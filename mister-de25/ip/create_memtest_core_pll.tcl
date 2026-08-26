@@ -1,0 +1,40 @@
+package require qsys 25.1
+
+# Dynamically reconfigurable SDRAM test clock for the exact DE25-Nano OPN.
+create_system memtest_core_pll
+set_project_property DEVICE_FAMILY "Agilex 5"
+set_project_property DEVICE A5EB013BB23BE4SCS
+
+add_instance iopll_0 altera_iopll 21.0.0
+set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+set_instance_parameter_value iopll_0 gui_output_clock_frequency0 80.0
+set_instance_parameter_value iopll_0 gui_output_clock_frequency1 80.0
+set_instance_parameter_value iopll_0 gui_phase_shift1 5750.0
+set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+
+add_interface refclk clock sink
+set_interface_property refclk EXPORT_OF iopll_0.refclk
+add_interface reset reset sink
+set_interface_property reset EXPORT_OF iopll_0.reset
+add_interface locked conduit end
+set_interface_property locked EXPORT_OF iopll_0.locked
+add_interface outclk0 clock source
+set_interface_property outclk0 EXPORT_OF iopll_0.outclk0
+add_interface outclk1 clock source
+set_interface_property outclk1 EXPORT_OF iopll_0.outclk1
+
+add_interface core_avl_address conduit end
+set_interface_property core_avl_address EXPORT_OF iopll_0.core_avl_address
+add_interface core_avl_clk clock sink
+set_interface_property core_avl_clk EXPORT_OF iopll_0.core_avl_clk
+add_interface core_avl_read conduit end
+set_interface_property core_avl_read EXPORT_OF iopll_0.core_avl_read
+add_interface core_avl_readdata conduit end
+set_interface_property core_avl_readdata EXPORT_OF iopll_0.core_avl_readdata
+add_interface core_avl_write conduit end
+set_interface_property core_avl_write EXPORT_OF iopll_0.core_avl_write
+add_interface core_avl_writedata conduit end
+set_interface_property core_avl_writedata EXPORT_OF iopll_0.core_avl_writedata
+
+save_system memtest_core_pll.qsys

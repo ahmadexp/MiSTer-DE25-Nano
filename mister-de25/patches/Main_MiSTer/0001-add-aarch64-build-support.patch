@@ -1,0 +1,87 @@
+diff --git a/DiskImage.cpp b/DiskImage.cpp
+index eb12841..049a0c7 100644
+--- a/DiskImage.cpp
++++ b/DiskImage.cpp
+@@ -2821,7 +2821,7 @@ bool unpack_td0(unsigned char *data, long &size)
+ 			td0_src = end_packed_data;
+ 		}
+ 	}
+-	size = unsigned(td0_dst) - unsigned(data);
++	size = td0_dst - data;
+ 	delete[] snbuf;
+ 	return true;
+ }
+diff --git a/Makefile b/Makefile
+index 9634284..0377033 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,12 +3,30 @@ SHELL = /bin/bash -o pipefail
+ 
+ MAKEFLAGS += "-j $(shell nproc)"
+ 
++# The production MiSTer target remains ARMv7. ARCH=aarch64 builds natively on
++# the DE25-Nano HPS and uses distribution libraries instead of bundled ARMv7
++# shared objects.
++ARCH ?= armv7
++
++ifeq ($(ARCH),aarch64)
++BASE    =
++CC      = gcc
++LD      = ld
++STRIP   = strip
++LIBCO   = lib/libco/ucontext.c
++IMLIB2_LIB = $(shell pkg-config --libs imlib2) -lfreetype -lbz2 -lpng16 -lz
++BLUETOOTH_LIB = -lbluetooth
++DFLAGS_ARCH = -DMISTER_DE25
++else
+ # using gcc version 10.2.1
+ BASE    = arm-none-linux-gnueabihf
+-
+ CC      = $(BASE)-gcc
+ LD      = $(BASE)-ld
+ STRIP   = $(BASE)-strip
++LIBCO   = lib/libco/arm.c
++IMLIB2_LIB = -Llib/imlib2 -lfreetype -lbz2 -lpng16 -lz -lImlib2
++BLUETOOTH_LIB = -Llib/bluetooth -lbluetooth
++endif
+ 
+ ifeq ($(V),1)
+ 	Q :=
+@@ -36,7 +54,7 @@ C_SRC =   $(wildcard *.c) \
+ 					$(wildcard ./lib/zstd/lib/common/*.c) \
+ 					$(wildcard ./lib/zstd/lib/decompress/*.c) \
+           $(wildcard ./lib/libchdr/*.c) \
+-          lib/libco/arm.c
++          $(LIBCO)
+ 
+ CPP_SRC = $(wildcard *.cpp) \
+           $(wildcard ./lib/serial_server/library/*.cpp) \
+@@ -44,14 +62,12 @@ CPP_SRC = $(wildcard *.cpp) \
+ 
+ IMG =     $(wildcard *.png)
+ 
+-IMLIB2_LIB  = -Llib/imlib2 -lfreetype -lbz2 -lpng16 -lz -lImlib2
+-
+ OBJ	= $(C_SRC:%.c=$(BUILDDIR)/%.c.o) $(CPP_SRC:%.cpp=$(BUILDDIR)/%.cpp.o) $(IMG:%.png=$(BUILDDIR)/%.png.o)
+ DEP	= $(C_SRC:%.c=$(BUILDDIR)/%.c.d) $(CPP_SRC:%.cpp=$(BUILDDIR)/%.cpp.d)
+ 
+-DFLAGS	= $(INCLUDE) -D_7ZIP_ST -DPACKAGE_VERSION=\"1.3.3\" -DHAVE_LROUND -DHAVE_STDINT_H -DHAVE_STDLIB_H -DHAVE_SYS_PARAM_H -DENABLE_64_BIT_WORDS=0 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -DVDATE=\"`date +"%y%m%d"`\"
++DFLAGS	= $(INCLUDE) $(DFLAGS_ARCH) -D_7ZIP_ST -DPACKAGE_VERSION=\"1.3.3\" -DHAVE_LROUND -DHAVE_STDINT_H -DHAVE_STDLIB_H -DHAVE_SYS_PARAM_H -DENABLE_64_BIT_WORDS=0 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -DVDATE=\"`date +"%y%m%d"`\"
+ CFLAGS	= $(DFLAGS) -Wall -Wextra -Wno-strict-aliasing -Wno-stringop-overflow -Wno-stringop-truncation -Wno-format-truncation -Wno-psabi -Wno-restrict -c
+-LFLAGS	= -lc -lstdc++ -lm -lrt $(IMLIB2_LIB) -Llib/bluetooth -lbluetooth -lpthread
++LFLAGS	= -lc -lstdc++ -lm -lrt $(IMLIB2_LIB) $(BLUETOOTH_LIB) -lpthread
+ 
+ OUTPUT_FILTER = sed -e 's/\(.[a-zA-Z]\+\):\([0-9]\+\):\([0-9]\+\):/\1(\2,\ \3):/g'
+ 
+diff --git a/lib/libco/ucontext.c b/lib/libco/ucontext.c
+index 72ea871..181c656 100644
+--- a/lib/libco/ucontext.c
++++ b/lib/libco/ucontext.c
+@@ -18,6 +18,7 @@
+ 
+ #define LIBCO_C
+ #include "libco.h"
++#include "settings.h"
+ 
+ #define _BSD_SOURCE
+ #include <stdlib.h>

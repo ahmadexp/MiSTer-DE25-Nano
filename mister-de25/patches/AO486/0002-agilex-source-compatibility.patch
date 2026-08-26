@@ -1,0 +1,423 @@
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+index ad59e00..1009772 100644
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -113,7 +113,13 @@ output        SDRAM_CLK,
+ output        SDRAM_CKE,
+ output [12:0] SDRAM_A,
+ output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++input  [15:0] de25_sdram_dq_in,
++output [15:0] de25_sdram_dq_out,
++output        de25_sdram_dq_oe,
++`else
+ inout  [15:0] SDRAM_DQ,
++`endif
+ output        SDRAM_DQML,
+ output        SDRAM_DQMH,
+ output        SDRAM_nCS,
+diff --git a/sys/hps_io.sv b/sys/hps_io.sv
+index 69492ae..dadd2a9 100644
+--- a/sys/hps_io.sv
++++ b/sys/hps_io.sv
+@@ -198,6 +198,17 @@ assign buttons = cfg[1:0];
+ //cfg[2] - vga_scaler handled in sys_top
+ //cfg[3] - csync handled in sys_top
+ assign forced_scandoubler = cfg[4];
++
++// The command decoder references these signals before the conditional PS/2
++// device instances. Keep them in module scope for SystemVerilog elaboration.
++reg  [7:0] kbd_data;
++reg        kbd_we;
++wire [8:0] kbd_data_host;
++reg        kbd_rd;
++reg  [7:0] mouse_data;
++reg        mouse_we;
++wire [8:0] mouse_data_host;
++reg        mouse_rd;
+ //cfg[5] - ypbpr handled in sys_top
+ assign direct_video = cfg[10];
+ 
+@@ -559,11 +570,6 @@ generate
+ 			end
+ 		end
+ 
+-		reg  [7:0] kbd_data;
+-		reg        kbd_we;
+-		wire [8:0] kbd_data_host;
+-		reg        kbd_rd;
+-
+ 		ps2_device keyboard
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -582,11 +588,6 @@ generate
+ 			.rd(kbd_rd)
+ 		);
+ 
+-		reg  [7:0] mouse_data;
+-		reg        mouse_we;
+-		wire [8:0] mouse_data_host;
+-		reg        mouse_rd;
+-
+ 		ps2_device mouse
+ 		(
+ 			.clk_sys(clk_sys),
+diff --git a/sys/hq2x.sv b/sys/hq2x.sv
+index f5fcc71..deef1fc 100644
+--- a/sys/hq2x.sv
++++ b/sys/hq2x.sv
+@@ -306,7 +306,7 @@ module Blend
+ 	input  [23:0] D,
+ 	input  [23:0] F,
+ 	input  [23:0] H,
+-	output [23:0] Result
++	output reg [23:0] Result
+ );
+ 
+ 	localparam BLEND1 = 7'b110_10_00; // (A * 12 + B * 4        ) >> 4
+diff --git a/sys/video_mixer.sv b/sys/video_mixer.sv
+index e53e1c0..dd91477 100644
+--- a/sys/video_mixer.sv
++++ b/sys/video_mixer.sv
+@@ -88,15 +88,19 @@ always @(posedge CLK_VIDEO) begin
+ 	frz  <= frz1;
+ end
+ 
++wire [DWIDTH_SD:0] R_in;
++wire [DWIDTH_SD:0] G_in;
++wire [DWIDTH_SD:0] B_in;
++
+ generate
+ 	if(GAMMA && HALF_DEPTH) begin
+-		wire [7:0] R_in  = frz ? 8'd0 : {R,R};
+-		wire [7:0] G_in  = frz ? 8'd0 : {G,G};
+-		wire [7:0] B_in  = frz ? 8'd0 : {B,B};
++		assign R_in = frz ? 8'd0 : {R,R};
++		assign G_in = frz ? 8'd0 : {G,G};
++		assign B_in = frz ? 8'd0 : {B,B};
+ 	end else begin
+-		wire [DWIDTH:0] R_in = frz ? 1'd0 : R;
+-		wire [DWIDTH:0] G_in = frz ? 1'd0 : G;
+-		wire [DWIDTH:0] B_in = frz ? 1'd0 : B;
++		assign R_in = frz ? 1'd0 : R;
++		assign G_in = frz ? 1'd0 : G;
++		assign B_in = frz ? 1'd0 : B;
+ 	end
+ endgenerate
+ 
+diff --git a/rtl/soc/vga.v b/rtl/soc/vga.v
+index fdafd3a..52e1d71 100644
+--- a/rtl/soc/vga.v
++++ b/rtl/soc/vga.v
+@@ -63,6 +63,7 @@ module vga
+ 	output reg  [7:0]   vga_r,
+ 	output reg  [7:0]   vga_g,
+ 	output reg  [7:0]   vga_b,
++	output      [4:0]   debug,
+ 
+ 	output reg [17:0]   vga_pal_d,
+ 	output reg  [7:0]   vga_pal_a,
+@@ -540,16 +541,23 @@ reg [27:0] clk_rate;
+ always @(posedge clk_vga) clk_rate <= clock_rate_vga;
+ 
+ reg ce_video;
+-reg [27:0] pixclk;
++reg [27:0] ce_video_accum = 28'd0;
++reg ce_video_seen = 1'b0;
++reg [27:0] pixclk = 28'd0;
+ always @(posedge clk_vga) begin
+-	reg [27:0] sum = 28'd0;
+-	
+-	if(~vga_rst_n) sum = 28'd0;
+-	ce_video = 1'd0;
+-	sum = sum + pixclk;
+-	if(sum >= clk_rate) begin
+-		sum = sum - clk_rate;
+-		ce_video = 1'd1;
++	if(~vga_rst_n) begin
++		ce_video_accum <= 28'd0;
++		ce_video       <= 1'b0;
++		ce_video_seen  <= 1'b0;
++	end
++	else if((ce_video_accum + pixclk) >= clk_rate) begin
++		ce_video_accum <= ce_video_accum + pixclk - clk_rate;
++		ce_video       <= 1'b1;
++		ce_video_seen  <= 1'b1;
++	end
++	else begin
++		ce_video_accum <= ce_video_accum + pixclk;
++		ce_video       <= 1'b0;
+ 	end
+ end
+ 
+@@ -568,7 +576,10 @@ always @(posedge clk_vga) begin
+ 	reg [31:0] pixcnt = 32'd0, pix60;
+ 	reg old_sync = 1'd0;
+ 	
+-	if(~vga_rst_n || ~vga_f60) pixclk <= (clk_rate<pixclk_orig) ? clk_rate : pixclk_orig;
++	// A runtime fabric load can begin after the HPS reset request is already
++	// released. Bootstrap a zero power-up value so the first ce_video pulse
++	// cannot depend on a pixel clock that has never been initialized.
++	if(~vga_rst_n || ~vga_f60 || !pixclk) pixclk <= (clk_rate<pixclk_orig) ? clk_rate : pixclk_orig;
+ 	else if(ce_video) begin
+ 		old_sync <= vga_vert_sync;
+ 		pixcnt <= pixcnt + 32'd1;
+@@ -681,6 +692,8 @@ end
+ // Note: Some video cards always allow Attribute Controller access to palette RAM?
+ reg attrib_pas;
+ always @(posedge clk_sys) if(~rst_n) attrib_pas <= 1'd0; else if(io_c_write && io_address == 4'h0 && ~(attrib_flip_flop)) attrib_pas <= io_writedata[5];
++assign debug = {ce_video_seen, crtc_timing_enable, general_enable_ram,
++		seq_async_reset_n, attrib_pas};
+ reg [4:0] attrib_io_index;
+ always @(posedge clk_sys) if(~rst_n) attrib_io_index <= 5'd0; else if(io_c_write && io_address == 4'h0 && ~(attrib_flip_flop)) attrib_io_index <= io_writedata[4:0];
+ 
+@@ -1328,6 +1341,15 @@ reg vgaprep_not_displaying;
+ 
+ wire [5:0] pel_palette;
+ wire [5:0] host_palette_q;
++`ifdef DE25_PLL_DIAGNOSTIC
++// Diagnostic-only visibility override. The BIOS currently leaves PAS low,
++// which blanks the whole framebuffer. Continue honoring PAS for host palette
++// writes, but let the pixel port show the initialized VGA state so the next
++// hardware run can distinguish a display gate from an earlier BIOS stall.
++wire attrib_display_enable = 1'b1;
++`else
++wire attrib_display_enable = attrib_pas;
++`endif
+ 
+ dpram_difclk #(4,6,4,6) internal_palette_ram
+ (
+@@ -1338,7 +1360,7 @@ dpram_difclk #(4,6,4,6) internal_palette_ram
+ 	.q_a            (host_palette_q),
+ 
+ 	.clk_b          (clk_vga),
+-	.enable_b       (ce_video && attrib_pas && ~seq_screen_disable && ~vgareg_blank),
++	.enable_b       (ce_video && attrib_display_enable && ~seq_screen_disable && ~vgareg_blank),
+ 	.address_b      (pel_after_panning[3:0]),
+ 	.q_b            (pel_palette)
+ );
+@@ -1369,7 +1391,7 @@ wire [7:0] pel_color_index =
+ 
+ wire [7:0] pel_dac_index = 
+ 	(vgaprep_not_displaying) ? attrib_color_overscan :
+-	(~attrib_pas)            ? 8'h00 : // 0 according to Intel documentation, attrib_color_overscan according to ET4000 documentation?
++	(~attrib_display_enable) ? 8'h00 : // 0 according to Intel documentation, attrib_color_overscan according to ET4000 documentation?
+ 	                           pel_color_index;
+ 
+ //------------------------------------------------------------------------------ dac
+@@ -1443,7 +1465,10 @@ wire vert_first_cnt        = (vert_cnt  == 11'd0);
+ wire vert_last_cnt         = (vert_cnt  == vert_total);
+ 
+ reg dot_cnt_div;
+-always @(posedge clk_vga) if (ce_video) dot_cnt_div <= ~(dot_cnt_div);
++always @(posedge clk_vga) begin
++	if (~vga_rst_n) dot_cnt_div <= 1'b0;
++	else if (ce_video) dot_cnt_div <= ~(dot_cnt_div);
++end
+ 
+ wire dot_cnt_enable = ~(seq_dotclock_divided) || dot_cnt_div;
+ 
+@@ -1451,24 +1476,27 @@ wire dot_cnt_enable = ~(seq_dotclock_divided) || dot_cnt_div;
+ wire character_last_dot = dot_cnt_enable && dot_cnt == { ~seq_8dot_char, {3{seq_8dot_char}} };
+ 
+ // dot_cnt (the dot counter) is clocked by dot_cnt_enable
+-always @(posedge clk_vga) if (ce_video) begin
+-	if (dot_cnt_enable) begin
++always @(posedge clk_vga) begin
++	if (~vga_rst_n) dot_cnt <= 4'd0;
++	else if (ce_video && dot_cnt_enable) begin
+ 		if (character_last_dot)   dot_cnt <= 4'd0;
+ 		else                      dot_cnt <= dot_cnt + 1'd1;
+ 	end
+ end
+ 
+ // horiz_cnt (the character counter) is clocked by character_last_dot
+-always @(posedge clk_vga) if (ce_video) begin
+-	if (character_last_dot) begin
++always @(posedge clk_vga) begin
++	if (~vga_rst_n) horiz_cnt <= 9'd0;
++	else if (ce_video && character_last_dot) begin
+ 		if (horiz_last_cnt)       horiz_cnt <= 9'd0;
+ 		else                      horiz_cnt <= horiz_cnt + 1'd1;
+ 	end
+ end
+ 
+ // vert_cnt (the scanline counter) is clocked by HSYNC
+-always @(posedge clk_vga) if (ce_video) begin
+-	if (character_last_dot && hss) begin
++always @(posedge clk_vga) begin
++	if (~vga_rst_n) vert_cnt <= 11'd0;
++	else if (ce_video && character_last_dot && hss) begin
+ 		if (vert_last_cnt)        vert_cnt <= 11'd0;
+ 		else                      vert_cnt <= vert_cnt + 1'd1;
+ 	end
+diff --git a/rtl/soc/gus/gus.v b/rtl/soc/gus/gus.v
+index 1bba0fb..3044eae 100644
+--- a/rtl/soc/gus/gus.v
++++ b/rtl/soc/gus/gus.v
+@@ -30,7 +30,13 @@ module gus    // ULTRASND IO = 240, IRQ = 7, DMA = 7
+ 	output        SDRAM_CKE,
+ 	output [12:0] SDRAM_A,
+ 	output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input  [15:0] SDRAM_DQ_IN,
++	output [15:0] SDRAM_DQ_OUT,
++	output        SDRAM_DQ_OE,
++`else
+ 	inout  [15:0] SDRAM_DQ,
++`endif
+ 	output        SDRAM_DQML,
+ 	output        SDRAM_DQMH,
+ 	output        SDRAM_nCS,
+@@ -75,7 +81,13 @@ sdram sdram (
+ 	.word             (word),
+ //	.ready            (),
+ 
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	.SDRAM_DQ_IN      (SDRAM_DQ_IN),
++	.SDRAM_DQ_OUT     (SDRAM_DQ_OUT),
++	.SDRAM_DQ_OE      (SDRAM_DQ_OE),
++`else
+ 	.SDRAM_DQ         (SDRAM_DQ),
++`endif
+ 	.SDRAM_A          (SDRAM_A),
+ 	.SDRAM_DQML       (SDRAM_DQML),
+ 	.SDRAM_DQMH       (SDRAM_DQMH),
+diff --git a/rtl/soc/gus/sdram.sv b/rtl/soc/gus/sdram.sv
+index b1219bb..66ada3d 100644
+--- a/rtl/soc/gus/sdram.sv
++++ b/rtl/soc/gus/sdram.sv
+@@ -32,7 +32,13 @@ module sdram
+    input             clk,         // clock ~100MHz
+                                   //
+                                   // SDRAM_* - signals to the MT48LC16M16 chip
+-   inout  reg [15:0] SDRAM_DQ,    // 16 bit bidirectional data bus
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++   input      [15:0] SDRAM_DQ_IN, // data sampled from the board SDRAM bus
++   output reg [15:0] SDRAM_DQ_OUT,// data driven to the board SDRAM bus
++   output reg        SDRAM_DQ_OE, // active-high output enable
++`else
++   inout wire [15:0] SDRAM_DQ,    // 16 bit bidirectional data bus
++`endif
+    output reg [12:0] SDRAM_A,     // 13 bit multiplexed address bus
+    output reg        SDRAM_DQML,  // two byte masks
+    output reg        SDRAM_DQMH,  // 
+@@ -61,6 +67,13 @@ assign SDRAM_nCAS = command[1];
+ assign SDRAM_nWE  = command[0];
+ assign {SDRAM_DQMH,SDRAM_DQML} = SDRAM_A[12:11];
+ 
++`ifndef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++wire [15:0] SDRAM_DQ_IN = SDRAM_DQ;
++reg  [15:0] SDRAM_DQ_OUT;
++reg         SDRAM_DQ_OE;
++assign SDRAM_DQ = SDRAM_DQ_OE ? SDRAM_DQ_OUT : 16'bZ;
++`endif
++
+ 
+ // no burst configured
+ localparam BURST_LENGTH        = 3'b000;   // 000=1, 001=2, 010=4, 011=8
+@@ -110,13 +123,13 @@ always @(posedge clk) begin
+ 
+ 	state_t state = STATE_STARTUP;
+ 
+-	SDRAM_DQ <= 16'bZ;
++	SDRAM_DQ_OE <= 1'b0;
+ 	command  <= CMD_NOP;
+ 	refresh_count  <= refresh_count+1'b1;
+ 
+ 	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY:1]};
+ 
+-	if(data_ready_delay[0]) {ready, data}  <= {1'b1, SDRAM_DQ};
++	if(data_ready_delay[0]) {ready, data}  <= {1'b1, SDRAM_DQ_IN};
+ 
+ 	case(state)
+ 		STATE_STARTUP: begin
+@@ -184,7 +197,8 @@ always @(posedge clk) begin
+ 			SDRAM_A     <= { save_word ? 2'b00 : {save_we & ~save_addr[0], save_we & save_addr[0]}, 2'b10, save_addr[22:14]};
+ 			if(save_we) begin
+ 				command  <= CMD_WRITE;
+-				SDRAM_DQ <= new_data;
++				SDRAM_DQ_OUT <= new_data;
++				SDRAM_DQ_OE  <= 1'b1;
+ 				ready    <= 1;
+ 				state    <= STATE_IDLE_2;
+ 			end
+@@ -211,6 +225,11 @@ always @(posedge clk) begin
+ 	end
+ end
+ 
++`ifdef DE25_AGILEX_PLL
++// The Cyclone V altddio emitted a clock that is low during clk's high half.
++// Agilex 5's clear-box flow cannot elaborate that legacy megafunction.
++assign SDRAM_CLK = ~clk;
++`else
+ altddio_out
+ #(
+ 	.extend_oe_disable("OFF"),
+@@ -235,5 +254,6 @@ sdramclk_ddr
+ 	.sclr(1'b0),
+ 	.sset(1'b0)
+ );
++`endif
+ 
+ endmodule
+diff --git a/rtl/soc/sound/saa1099.sv b/rtl/soc/sound/saa1099.sv
+index 6faf199..0d7957d 100644
+--- a/rtl/soc/sound/saa1099.sv
++++ b/rtl/soc/sound/saa1099.sv
+@@ -22,7 +22,7 @@
+ //
+ //============================================================================
+ `timescale 1ns / 1ps
+-`default_nettype none
++`default_nettype wire
+ 
+ 
+ module saa1099
+diff --git a/rtl/soc/uart/gh_fifo_async_sr.vhd b/rtl/soc/uart/gh_fifo_async_sr.vhd
+index 362b0fd..49dcfe8 100644
+--- a/rtl/soc/uart/gh_fifo_async_sr.vhd
++++ b/rtl/soc/uart/gh_fifo_async_sr.vhd
+@@ -92,7 +92,8 @@ process (clk_WR,rst)
+ begin 
+ 	if (rst = '1') then
+ 		add_WR <= (others => '0');
+-		add_RD_WS <= (queue_depth => '1', (queue_depth-1) => '1', others => '0');
++		add_RD_WS <= (others => '0');
++		add_RD_WS(queue_depth downto queue_depth-1) <= (others => '1');
+ 		add_WR_GC <= (others => '0');
+ 	elsif (rising_edge(clk_WR)) then
+ 		add_RD_WS <= add_RD_GCwc;
+@@ -102,7 +103,7 @@ begin
+ 			add_WR_GC <= (others => '0');
+ 		elsif (add_WR_CE = '1') then
+ 			add_WR <= n_add_WR;
+-			add_WR_GC <= n_add_WR xor n_add_WR(queue_depth downto 1);
++			add_WR_GC <= n_add_WR xor ('0' & n_add_WR(queue_depth downto 1));
+ 		end if;
+ 	end if;
+ end process;
+@@ -133,17 +134,19 @@ begin
+ 		add_RD <= (others => '0');	
+ 		add_WR_RS <= (others => '0');
+ 		add_RD_GC <= (others => '0');
+-		add_RD_GCwc <= (queue_depth => '1', (queue_depth-1) => '1', others => '0');
++		add_RD_GCwc <= (others => '0');
++		add_RD_GCwc(queue_depth downto queue_depth-1) <= (others => '1');
+ 	elsif (rising_edge(clk_RD)) then
+ 		add_WR_RS <= add_WR_GC;
+ 		if (srst_r = '1') then
+ 			add_RD <= (others => '0');
+ 			add_RD_GC <= (others => '0');
+-			add_RD_GCwc <= (queue_depth => '1', (queue_depth-1) => '1', others => '0');
++			add_RD_GCwc <= (others => '0');
++			add_RD_GCwc(queue_depth downto queue_depth-1) <= (others => '1');
+ 		elsif (add_RD_CE = '1') then
+ 			add_RD <= n_add_RD;
+-			add_RD_GC   <= n_add_RD xor n_add_RD(queue_depth downto 1);
+-			add_RD_GCwc <= ((not n_add_RD(queue_depth downto queue_depth-1)) & n_add_RD(queue_depth-2 downto 0)) xor n_add_RD(queue_depth downto 1);
++			add_RD_GC   <= n_add_RD xor ('0' & n_add_RD(queue_depth downto 1));
++			add_RD_GCwc <= ((not n_add_RD(queue_depth downto queue_depth-1)) & n_add_RD(queue_depth-2 downto 0)) xor ('0' & n_add_RD(queue_depth downto 1));
+ 		end if;
+ 	end if;
+ end process;

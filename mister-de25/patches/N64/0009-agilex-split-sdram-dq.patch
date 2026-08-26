@@ -1,0 +1,113 @@
+diff --git a/N64.sv b/N64.sv
+index ae91528..c84892a 100644
+--- a/N64.sv
++++ b/N64.sv
+@@ -131,7 +131,13 @@ module emu
+ 	output        SDRAM_CKE,
+ 	output [12:0] SDRAM_A,
+ 	output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input  [15:0] de25_sdram_dq_in,
++	output [15:0] de25_sdram_dq_out,
++	output        de25_sdram_dq_oe,
++`else
+ 	inout  [15:0] SDRAM_DQ,
++`endif
+ 	output        SDRAM_DQML,
+ 	output        SDRAM_DQMH,
+ 	output        SDRAM_nCS,
+@@ -191,7 +197,9 @@ assign ADC_BUS  = 'Z;
+ 
+ assign {UART_RTS, UART_TXD, UART_DTR} = 0;
+ assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
++`ifndef DE25_CORE_HAS_SPLIT_SDRAM_DQ
+ assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
++`endif
+ 
+ assign FB_BASE    = video_FB_base;
+ assign FB_EN      = video_FB_en;
+@@ -668,6 +676,13 @@ wire [31:0] sdram_dataRead;
+ 
+ sdram sdram
+ (
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	.SDRAM_DQ_IN (de25_sdram_dq_in),
++	.SDRAM_DQ_OUT(de25_sdram_dq_out),
++	.SDRAM_DQ_OE (de25_sdram_dq_oe),
++`else
++	.SDRAM_DQ(SDRAM_DQ),
++`endif
+ 	.*,
+ 	.init(~pll_locked),
+ 	.clk(clk_1x),
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+index b6d2da6..0a48a1f 100644
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -22,7 +22,13 @@ module sdram
+ 	input             init,        // reset to initialize RAM
+ 	input             clk,         // clock ~100MHz
+ 
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input      [15:0] SDRAM_DQ_IN,
++	output     [15:0] SDRAM_DQ_OUT,
++	output            SDRAM_DQ_OE,
++`else
+ 	inout wire [15:0] SDRAM_DQ,    // 16 bit bidirectional data bus
++`endif
+ 	output reg [12:0] SDRAM_A,     // 13 bit multiplexed address bus
+ 	output            SDRAM_DQML,  // two byte masks
+ 	output            SDRAM_DQMH,  // 
+@@ -59,8 +65,17 @@ module sdram
+ 	output reg        ch3_ready
+ );
+ 
+ reg [15:0] sdram_dq_out;
++reg        sdram_dq_oe;
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++wire [15:0] sdram_dq_in = SDRAM_DQ_IN;
++assign SDRAM_DQ_OUT = sdram_dq_out;
++assign SDRAM_DQ_OE  = sdram_dq_oe;
++`else
++wire [15:0] sdram_dq_in = SDRAM_DQ;
++assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'bz;
++`endif
+-assign SDRAM_DQ = sdram_dq_out;
+ 
+ assign SDRAM_nCS  = chip;
+ assign SDRAM_nRAS = command[2];
+@@ -138,7 +153,7 @@ always @(posedge clk) begin
+ 	data_ready_delay2 <= data_ready_delay2>>1;
+ 	data_ready_delay3 <= data_ready_delay3>>1;
+ 
+-	dq_reg <= SDRAM_DQ;
++	dq_reg <= sdram_dq_in;
+ 
+ 	if(data_ready_delay1[1]) ch1_dout[15:00] <= dq_reg;
+ 	if(data_ready_delay1[0]) ch1_dout[31:16] <= dq_reg;
+@@ -152,7 +167,8 @@ always @(posedge clk) begin
+ 	if(data_ready_delay3[0]) ch3_dout[15:08] <= dq_reg[7:0];
+ 	if(data_ready_delay3[0]) ch3_ready <= 1;
+ 
+-	sdram_dq_out <= 16'bZ;
++	sdram_dq_out <= 16'd0;
++	sdram_dq_oe  <= 1'b0;
+ 
+ 	command <= CMD_NOP;
+ 	case (state)
+@@ -267,6 +283,7 @@ always @(posedge clk) begin
+ 			if(saved_wr) begin
+ 				command  <= CMD_WRITE;
+ 				sdram_dq_out <= saved_data[15:0];
++				sdram_dq_oe <= 1'b1;
+ 				state <= STATE_RW2;
+ 			end
+ 			else begin
+@@ -284,6 +301,7 @@ always @(posedge clk) begin
+ 			SDRAM_A[0]     <= 1;
+ 			command        <= CMD_WRITE;
+ 			sdram_dq_out   <= saved_data[31:16];
++			sdram_dq_oe    <= 1'b1;
+ 	        SDRAM_A[12:11] <= ~saved_be[3:2];
+ 	        if(ch == 0)      ch1_ready <= 1;
+ 			else if(ch == 1) ch2_ready <= 1;

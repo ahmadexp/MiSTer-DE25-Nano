@@ -1,0 +1,133 @@
+***************************************************************
+Quartus is a registered trademark of Altera Corporation in the
+US and other countries.  Portions of the Quartus Prime software
+code, and other portions of the code included in this download
+or on this DVD, are licensed to Altera Corporation and are the
+copyrighted property of third parties. For license details,
+refer to the Altera Software License Subscription Agreements 
+on the Quartus Prime software download page.
+***************************************************************
+
+2026.08.12.09:52:35 Warning: Both --quartus-project and --new-quartus-project switches are not used. A new Quartus project named inspect_nes_pll_profiles will be created using the tcl script filename: /probe/inspect_nes_pll_profiles.qpf.
+2026.08.12.09:52:35 Info: Doing: qsys-script --script=inspect_nes_pll_profiles.tcl
+2026.08.12.09:52:38 Info: create_system inspect_nes_pll_profiles
+2026.08.12.09:52:38 Info: set_project_property DEVICE_FAMILY Agilex 5
+2026.08.12.09:52:38 Info: set_project_property DEVICE A5EB013BB23BE4SCS
+2026.08.12.09:52:38 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.09:52:39 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.09:52:39 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 5
+2026.08.12.09:52:39 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 85.9090880
+2026.08.12.09:52:39 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 42.9545440
+2026.08.12.09:52:39 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency2 21.4772720
+2026.08.12.09:52:39 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency3 85.9090880
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency4 85.9090880
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_phase_shift3 5320.10601719
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_phase_shift4 6320.10601719
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst4
+2026.08.22.21:57:44 Info: send_message Info NES_PROFILE profile=ntsc requested0=85.9090880 requested1=42.9545440 requested2=21.4772720 phase_requested3=5320.10601719 phase_requested4=11140.2120344 m=189 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 actual0=85.909091 actual_phase0=0.0 hi0=11 lo0=11 odd0=0 bypass0=0 preset0=1 phase0=0 actual1=42.954545 actual_phase1=0.0 hi1=22 lo1=22 odd1=0 bypass1=0 preset1=1 phase1=0 actual2=21.477273 actual_phase2=0.0 hi2=44 lo2=44 odd2=0 bypass2=0 preset2=1 phase2=0 actual3=85.909091 actual_phase3=5291.0 hi3=11 lo3=11 odd3=0 bypass3=0 preset3=11 phase3=0 actual4=85.909091 actual_phase4=11111.1 hi4=11 lo4=11 odd4=0 bypass4=0 preset4=22 phase4=0
+2026.08.22.21:57:44 Info: Info: NES_PROFILE profile=ntsc requested0=85.9090880 requested1=42.9545440 requested2=21.4772720 phase_requested3=5320.10601719 phase_requested4=11140.2120344 m=189 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 actual0=85.909091 actual_phase0=0.0 hi0=11 lo0=11 odd0=0 bypass0=0 preset0=1 phase0=0 actual1=42.954545 actual_phase1=0.0 hi1=22 lo1=22 odd1=0 bypass1=0 preset1=1 phase1=0 actual2=21.477273 actual_phase2=0.0 hi2=44 lo2=44 odd2=0 bypass2=0 preset2=1 phase2=0 actual3=85.909091 actual_phase3=5291.0 hi3=11 lo3=11 odd3=0 bypass3=0 preset3=11 phase3=0 actual4=85.909091 actual_phase4=11111.1 hi4=11 lo4=11 odd4=0 bypass4=0 preset4=22 phase4=0
+2026.08.12.09:52:40 Info: remove_instance iopll_0
+2026.08.12.09:52:40 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 5
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 85.1254784
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 42.5627392
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency2 21.2813696
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency3 85.1254784
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency4 85.1254784
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_phase_shift3 5373.6821149
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_phase_shift4 6373.6821149
+2026.08.12.09:52:40 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst2
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst3
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_prst4
+2026.08.12.09:52:40 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst4
+2026.08.22.21:57:45 Info: send_message Info NES_PROFILE profile=pal requested0=85.1254784 requested1=42.5627392 requested2=21.2813696 phase_requested3=5373.6821149 phase_requested4=11247.3642298 m=143 n_hi=2 n_lo=2 n_odd=0 n_bypass=0 actual0=85.119048 actual_phase0=0.0 hi0=11 lo0=10 odd0=1 bypass0=0 preset0=1 phase0=0 actual1=42.559524 actual_phase1=0.0 hi1=21 lo1=21 odd1=0 bypass1=0 preset1=1 phase1=0 actual2=21.279762 actual_phase2=0.0 hi2=42 lo2=42 odd2=0 bypass2=0 preset2=1 phase2=0 actual3=85.119048 actual_phase3=5384.6 hi3=11 lo3=10 odd3=1 bypass3=0 preset3=10 phase3=5 actual4=85.119048 actual_phase4=11258.7 hi4=11 lo4=10 odd4=1 bypass4=0 preset4=21 phase4=1
+2026.08.22.21:57:45 Info: Info: NES_PROFILE profile=pal requested0=85.1254784 requested1=42.5627392 requested2=21.2813696 phase_requested3=5373.6821149 phase_requested4=11247.3642298 m=143 n_hi=2 n_lo=2 n_odd=0 n_bypass=0 actual0=85.119048 actual_phase0=0.0 hi0=11 lo0=10 odd0=1 bypass0=0 preset0=1 phase0=0 actual1=42.559524 actual_phase1=0.0 hi1=21 lo1=21 odd1=0 bypass1=0 preset1=1 phase1=0 actual2=21.279762 actual_phase2=0.0 hi2=42 lo2=42 odd2=0 bypass2=0 preset2=1 phase2=0 actual3=85.119048 actual_phase3=5384.6 hi3=11 lo3=10 odd3=1 bypass3=0 preset3=10 phase3=5 actual4=85.119048 actual_phase4=11258.7 hi4=11 lo4=10 odd4=1 bypass4=0 preset4=21 phase4=1
+2026.08.12.09:52:40 Info: remove_instance iopll_0

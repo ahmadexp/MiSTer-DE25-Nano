@@ -1,0 +1,13 @@
+diff --git a/rtl/RSP_divtable.vhd b/rtl/RSP_divtable.vhd
+index be7a02b..cdf1584 100644
+--- a/rtl/RSP_divtable.vhd
++++ b/rtl/RSP_divtable.vhd
+@@ -87,7 +87,7 @@ architecture arch of RSP_divtable is
+       x"0418",x"03d5",x"0392",x"0350",x"030d",x"02cb",x"0289",x"0247",x"0206",x"01c4",x"0183",x"0142",x"0101",x"00c0",x"0080",x"0040"
+    );  
+    attribute ramstyle : string;
+-   attribute ramstyle of divtable : signal is "M10K";
++   attribute ramstyle of divtable : signal is "M20K";
+   
+ begin 
+ 

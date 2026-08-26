@@ -1,0 +1,47 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    // Supply the target root's 64-bit cell geometry to dtc. These properties
+    // describe the overlay container and are not applied to the live tree.
+    #address-cells = <2>;
+    #size-cells = <2>;
+
+    fragment@0 {
+        #address-cells = <2>;
+        #size-cells = <2>;
+        target-path = "/memory";
+
+        __overlay__ {
+            // The populated DE25-Nano has 1 GiB at 0x80000000.
+            reg = <0x00000000 0x80000000 0x00000000 0x40000000>;
+        };
+    };
+
+    fragment@1 {
+        #address-cells = <2>;
+        #size-cells = <2>;
+        target-path = "/reserved-memory";
+
+        __overlay__ {
+            #address-cells = <2>;
+            #size-cells = <2>;
+            ranges;
+
+            mister_env@9ffff000 {
+                // Main's persistent core-switch handoff page at 0x1ffff000.
+                reg = <0x00000000 0x9ffff000 0x00000000 0x00001000>;
+                no-map;
+            };
+
+            mister_ddram@a0000000 {
+                // MiSTer logical 0x20000000..0x3fffffff, plus 0x80000000.
+                // Keep the region reserved from Linux allocation, but allow
+                // the arm64 linear map to cover it. Main accesses this shared
+                // LPDDR through /dev/mem; no-map would force Device memory
+                // attributes and make normal vector loads/stores raise SIGBUS.
+                reg = <0x00000000 0xa0000000 0x00000000 0x20000000>;
+            };
+        };
+    };
+};

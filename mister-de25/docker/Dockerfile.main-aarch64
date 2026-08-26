@@ -1,0 +1,17 @@
+FROM ubuntu:22.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      build-essential \
+      pkg-config \
+      libimlib2-dev \
+      libfreetype6-dev \
+      libbz2-dev \
+      libpng-dev \
+      zlib1g-dev \
+      libbluetooth-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src

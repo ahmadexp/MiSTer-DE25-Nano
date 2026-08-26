@@ -1,0 +1,6 @@
+# IBM PC/XT persona on the shared Platform V2 board contract.
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+source DE25_MISTER_PCXT.qsf
+
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_pcxt_v2
+source de25_platform_v2.qsf

@@ -1,0 +1,20 @@
+diff --git a/rtl/dpram.vhd b/rtl/dpram.vhd
+index ae81a9f..791ac32 100644
+--- a/rtl/dpram.vhd
++++ b/rtl/dpram.vhd
+@@ -41,6 +41,7 @@ ARCHITECTURE SYN OF dpram_dc IS
+ 	COMPONENT altsyncram
+ 	GENERIC (
+ 		address_reg_b		: STRING;
++		byteena_reg_b		: STRING;
+ 		clock_enable_input_a		: STRING;
+ 		clock_enable_input_b		: STRING;
+ 		clock_enable_output_a		: STRING;
+@@ -89,6 +90,7 @@ BEGIN
+ 	altsyncram_component : altsyncram
+ 	GENERIC MAP (
+ 		address_reg_b => "CLOCK0",
++		byteena_reg_b => "CLOCK0",
+ 		clock_enable_input_a => "BYPASS",
+ 		clock_enable_input_b => "BYPASS",
+ 		clock_enable_output_a => "BYPASS",

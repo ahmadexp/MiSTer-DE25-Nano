@@ -1,0 +1,36 @@
+diff --git a/input.cpp b/input.cpp
+index 7531930..a598dd2 100644
+--- a/input.cpp
++++ b/input.cpp
+@@ -6266,5 +6266,31 @@ int input_test(int getchar)
+ 					{
+ 						if (is_x86()) x86_pc110_post_bypass();
+ 					}
++					else if (!strncmp(cmd, "de25_load_mgl ", 14))
++					{
++						const char *path = cmd + 14;
++						mgl_struct *mgl = NULL;
++
++						// A DE25 core is already active when this command is used.
++						// Arm its content descriptor in place so loading a disk does
++						// not restart Main or request a second FPGA reconfiguration.
++						if (path[0] == '/' && isXmlName(path) == 2 &&
++						    !strchr(path, '\r') && !strchr(path, '\n') &&
++						    !access(path, R_OK))
++						{
++							mgl = mgl_parse(path);
++							if (mgl->count)
++							{
++								mgl->current = 0;
++								mgl->state = 0;
++								mgl->done = 0;
++								mgl->timer = GetTimer(mgl->item[0].delay * 1000);
++								MenuHide();
++								printf("DE25 armed MGL in place: %s\n", path);
++							}
++						}
++						if (!mgl || !mgl->count)
++							printf("Invalid or empty DE25 MGL: %s\n", path);
++					}
+ 					#endif
+ 					else if (!strncmp(cmd, "video_mode ", 11)) video_mode_cmd(cmd + 11);

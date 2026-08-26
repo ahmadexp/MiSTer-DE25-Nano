@@ -1,0 +1,25 @@
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -271,7 +271,11 @@ wire [15:0] de25_data_reg = data_reg;
+ 	always @(posedge clk) begin
+ 	if(state == STATE_START) SDRAM_BA <= (mode == MODE_NORMAL) ? bank : 2'b00;
+ 
+ `ifdef DE25_AGILEX_PLL_RECONFIG
+-	SDRAM_DQ_OUT <= '0;
++	// Keep write data continuously registered.  Driving zero in every
++	// non-write cycle makes Quartus infer a synchronous clear, which cannot be
++	// implemented in the Agilex bidirectional SDRAM I/O register.  OE alone
++	// controls when the registered word reaches the physical bus.
++	SDRAM_DQ_OUT <= data;
+ 	SDRAM_DQ_OE <= 0;
+ `else
+ 	SDRAM_DQ <= 'Z;
+@@ -291,7 +295,6 @@ always @(posedge clk) begin
+ 	if(ram_req && mode == MODE_NORMAL && state == STATE_CONT) begin
+ 		if(we) begin
+ `ifdef DE25_AGILEX_PLL_RECONFIG
+-			SDRAM_DQ_OUT <= data;
+ 			SDRAM_DQ_OE <= active;
+ `else
+ 			SDRAM_DQ <= data;

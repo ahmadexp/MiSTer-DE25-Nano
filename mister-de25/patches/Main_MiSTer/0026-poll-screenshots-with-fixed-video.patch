@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano port
+Date: Mon, 17 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Poll screenshots with fixed video
+
+The DE25 fixed fabric video path deliberately skips the Cyclone V video
+initialization that drives Main's frame callbacks. Poll the screenshot worker
+from user_io_poll on DE25 so FIFO screenshot requests can start and completed
+images can be published even though no HPS scaler interrupt is present.
+
+diff --git a/user_io.cpp b/user_io.cpp
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -3224,7 +3224,13 @@ void user_io_poll()
+ 
+ 	// every frame, check if a screenshot has been requested.
+ 	// this is reduce risk of screenshot occurring while the scaler
+ 	// is being updated and getting a corrupted image.
++#ifdef MISTER_DE25
++	// The fixed fabric scaler has no Main-owned frame callback source.
++	// Polling here starts requests and publishes asynchronous completions.
++	screenshot_cb();
++#else
+ 	add_frame_callback(screenshot_cb);
++#endif
+ 
+ 	if ((core_type != CORE_TYPE_SHARPMZ) &&
+ 		(core_type != CORE_TYPE_8BIT))
+-- 
+2.43.0

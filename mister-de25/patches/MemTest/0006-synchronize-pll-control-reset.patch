@@ -1,0 +1,36 @@
+diff --git a/memtest.sv b/memtest.sv
+--- a/memtest.sv
++++ b/memtest.sv
+@@ -103,6 +103,7 @@ wire [11:0] de25_frequency_bcd;
+ wire de25_reconfig_busy;
+ wire de25_reconfig_done;
+ wire de25_reconfig_error;
++wire de25_control_reset;
+ wire de25_ram_quiesced;
+ wire de25_sdram_clk;
+ reg  de25_reconfig_start = 0;
+@@ -121,6 +122,7 @@ de25_memtest_pll de25_pll
+ 	.busy(de25_reconfig_busy),
+ 	.done(de25_reconfig_done),
+-	.error(de25_reconfig_error)
++	.error(de25_reconfig_error),
++	.control_reset(de25_control_reset)
+ );
+ `else
+ pll pll
+@@ -229,6 +231,6 @@ always @(posedge CLK_50M) begin
+ `ifdef DE25_AGILEX_PLL_RECONFIG
+ 	de25_reconfig_start <= 0;
+-	if(RESET) begin
++	if(de25_control_reset) begin
+ 		de25_reconfig_issued <= 0;
+ 	end else begin
+ 		if(!recfg) de25_reconfig_issued <= 0;
+@@ -414,6 +416,6 @@ de25_sdram_quiesce de25_ram_quiesce
+ (
+ 	.clk_control(CLK_50M),
+-	.reset_control(RESET),
++	.reset_control(de25_control_reset),
+ 	.clk_sdram(clk_ram),
+ 	.pll_locked(locked),
+ 	.request_control(recfg),

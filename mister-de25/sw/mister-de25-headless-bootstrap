@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fat_root=${MISTER_DE25_FAT_ROOT:-/media/fat}
+control_root=${MISTER_DE25_HEADLESS_ROOT:-$fat_root/.mister-de25/headless-migration}
+real_main=${MISTER_DE25_REAL_MAIN:-$fat_root/.mister-de25/bin/MiSTer.real}
+controller=${MISTER_DE25_MIGRATION_CONTROLLER:-$fat_root/.mister-de25/bin/mister-de25-headless-migrate}
+request=$control_root/request
+
+# Main compares the configured `main=` path with /proc/self/exe and normally
+# re-executes when they differ.  This launcher intentionally occupies the
+# configured /media/fat/MiSTer path, so tell the real binary that the launcher
+# is an equivalent current executable and avoid an infinite launcher loop.
+export MISTER_DE25_LAUNCHER=${MISTER_DE25_LAUNCHER:-$fat_root/MiSTer}
+
+if [[ ! -x $real_main ]]; then
+    echo "DE25-Nano real Main binary is missing: $real_main" >&2
+    exit 1
+fi
+
+# Main is launched as root by mister.service. A request file on the writable
+# FAT partition is not itself trusted: the controller validates the requested
+# hash, the RBF sidecars, and the existing root-owned migration state before
+# making any change. Run it in a separate transient unit so stopping
+# mister.service cannot terminate the migration transaction.
+if [[ -s $request ]]; then
+    if [[ ! -x $controller ]]; then
+        echo "DE25-Nano headless migration controller is missing: $controller" >&2
+        exit 1
+    fi
+    systemd-run --quiet --no-block --collect \
+        --unit=mister-de25-headless-migration \
+        "$controller"
+fi
+
+exec "$real_main" "$@"

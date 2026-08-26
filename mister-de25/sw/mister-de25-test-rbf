@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF' >&2
+Usage: mister-de25-test-rbf CANDIDATE.rbf ROLLBACK.rbf [CONTENT.mgl]
+
+Temporarily stops Main, loads a compatibility-checked candidate, and starts
+Main on that candidate. The known-good rollback image is always restored if
+the test fails, including when Main cannot start on the candidate. Neither
+image is installed as the boot Menu. An optional absolute MGL or MRA path is
+passed to the same one-shot Main start so a core and its content can be tested
+without a local keyboard.
+EOF
+}
+
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+    usage
+    exit 2
+fi
+
+candidate=$1
+rollback=$2
+content=${3:-}
+loader=${MISTER_DE25_LOADER:-/usr/libexec/mister-de25-load}
+systemctl_command=${MISTER_DE25_SYSTEMCTL:-systemctl}
+firmware=${MISTER_DE25_FIRMWARE:-/lib/firmware/mister-de25-core.rbf}
+selected_core_marker=${MISTER_DE25_SELECTED_CORE_MARKER:-/run/mister-de25-selected-core}
+settle_seconds=${MISTER_DE25_TEST_SETTLE_SECONDS:-5}
+
+for rbf in "$candidate" "$rollback"; do
+    if [[ ! -s $rbf || ! -s $rbf.hps-io-hash || ! -s $rbf.sha256 ]]; then
+        echo "RBF or required compatibility metadata is missing: $rbf" >&2
+        exit 1
+    fi
+done
+if [[ -n $content ]]; then
+    shopt -s nocasematch
+    case "$content" in
+        /*.mgl|/*.mra) ;;
+        *)
+            echo "Content path must be an absolute MGL or MRA: $content" >&2
+            exit 1
+            ;;
+    esac
+    shopt -u nocasematch
+    if [[ ! -f $content || ! -r $content || $content == *$'\n'* ||
+          $content == *$'\r'* ]]; then
+        echo "Content file is missing, unreadable, or unsafe: $content" >&2
+        exit 1
+    fi
+fi
+if [[ ! -x $loader ]]; then
+    echo "DE25-Nano loader is missing: $loader" >&2
+    exit 1
+fi
+
+main_stopped=0
+service_started=0
+cleanup() {
+    status=$?
+    trap - EXIT HUP INT TERM
+    rm -f "$selected_core_marker"
+    if [[ $status -ne 0 && $main_stopped -eq 1 ]]; then
+        if [[ $service_started -eq 1 ]]; then
+            "$systemctl_command" stop mister.service || status=1
+            service_started=0
+        fi
+        echo "Candidate failed, restoring $(basename "$rollback")..." >&2
+        "$loader" "$rollback" || status=1
+    fi
+    if [[ $main_stopped -eq 1 ]]; then
+        "$systemctl_command" start mister.service || status=1
+    fi
+    exit "$status"
+}
+trap cleanup EXIT HUP INT TERM
+
+"$systemctl_command" stop mister.service
+main_stopped=1
+"$loader" "$candidate"
+marker_tmp=$selected_core_marker.$$
+{
+    printf '%s\n' "$candidate"
+    [[ -z $content ]] || printf '%s\n' "$content"
+} >"$marker_tmp"
+chmod 0600 "$marker_tmp"
+mv -f "$marker_tmp" "$selected_core_marker"
+if ! "$systemctl_command" start mister.service; then
+    echo "Main failed to start on $(basename "$candidate")" >&2
+    exit 1
+fi
+service_started=1
+sleep "$settle_seconds"
+if ! "$systemctl_command" is-active --quiet mister.service; then
+    echo "Main did not remain active on $(basename "$candidate")" >&2
+    exit 1
+fi
+if [[ -e $selected_core_marker ]]; then
+    echo "Main did not consume the selected-core marker" >&2
+    exit 1
+fi
+if ! cmp -s "$candidate" "$firmware"; then
+    echo "Candidate was replaced during Main startup" >&2
+    exit 1
+fi
+main_stopped=0
+trap - EXIT HUP INT TERM
+
+echo "DE25-Nano temporary FPGA test is running: $(basename "$candidate")"

@@ -1,0 +1,389 @@
+diff --git a/rtl/sdram.v b/rtl/sdram.v
+index 63f06e3..615e3df 100644
+--- a/rtl/sdram.v
++++ b/rtl/sdram.v
+@@ -67,6 +67,28 @@ module sdram
+ 	output     [12:0] DRAM_ADDR
+ );
+ 
++reg [12:0] sdaddr, sdaddr2;
++reg  [1:0] ba, ba2;
++reg  [2:0] cmd, cmd2;
++reg        cs, cs2;
++reg [4:0]  initstate;
++reg        init_done;
++reg        ready2;
++reg [2:0]  state;
++reg        wr, rd, wr2, done2;
++reg  [9:0] cas_addr, cas_addr2;
++reg [23:0] addr, addr2, addr3; // x4
++reg  [5:0] rcnt;
++reg        rnw_reg;
++reg  [1:0] rfsh;
++reg [15:0] rdat2, rdat3;
++reg        done3;
++reg [4:0]  is, is2, is3;
++reg [2:0]  st;
++reg        id;
++reg [2:0]  cas_cmd, cas_cmd2;
++reg        wdat_req;
++
+ assign {DRAM_BA_1,DRAM_BA_0} = ba;
+ assign DRAM_ADDR  = sdaddr;
+ assign DRAM_WE_N  = cmd[0];
+@@ -75,11 +97,6 @@ assign DRAM_RAS_N = cmd[2];
+ assign DRAM_CS_N  = cs;
+ assign {DRAM_UDQM,DRAM_LDQM} = DRAM_ADDR[12:11];
+ 
+-reg [12:0] sdaddr, sdaddr2;
+-reg  [1:0] ba, ba2;
+-reg  [2:0] cmd, cmd2;
+-reg        cs, cs2;
+-
+ wire [2:0] CMD_NOP             = 3'b111;
+ wire [2:0] CMD_ACTIVE          = 3'b011;
+ wire [2:0] CMD_READ            = 3'b101;
+@@ -89,8 +106,6 @@ wire [2:0] CMD_AUTO_REFRESH    = 3'b001;
+ wire [2:0] CMD_LOAD_MODE       = 3'b000;
+ 
+ 
+-reg [4:0] initstate;
+-reg       init_done;
+ always @ (posedge clk) begin
+ 	if(!rst_n) begin
+ 		initstate <= 0;
+@@ -103,103 +118,117 @@ always @ (posedge clk) begin
+ 	end
+ end
+ 
+-reg ready2;
+ always @ (posedge clk) begin
+-	ready2 <= 0;
+-	if(wr) case(state) 3,4,5,6: ready2 <= 1; endcase
+-	if(rd) case(state) 2,3,4,5: ready2 <= 1; endcase
++	if(!rst_n) begin
++		ready2 <= 0;
++	end else begin
++		ready2 <= 0;
++		if(wr) case(state) 3,4,5,6: ready2 <= 1; endcase
++		if(rd) case(state) 2,3,4,5: ready2 <= 1; endcase
++	end
+ end
+ 
+-reg [2:0] state;
+-reg       wr,rd,wr2,done2;
+ always @ (posedge clk) begin
+-	reg  [9:0] cas_addr, cas_addr2;
+-	reg [23:0] addr, addr2, addr3; // x4
+-	reg  [5:0] rcnt = 0;
+-	reg        rnw_reg;
+-	reg  [1:0] rfsh;
+-	reg [15:0] rdat2,rdat3;
+-	reg        done3;
+-	reg [4:0]  is, is2, is3;
+-	reg [2:0]  st;
+-	reg        id;
+-	reg [2:0]  cas_cmd, cas_cmd2;
+-	reg        wdat_req;
+-
+-	// Do not depend on family-specific register power-up behavior. The phase
+-	// counter drives both SDRAM initialization and every CAS transaction.
+ 	if(!rst_n) begin
+-		st    <= 0;
+-		state <= 0;
++		state       <= 0;
++		st          <= 0;
++		wr          <= 0;
++		rd          <= 0;
++		wr2         <= 0;
++		done2       <= 0;
++		cas_addr    <= 0;
++		cas_addr2   <= 0;
++		addr        <= 0;
++		addr2       <= 0;
++		addr3       <= 0;
++		rcnt        <= 0;
++		rnw_reg     <= 0;
++		rfsh        <= 0;
++		rdat        <= 0;
++		rdat2       <= 0;
++		rdat3       <= 0;
++		done3       <= 0;
++		is          <= 0;
++		is2         <= 0;
++		is3         <= 0;
++		id          <= 0;
++		cas_cmd     <= CMD_NOP;
++		cas_cmd2    <= CMD_NOP;
++		wdat_req    <= 0;
++		cmd2        <= CMD_NOP;
++		cs2         <= 1;
++		sdaddr2     <= 0;
++		ba2         <= 0;
++		DRAM_DQ_OUT <= 0;
++		DRAM_DQ_OE  <= 0;
+ 	end else begin
+ 		st    <= st + 1'd1;
+ 		state <= st;
+-	end
+ 
+-	DRAM_DQ_OE <= 1'b0;
++		DRAM_DQ_OE <= 1'b0;
+ 
+-	wr <= wr2;
+-	wdat_req <= wr2 & ready2;
+-	if(wdat_req) begin
+-		DRAM_DQ_OUT <= wdat;
+-		DRAM_DQ_OE  <= 1'b1;
+-	end
++		wr <= wr2;
++		wdat_req <= wr2 & ready2;
++		if(wdat_req) begin
++			DRAM_DQ_OUT <= wdat;
++			DRAM_DQ_OE  <= 1'b1;
++		end
+ 
+-	rdat3   <= DRAM_DQ_IN;
+-	rdat2   <= rdat3;
+-	rdat    <= rdat2;
+-	cmd2    <= CMD_NOP;
++		rdat3   <= DRAM_DQ_IN;
++		rdat2   <= rdat3;
++		rdat    <= rdat2;
++		cmd2    <= CMD_NOP;
+ 
+-	is3 <= initstate;
+-	is2 <= is3;
+-	is  <= is2;
+-	id  <= init_done;
++		is3 <= initstate;
++		is2 <= is3;
++		is  <= is2;
++		id  <= init_done;
+ 
+-	if(!id) begin
+-		cs2 <= is[4];
++		if(!id) begin
++			cs2 <= is[4];
+ 
+-		if(state == 1) begin
+-			case(is[3:0])
+-				2 : begin
+-					sdaddr2[10]<= 1; // all banks
+-					cmd2       <= CMD_PRECHARGE;
+-				end
+-				4,7 : begin
+-					cmd2       <= CMD_AUTO_REFRESH;
+-				end
+-				10, 13 : begin
+-					cmd2       <= CMD_LOAD_MODE;
+-					sdaddr2    <= 13'b000_0_00_011_0_010; // WRITE BURST, LATENCY=3, BURST=4
+-				end
+-			endcase
++			if(state == 1) begin
++				case(is[3:0])
++					2 : begin
++						sdaddr2[10]<= 1; // all banks
++						cmd2       <= CMD_PRECHARGE;
++					end
++					4,7 : begin
++						cmd2       <= CMD_AUTO_REFRESH;
++					end
++					10, 13 : begin
++						cmd2       <= CMD_LOAD_MODE;
++						sdaddr2    <= 13'b000_0_00_011_0_010; // WRITE BURST, LATENCY=3, BURST=4
++					end
++				endcase
++			end
++			wr2  <= 0;
++			wr   <= 0;
++			rd   <= 0;
++			rcnt <= 0;
++			done2<= 0;
+ 		end
+-		wr2  <= 0;
+-		wr   <= 0;
+-		rd   <= 0;
+-		rcnt <= 0;
+-		done2<= 0;
+-	end
+-	else if(done2) begin
+-		rd    <= 0;
+-		wr2   <= 0;
+-		wr    <= 0;
+-		if (chip == 2'h2) begin
+-		    addr  <= 24'h800000;
+-		    addr2 <= 24'h800000;
+-		end else begin
+-		    addr  <= 0;
+-		    addr2 <= 0;
+-      end
+-		st    <= 0;
+-		done3 <= 0;
+-		if(start) begin
+-			done2   <= 0;
+-			rnw_reg <= rnw;
++		else if(done2) begin
++			rd    <= 0;
++			wr2   <= 0;
++			wr    <= 0;
++			if (chip == 2'h2) begin
++				addr  <= 24'h800000;
++				addr2 <= 24'h800000;
++			end else begin
++				addr  <= 0;
++				addr2 <= 0;
++			end
++			st    <= 0;
++			done3 <= 0;
++			if(start) begin
++				done2   <= 0;
++				rnw_reg <= rnw;
++			end
+ 		end
+-	end
+-	else begin
+-		case(state)
+-			0: begin
++		else begin
++			case(state)
++				0: begin
+ 					rcnt       <= rcnt + 1'd1;
+ 					if(rcnt == 50) rcnt <= 0;
+ 
+@@ -208,8 +237,8 @@ always @ (posedge clk) begin
+ 					addr3 <= addr;
+ 				end
+ 
+-			// RAS
+-			1 : begin
++				// RAS
++				1 : begin
+ 					cas_cmd2   <= CMD_NOP;
+ 					wr2        <= 0;
+ 					if(rfsh[1]) begin
+@@ -225,19 +254,19 @@ always @ (posedge clk) begin
+ 					end
+ 				end
+ 			
+-			2 : begin
++				2 : begin
+ 					addr       <= addr2;
+ 					cas_addr   <= cas_addr2;
+ 					cas_cmd    <= cas_cmd2;
+ 				end
+ 
+-			// CAS
+-			4 : begin
++				// CAS
++				4 : begin
+ 					sdaddr2    <= {1'b1, cas_addr}; // AUTO PRECHARGE
+ 					cmd2       <= cas_cmd;
+ 				end
+ 			
+-			7: begin
++				7: begin
+ 					if(chip == 0 && sz == 3 && &addr[23:0]) done3 <= 1;
+ 					if(chip == 1 && sz == 3 && &addr[22:0]) done3 <= 1;
+ 					if(chip == 2 && sz == 3 && &addr[23:0]) done3 <= 1;
+@@ -246,17 +275,27 @@ always @ (posedge clk) begin
+ 					rd <= (cas_cmd == CMD_READ);
+ 					if(done3) done2 <= 1;
+ 				end
+-		endcase
++			endcase
++		end
+ 	end
+ end
+ 
+ always @ (posedge clk) begin
+-	sdaddr <= sdaddr2;
+-	ba <= ba2;
+-	cmd <= cmd2;
+-	cs <= cs2;
+-	ready <= ready2;
+-	done <= done2;
++	if(!rst_n) begin
++		sdaddr <= 0;
++		ba     <= 0;
++		cmd    <= CMD_NOP;
++		cs     <= 1;
++		ready  <= 0;
++		done   <= 0;
++	end else begin
++		sdaddr <= sdaddr2;
++		ba     <= ba2;
++		cmd    <= cmd2;
++		cs     <= cs2;
++		ready  <= ready2;
++		done   <= done2;
++	end
+ end
+ 
+ `ifndef DE25_AGILEX_PLL_RECONFIG
+diff --git a/rtl/tester.v b/rtl/tester.v
+index f3ff805..35808d5 100644
+--- a/rtl/tester.v
++++ b/rtl/tester.v
+@@ -34,6 +34,13 @@ module tester
+ 
+ reg rnd_save,rnd_restore; // rnd_vec_gen control
+ wire [15:0] rnd_out; // rnd_vec_gen output
++reg dram_start,dram_rnw;
++wire dram_done,dram_ready;
++wire [15:0] dram_rdat;
++reg sdram_rst_n = 0;
++reg check_in_progress; // when 1 - enables errors checking
++reg reset_req = 1;
++reg [31:0] rst_cnt;
+ 
+ rnd_vec_gen my_rnd
+ (
+@@ -45,10 +52,6 @@ rnd_vec_gen my_rnd
+ );
+ 
+ 
+-reg dram_start,dram_rnw;
+-wire dram_done,dram_ready;
+-wire [15:0] dram_rdat;
+-
+ sdram my_dram
+ (
+ 	.rst_n(sdram_rst_n),
+@@ -139,12 +142,7 @@ end
+ 
+ 
+ // FSM controller
+-reg sdram_rst_n = 0;
+ always @(posedge clk) begin
+-	reg        check_in_progress; // when 1 - enables errors checking
+-	reg        reset_req = 1;
+-	reg [31:0] rst_cnt;
+-
+ 	if (check_in_progress & dram_ready & (dram_rdat!=rnd_out)) failcount <= failcount + 1;
+ 	 
+ 	curr_state <= ( reset_req & dram_done ) ? RESET : next_state;
+diff --git a/rtl/rnd_vec_gen.v b/rtl/rnd_vec_gen.v
+index 214ad37..1e9098c 100644
+--- a/rtl/rnd_vec_gen.v
++++ b/rtl/rnd_vec_gen.v
+@@ -3,12 +3,12 @@ module rnd_vec_gen
+ (
+ 	input         clk,
+ 	input         save,restore,next, // strobes for required events: positive, one clock cycle long
+-	output [15:0] out
+-);
+-
+-assign out = lfsr[15:0];
+-
+-reg [16:0] lfsr, saved; 
++	output [15:0] out
++);
++
++reg [16:0] lfsr = 0, saved = 0;
++
++assign out = lfsr[15:0];
+ 
+ always @(posedge clk) begin
+ 	if( next )    lfsr  <= {(lfsr[0] ^ lfsr[2] ^ !lfsr), lfsr[16:1]}; 
+

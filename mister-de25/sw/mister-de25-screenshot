@@ -1,0 +1,94 @@
+#!/bin/sh
+set -eu
+
+cmd_fifo=${MISTER_CMD_FIFO:-/dev/MiSTer_cmd}
+status_file=${MISTER_SCREENSHOT_STATUS:-/tmp/DE25_SCREENSHOT}
+fat_root=${MISTER_FAT_ROOT:-/media/fat}
+timeout=${MISTER_SCREENSHOT_TIMEOUT:-15}
+scaled=0
+
+usage() {
+    echo "Usage: mister-de25-screenshot [--scaled] [NAME]" >&2
+    exit 2
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --scaled)
+            scaled=1
+            shift
+            ;;
+        --help|-h)
+            usage
+            ;;
+        --*)
+            usage
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+[ "$#" -le 1 ] || usage
+
+case "$timeout" in
+    ''|*[!0-9]*)
+        echo "Invalid screenshot timeout: $timeout" >&2
+        exit 2
+        ;;
+esac
+[ "$timeout" -gt 0 ] || {
+    echo "Screenshot timeout must be greater than zero" >&2
+    exit 2
+}
+
+name=${1:-de25-$(date +%Y%m%d-%H%M%S)}
+case "$name" in
+    ''|*[!A-Za-z0-9._-]*)
+        echo "Screenshot name may contain only letters, digits, dot, dash, and underscore" >&2
+        exit 2
+        ;;
+esac
+
+if [ ! -w "$cmd_fifo" ]; then
+    echo "MiSTer command FIFO is unavailable: $cmd_fifo" >&2
+    exit 1
+fi
+
+previous_status=
+if [ -r "$status_file" ]; then
+    previous_status=$(sed -n '1p' "$status_file")
+fi
+
+if [ "$scaled" -eq 1 ]; then
+    printf 'screenshot scaled %s\n' "$name" >"$cmd_fifo"
+else
+    printf 'screenshot %s\n' "$name" >"$cmd_fifo"
+fi
+
+ticks=$((timeout * 10))
+while [ "$ticks" -gt 0 ]; do
+    if [ -r "$status_file" ]; then
+        result=$(sed -n '1p' "$status_file")
+        if [ "$result" = "$previous_status" ]; then
+            result=
+        fi
+        case "$result" in
+            *"$name"*)
+                case "$result" in
+                    /*) image=$result ;;
+                    *)  image=$fat_root/$result ;;
+                esac
+                if [ -f "$image" ]; then
+                    printf '%s\n' "$image"
+                    exit 0
+                fi
+                ;;
+        esac
+    fi
+    sleep 0.1
+    ticks=$((ticks - 1))
+done
+
+echo "Timed out waiting for Main to save screenshot '$name'" >&2
+exit 1

@@ -1,0 +1,27 @@
+From: DE25-Nano port
+Subject: [PATCH] Keep Menu OSD at sixteen rows
+
+The Menu persona always supplies a 16-row bitmap, but a partial redraw can
+arrive before Main sends the high-resolution write flag. Keep the Menu
+viewport at 128 pixels unconditionally so its lower eight rows are not
+clipped. Other cores retain dynamic eight-row and sixteen-row sizing.
+
+diff --git a/sys/osd.v b/sys/osd.v
+--- a/sys/osd.v
++++ b/sys/osd.v
+@@ -51,8 +51,13 @@ always@(posedge clk_sys) begin
+ 	reg        highres = 0;
+ 
+ 	osd_t <= rot[0] ? OSD_WIDTH : (OSD_HEIGHT<<1);
+-	osd_h <= rot[0] ? (info ? infow : OSD_WIDTH) : info ? infoh : (OSD_HEIGHT<<highres);
+-	osd_w <= rot[0] ? (info ? infoh : (OSD_HEIGHT<<highres)) : (info ? infow : OSD_WIDTH);
++	// The Menu persona always owns a 16-row bitmap. Main may issue a partial
++	// redraw before sending the high-resolution write flag, so do not let that
++	// transient collapse the viewport to eight rows and clip its lower half.
++	osd_h <= rot[0] ? (info ? infow : OSD_WIDTH) :
++	         info ? infoh : (OSD_HEIGHT<<(highres | menu_core));
++	osd_w <= rot[0] ? (info ? infoh :
++	         (OSD_HEIGHT<<(highres | menu_core))) : (info ? infow : OSD_WIDTH);
+ 
+ 	old_strobe <= io_strobe;
+ 

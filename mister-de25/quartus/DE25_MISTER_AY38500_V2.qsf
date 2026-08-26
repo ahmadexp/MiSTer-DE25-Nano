@@ -1,0 +1,15 @@
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_ay38500_v2
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_AY-3-8500-MiSTer
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_AY-3-8500-MiSTer/sys
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_AY-3-8500-MiSTer/rtl
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_AY-3-8500-MiSTer/sys/hps_io.sv
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_AY-3-8500-MiSTer/rtl/ay38500NTSC.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_AY-3-8500-MiSTer/AY-3-8500.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ay38500_core_pll_wrapper.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/mister_sync_fix.sv
+set_global_assignment -name QSYS_FILE ../ip/ay38500_core_pll.qsys
+set_global_assignment -name IP_FILE ../ip/ip/ay38500_core_pll/ay38500_core_pll_iopll_0.ip
+
+source de25_simple_persona_base.qsf
+source de25_platform_v2.qsf

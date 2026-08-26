@@ -1,0 +1,122 @@
+#!/bin/sh
+set -eu
+
+usage() {
+    cat <<'EOF'
+Usage: mister-de25-prune-cores [--dry-run]
+
+Move superseded date-stamped DE25-Nano core files out of the MiSTer menu
+directories. Only core families listed in the managed runtime catalog are
+considered. The active catalog version and unrecognized user cores are kept.
+
+Environment:
+  DE25_FAT_ROOT       MiSTer FAT root (default: /media/fat)
+  DE25_CORE_CATALOG   Managed core catalog (default: /etc/mister-de25/cores.tsv)
+  DE25_PRUNE_ARCHIVE  Rollback archive root (default: hidden directory on FAT)
+EOF
+}
+
+dry_run=0
+case ${1:-} in
+    '') ;;
+    --dry-run) dry_run=1 ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage >&2; exit 2 ;;
+esac
+if [ "$#" -gt 1 ]; then
+    usage >&2
+    exit 2
+fi
+
+fat_root=${DE25_FAT_ROOT:-/media/fat}
+catalog=${DE25_CORE_CATALOG:-/etc/mister-de25/cores.tsv}
+run_id=$(date -u +%Y%m%dT%H%M%SZ)
+archive=${DE25_PRUNE_ARCHIVE:-$fat_root/.mister-de25/obsolete-cores/$run_id}
+
+if [ ! -d "$fat_root" ]; then
+    echo "MiSTer FAT root not found: $fat_root" >&2
+    exit 1
+fi
+if [ ! -s "$catalog" ]; then
+    echo "Managed core catalog not found: $catalog" >&2
+    exit 1
+fi
+
+safe_catalog_path() {
+    case $1 in
+        _[A-Za-z0-9_.-]*/[A-Za-z0-9_.-]*.rbf) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+move_with_metadata() {
+    source=$1
+    relative=${source#"$fat_root"/}
+    destination=$archive/$relative
+
+    if [ "$dry_run" -eq 1 ]; then
+        printf 'Would archive %s\n' "$source"
+        return
+    fi
+
+    mkdir -p "$(dirname "$destination")"
+    mv "$source" "$destination"
+    for suffix in .hps-io-hash .sha256; do
+        if [ -e "$source$suffix" ]; then
+            mv "$source$suffix" "$destination$suffix"
+        fi
+    done
+    printf 'Archived %s\n' "$source"
+}
+
+normalize_core_stem() {
+    printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d ' _-'
+}
+
+tab=$(printf '\t')
+moved=0
+while IFS="$tab" read -r core_id relative; do
+    case $core_id in ''|'#'*) continue ;; esac
+    [ "$core_id" = MENU ] && continue
+    safe_catalog_path "$relative" || {
+        echo "Unsafe managed core path: $relative" >&2
+        exit 1
+    }
+
+    filename=${relative##*/}
+    directory=${relative%/*}
+    without_extension=${filename%.rbf}
+    case $without_extension in
+        *_20[0-9][0-9][0-9][0-9][0-9][0-9]*) ;;
+        *) continue ;;
+    esac
+    stem=${without_extension%%_20[0-9][0-9][0-9][0-9][0-9][0-9]*}
+
+    active=$fat_root/$relative
+    # If the catalog's selected image is absent, retain older versions as a
+    # last-known recovery path instead of making the family unbootable.
+    [ -s "$active" ] || continue
+    normalized_stem=$(normalize_core_stem "$stem")
+    for candidate in "$fat_root/$directory/"*.rbf; do
+        [ -e "$candidate" ] || continue
+        [ "$candidate" = "$active" ] && continue
+        candidate_filename=${candidate##*/}
+        case $candidate_filename in
+            *_20[0-9][0-9][0-9][0-9][0-9][0-9]*) ;;
+            *) continue ;;
+        esac
+        candidate_stem=${candidate_filename%%_20[0-9][0-9][0-9][0-9][0-9][0-9]*}
+        [ "$(normalize_core_stem "$candidate_stem")" = "$normalized_stem" ] || \
+            continue
+        move_with_metadata "$candidate"
+        moved=$((moved + 1))
+    done
+done <"$catalog"
+
+if [ "$dry_run" -eq 0 ]; then
+    sync
+fi
+printf 'Superseded managed cores archived: %s\n' "$moved"
+if [ "$moved" -gt 0 ]; then
+    printf 'Rollback archive: %s\n' "$archive"
+fi

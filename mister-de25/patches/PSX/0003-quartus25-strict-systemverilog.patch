@@ -1,0 +1,235 @@
+diff --git a/PSX.sv b/PSX.sv
+--- a/PSX.sv
++++ b/PSX.sv
+@@ -1221,7 +1221,13 @@ assign sdram_ack = sdram_readack | sdram_writeack;
+ 
+ sdram sdram
+ (
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++   .SDRAM_DQ_IN (de25_sdram_dq_in),
++   .SDRAM_DQ_OUT(de25_sdram_dq_out),
++   .SDRAM_DQ_OE (de25_sdram_dq_oe),
++`else
+    .SDRAM_DQ   (SDRAM_DQ),
++`endif
+    .SDRAM_A    (SDRAM_A),
+    .SDRAM_DQML (SDRAM_DQML),
+    .SDRAM_DQMH (SDRAM_DQMH),
+@@ -1590,39 +1596,39 @@ end
+ 
+ wire clk8Snac;
+ wire clk9Snac;
+-wire oldClk8;
+-wire oldClk9;
++logic oldClk8;
++logic oldClk9;
+ wire selectedPort1Snac;
+ wire selectedPort2Snac;
+-wire oldselectedPort1;
+-wire oldselectedPort2;
++logic oldselectedPort1;
++logic oldselectedPort2;
+ wire [7:0]transmitValueSnac;
+-wire [7:0]receiveBufferSnac;
+-wire receiveValidSnac;
++logic [7:0]receiveBufferSnac;
++logic receiveValidSnac;
+ wire beginTransferSnac;
+-wire actionNextSnac;
+-wire actionNextPadSnac;
++logic actionNextSnac;
++logic actionNextPadSnac;
+ reg [7:0]Send;
+ reg [7:0]Receive;
+-wire Cmd;
+-wire Dat;
+-wire ack;
+-wire oldAck;
++logic Cmd;
++logic Dat;
++logic ack;
++logic oldAck;
+ //wire ackSnac;
+-wire [15:0]ackTimer;
+-wire ackNone;
+-wire oneTime;
+-wire [3:0]bitCnt;
+-wire [8:0]byteCnt;
+-wire [8:0]bytesLeft;
+-wire [7:0]pad1ID;
+-wire [7:0]pad2ID;
+-wire [7:0]targetID;
+-wire irq10Snac;
+-wire csync;
+-wire MCtransfer;
+-wire PStransfer;
+-wire [7:0]PSdatalength;
++logic [15:0]ackTimer;
++logic ackNone;
++logic oneTime;
++logic [3:0]bitCnt;
++logic [8:0]byteCnt;
++logic [8:0]bytesLeft;
++logic [7:0]pad1ID;
++logic [7:0]pad2ID;
++logic [7:0]targetID;
++logic irq10Snac;
++logic csync;
++logic MCtransfer;
++logic PStransfer;
++logic [7:0]PSdatalength;
+ 
+ reg USER_IN3_1;
+ reg USER_IN4_1;
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -26,7 +26,13 @@ module sdram
+                       
+ 	input              SDRAM_EN,    // Set all output SDRAM_* signals to Z ASAP if SDRAM2_EN is 0 
+    
+-	inout  reg [15:0]  SDRAM_DQ,    // 16 bit bidirectional data bus
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input      [15:0]  SDRAM_DQ_IN, // data sampled from the board-level pins
++	output     [15:0]  SDRAM_DQ_OUT,// data driven during writes
++	output             SDRAM_DQ_OE, // board-level output-enable control
++`else
++	inout      [15:0]  SDRAM_DQ,    // 16 bit bidirectional data bus
++`endif
+ 	output reg [12:0]  SDRAM_A,     // 13 bit multiplexed address bus
+ 	output             SDRAM_DQML,  // two byte masks
+ 	output             SDRAM_DQMH,  // 
+@@ -80,6 +86,17 @@ module sdram
+ 	output reg         dmafifo_read
+ );
+ 
++reg [15:0] sdram_dq_out;
++reg        sdram_dq_oe;
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++wire [15:0] sdram_dq_in = SDRAM_DQ_IN;
++assign SDRAM_DQ_OUT = sdram_dq_out;
++assign SDRAM_DQ_OE  = sdram_dq_oe;
++`else
++wire [15:0] sdram_dq_in = SDRAM_DQ;
++assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'bz;
++`endif
++
+ assign SDRAM_nCS  = chip;
+ assign SDRAM_nRAS = command[2];
+ assign SDRAM_nCAS = command[1];
+@@ -263,7 +280,7 @@ always @(posedge clk) begin
+ 	data_ready_delay2 <= data_ready_delay2>>1;
+ 	data_ready_delay3 <= data_ready_delay3>>1;
+ 
+-	dq_reg <= SDRAM_DQ;
++	dq_reg <= sdram_dq_in;
+    
+    cache_wr     <= 0;
+    cache_done_0 <= 0;
+@@ -301,7 +318,8 @@ always @(posedge clk) begin
+ 	if(data_ready_delay3[6]) ch3_dout[31:16]    <= dq_reg;
+ 	if(data_ready_delay3[2]) ch3_ready_ramclock <= 1;
+ 
+-	SDRAM_DQ <= 16'bZ;
++	sdram_dq_out <= 16'b0;
++	sdram_dq_oe  <= 1'b0;
+    
+    if (SDRAM_EN) begin
+    
+@@ -490,7 +508,8 @@ always @(posedge clk) begin
+             SDRAM_A <= cas_addr;
+             if(saved_wr) begin
+                command  <= CMD_WRITE;
+-               SDRAM_DQ <= saved_data[15:0];
++               sdram_dq_out <= saved_data[15:0];
++               sdram_dq_oe  <= 1'b1;
+                if(!ch) begin
+                   ch1_ready_ramclock  <= 1;
+                   state <= STATE_IDLE_2;
+@@ -512,7 +531,8 @@ always @(posedge clk) begin
+             if(ch == 1) begin
+                SDRAM_A[0]           <= 1;
+                command              <= CMD_WRITE;
+-               SDRAM_DQ             <= saved_data[31:16];
++               sdram_dq_out         <= saved_data[31:16];
++               sdram_dq_oe          <= 1'b1;
+                SDRAM_A[12:11]       <= ~saved_be[3:2];
+                if(~dmafifo_empty && (lastbank == dmafifo_adr[20:10])) begin
+                   cas_addr[8:0]     <= dmafifo_adr[9:1];
+@@ -529,7 +549,8 @@ always @(posedge clk) begin
+                SDRAM_A[10]          <= 1;
+                SDRAM_A[0]           <= 1;
+                command              <= CMD_WRITE;
+-               SDRAM_DQ             <= saved_data[31:16];
++               sdram_dq_out         <= saved_data[31:16];
++               sdram_dq_oe          <= 1'b1;
+                SDRAM_A[12:11]       <= ~saved_be[3:2];
+                ch3_ready_ramclock   <= 1;
+             end
+@@ -549,29 +570,8 @@ always @(posedge clk) begin
+ 	end   
+ end
+ 
+-altddio_out
+-#(
+-	.extend_oe_disable("OFF"),
+-	.intended_device_family("Agilex 5"),
+-	.invert_output("OFF"),
+-	.lpm_hint("UNUSED"),
+-	.lpm_type("altddio_out"),
+-	.oe_reg("UNREGISTERED"),
+-	.power_up_high("OFF"),
+-	.width(1)
+-)
+-sdramclk_ddr
+-(
+-	.datain_h(1'b0),
+-	.datain_l(1'b1),
+-	.outclock(clk),
+-	.dataout(SDRAM_CLK),
+-	.aclr(1'b0),
+-	.aset(1'b0),
+-	.oe(SDRAM_EN),
+-	.outclocken(1'b1),
+-	.sclr(1'b0),
+-	.sset(1'b0)
+-);
++// Agilex 5 no longer supports the Cyclone V altddio_out clear-box primitive.
++// The original constant high/low DDR pattern is exactly an inverted clock.
++assign SDRAM_CLK = SDRAM_EN ? ~clk : 1'bz;
+ 
+ endmodule
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -29,7 +29,7 @@ output        VGA_DE,    // = ~(VBlank | HBlank)
+ output        VGA_F1,
+ output [1:0]  VGA_SL,
+ output        VGA_SCALER, // Force VGA scaler
+-output        VGA_DISABLE, // analog out is off
++output logic  VGA_DISABLE, // analog out is off
+ 
+ input  [11:0] HDMI_WIDTH,
+ input  [11:0] HDMI_HEIGHT,
+@@ -113,7 +113,13 @@ output        SDRAM_CLK,
+ output        SDRAM_CKE,
+ output [12:0] SDRAM_A,
+ output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++input  [15:0] de25_sdram_dq_in,
++output [15:0] de25_sdram_dq_out,
++output        de25_sdram_dq_oe,
++`else
+ inout  [15:0] SDRAM_DQ,
++`endif
+ output        SDRAM_DQML,
+ output        SDRAM_DQMH,
+ output        SDRAM_nCS,
+@@ -148,6 +154,6 @@ input         UART_DSR,
+ // 2..6 - USR2..USR6
+ // Set USER_OUT to 1 to read from USER_IN.
+ input   [6:0] USER_IN,
+-output  [6:0] USER_OUT,
++output logic [6:0] USER_OUT,
+ 
+ input         OSD_STATUS

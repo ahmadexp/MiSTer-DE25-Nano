@@ -1,0 +1,16 @@
+diff --git a/sys/osd.v b/sys/osd.v
+--- a/sys/osd.v
++++ b/sys/osd.v
+@@ -62,7 +62,11 @@ always@(posedge clk_sys) begin
+ 				cmd <= io_din[7:0];
+ 				// command 0x40: OSDCMDENABLE, OSDCMDDISABLE
+ 				if(io_din[7:4] == 4) begin
+-					if(!io_din[0]) {osd_status,highres} <= 0;
++					// Menu always uses the 16-row bitmap after its first full
++					// update. Keep that geometry across disable/enable cycles so
++					// a partial Settings redraw cannot collapse to eight rows.
++					// Other cores retain the original latch-clearing behavior.
++					if(!io_din[0]) {osd_status,highres} <= {1'b0,menu_core};
+ 					else {osd_status,info} <= {~io_din[2] & ~io_din[3],io_din[2]};
+ 					bcnt  <= 0;
+ 				end

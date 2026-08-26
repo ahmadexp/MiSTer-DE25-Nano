@@ -1,0 +1,42 @@
+From: DE25-Nano port
+Subject: [PATCH] Read the ao486 DE25 scaler buffer
+
+ao486 reserves logical DDR 0x30000000 for PC RAM, so the shared DE25 shell
+places its scaler at 0x20000000. Select that buffer for native screenshots
+while retaining the standard DE25 scaler address for every other core.
+
+diff --git a/scaler.cpp b/scaler.cpp
+--- a/scaler.cpp
++++ b/scaler.cpp
+@@ -8,6 +8,7 @@ with help from the MiSTer contributors including Grabulosaure
+ #include <inttypes.h>
+ #include <ctype.h>
+ #include <string.h>
++#include <strings.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <atomic>
+@@ -41,6 +42,13 @@ mister_scaler * mister_scaler_init()
+     int pagesize = sysconf(_SC_PAGE_SIZE);
+     if (pagesize==0) pagesize=4096;
+     int offset = MISTER_SCALER_BASEADDR;
++#ifdef MISTER_DE25
++    // ao486 owns logical DDR 0x30000000 for its PC RAM. Its scaler is placed
++    // at 0x20000000 so screenshots must follow the core-specific FPGA layout.
++    const char *core_name = user_io_get_core_name(1);
++    if (core_name && !strcasecmp(core_name, "AO486"))
++        offset = MISTER_AO486_SCALER_BASEADDR;
++#endif
+     int map_start = offset & ~(pagesize - 1);
+     ms->map_off = offset - map_start;
+     ms->num_bytes=MISTER_SCALER_BUFFERSIZE;
+diff --git a/scaler.h b/scaler.h
+--- a/scaler.h
++++ b/scaler.h
+@@ -33,5 +33,6 @@ typedef struct {
+ // matches the RAMBASE used by the common Agilex video scaler.
+ #define MISTER_SCALER_BASEADDR     0x30000000
++#define MISTER_AO486_SCALER_BASEADDR 0x20000000
+ #else
+ #define MISTER_SCALER_BASEADDR     0x20000000
+ #endif

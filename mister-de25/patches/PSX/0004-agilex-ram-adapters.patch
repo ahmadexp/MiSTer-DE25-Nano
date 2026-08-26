@@ -1,0 +1,398 @@
+diff --git a/rtl/cd_top.vhd b/rtl/cd_top.vhd
+index a43acc0..dffffc8 100644
+--- a/rtl/cd_top.vhd
++++ b/rtl/cd_top.vhd
+@@ -2395,7 +2395,7 @@ begin
+       end if;
+    end process;
+    
+-   iramSectorBuffer: entity mem.dpram
++   iramSectorBuffer: entity mem.dpram_agilex_tdp_sc
+    generic map 
+    ( 
+       addr_width => 10, 
+@@ -2420,7 +2420,7 @@ begin
+    sectorBuffers_addrB <= std_logic_vector(to_unsigned(to_integer(SS_Adr - 2048), 13)) when (SS_rden = '1' and SS_Adr >= 2048 and SS_Adr < 2048 + (1024 * 8)) else 
+                           std_logic_vector(copySectorPointer & to_unsigned(copyReadAddr, 10));
+    
+-   iramSectorBuffers: entity mem.dpram
++   iramSectorBuffers: entity mem.dpram_agilex_tdp_sc
+    generic map 
+    ( 
+       addr_width => 13, 
+@@ -3203,7 +3203,7 @@ begin
+    secondsBCD <= trackInfo_DataOutA(45 downto 38);
+    minutesBCD <= trackInfo_DataOutA(53 downto 46);   
+    
+-   iramTrackInfos: entity mem.dpram
++   iramTrackInfos: entity mem.dpram_agilex_tdp_sc
+    generic map 
+    ( 
+       addr_width => 7, 
+@@ -3592,4 +3592,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/cd_xa.vhd b/rtl/cd_xa.vhd
+index 260dc55..7d9474f 100644
+--- a/rtl/cd_xa.vhd
++++ b/rtl/cd_xa.vhd
+@@ -148,7 +148,7 @@ begin
+    RamIn_addrA <= to_unsigned(XA_addr, 10);
+    
+ 
+-   iRAmIN: entity work.dpram_dif
++   iRAmIN: entity work.dpram_agilex_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 10,
+@@ -657,4 +657,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/cpu.vhd b/rtl/cpu.vhd
+index 283be8f..b274520 100644
+--- a/rtl/cpu.vhd
++++ b/rtl/cpu.vhd
+@@ -619,7 +619,7 @@ begin
+ 
+    gcache: for i in 0 to 3 generate
+    begin
+-      icache: entity work.dpram
++      icache: entity work.dpram_agilex_sdp_ab
+       generic map ( addr_width => 8, data_width => 32)
+       port map
+       (
+@@ -2038,7 +2038,7 @@ begin
+    
+    gscratchpad: for i in 0 to 3 generate
+    begin
+-      icache: entity work.dpram
++      icache: entity work.dpram_agilex_sdp_ab
+       generic map ( addr_width => 8, data_width => 8)
+       port map
+       (
+@@ -2879,4 +2879,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/datacache.vhd b/rtl/datacache.vhd
+index c800c63..212ebcb 100644
+--- a/rtl/datacache.vhd
++++ b/rtl/datacache.vhd
+@@ -70,7 +70,7 @@ architecture arch of datacache is
+    
+ begin 
+ 
+-   iRamMemory: entity work.dpram
++   iRamMemory: entity work.dpram_agilex_sdp_ba
+    generic map ( addr_width => SIZEBITS, data_width => BITWIDTH)
+    port map
+    (
+@@ -87,7 +87,7 @@ begin
+       q_b         => open
+    );
+    
+-   iRamaddrsave: entity work.dpram
++   iRamaddrsave: entity work.dpram_agilex_sdp_ba
+    generic map ( addr_width => SIZEBITS, data_width => ADDRSAVEBITS + 1)
+    port map
+    (
+@@ -196,6 +196,5 @@ end architecture;
+ 
+ 
+ 
+-
+ 
+ 
+diff --git a/rtl/gpu.vhd b/rtl/gpu.vhd
+index fb29855..4bc4ade 100644
+--- a/rtl/gpu.vhd
++++ b/rtl/gpu.vhd
+@@ -1814,7 +1814,7 @@ begin
+       end if;
+    end process;
+    
+-   ilineram: entity mem.dpram_dif
++   ilineram: entity mem.dpram_agilex_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 8,
+@@ -1836,7 +1836,7 @@ begin
+       q_b         => vramLineData
+    );
+    
+-   ilineram2: entity mem.dpram_dif
++   ilineram2: entity mem.dpram_agilex_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 8,
+@@ -2129,4 +2129,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/gpu_dither.vhd b/rtl/gpu_dither.vhd
+index bec8492..19adae5 100644
+--- a/rtl/gpu_dither.vhd
++++ b/rtl/gpu_dither.vhd
+@@ -47,7 +47,7 @@ architecture arch of gpu_dither is
+  
+ begin
+ 
+-   ilineram: entity work.dpram
++   ilineram: entity work.dpram_agilex_tdp_sc
+    generic map ( addr_width => 10, data_width => dither_bits1 * 3)
+    port map
+    (
+@@ -116,4 +116,4 @@ begin
+    end process;
+  
+  
+-end architecture;
+\ No newline at end of file
++end architecture;
+diff --git a/rtl/gpu_pixelpipeline.vhd b/rtl/gpu_pixelpipeline.vhd
+index 15914c4..504b688 100644
+--- a/rtl/gpu_pixelpipeline.vhd
++++ b/rtl/gpu_pixelpipeline.vhd
+@@ -364,7 +364,7 @@ begin
+                                           (drawMode(3 downto 0) & "000000") + stage0_u_array(i)(7 downto 1) when drawMode(8 downto 7) = "01" else
+                                           (drawMode(3 downto 0) & "000000") + stage0_u_array(i);
+       
+-      icache: entity work.dpram
++      icache: entity work.dpram_agilex_tdp_sc
+       generic map ( addr_width => 8, data_width => 64)
+       port map
+       (
+@@ -393,7 +393,7 @@ begin
+                             cache_q_b(i)(47 downto 32) when (stage1_u_mux(i) = "10") else
+                             cache_q_b(i)(63 downto 48);
+       
+-      iCLUTram: entity work.dpram_dif
++      iCLUTram: entity work.dpram_agilex_mixed_sdp_ab
+       generic map 
+       ( 
+          addr_width_a  => 6,
+@@ -952,4 +952,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/gpu_videoout.vhd b/rtl/gpu_videoout.vhd
+index 0974300..97311a8 100644
+--- a/rtl/gpu_videoout.vhd
++++ b/rtl/gpu_videoout.vhd
+@@ -337,7 +337,7 @@ begin
+       end if;
+    end process; 
+    
+-   ilineram: entity work.dpram_dif
++   ilineram: entity work.dpram_agilex_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 9,
+@@ -359,7 +359,7 @@ begin
+       q_b         => videoout_pixelRead
+    );   
+    
+-   ilineram2: entity work.dpram_dif
++   ilineram2: entity work.dpram_agilex_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 9,
+@@ -603,4 +603,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/joypad_mem.vhd b/rtl/joypad_mem.vhd
+index 8999069..a3f7fe1 100644
+--- a/rtl/joypad_mem.vhd
++++ b/rtl/joypad_mem.vhd
+@@ -241,14 +241,7 @@ begin
+       end if; -- clock
+    end process;
+    
+-   iramSectorBuffer: entity work.dpram_dif
+-   generic map 
+-   ( 
+-      addr_width_a  => 7,
+-      data_width_a  => 8,
+-      addr_width_b  => 4,
+-      data_width_b  => 64
+-   )
++   iramSectorBuffer: entity work.dpram_agilex_joypad
+    port map
+    (
+       clock_a     => clk1x,
+@@ -363,4 +356,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/mdec.vhd b/rtl/mdec.vhd
+index 018c2b1..57fc87a 100644
+--- a/rtl/mdec.vhd
++++ b/rtl/mdec.vhd
+@@ -538,7 +538,7 @@ begin
+       end if;
+    end process;
+    
+-   iramYUV: entity work.dpram_dif
++   iramYUV: entity work.dpram_agilex_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 5,
+@@ -562,7 +562,7 @@ begin
+    
+    RamYUVaddrB <= '0' & currentCoeff(5 downto 0) when (currentBlock >= 2) else '1' & currentCoeff(5 downto 0);
+    
+-   iramSS: entity work.dpram_dif
++   iramSS: entity work.dpram_agilex_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 6,
+@@ -680,7 +680,7 @@ begin
+    
+    IDCTi_data_a    <= FifoRL_Dout(10 downto 0);
+    
+-   iIDCTiTable: entity work.dpram
++   iIDCTiTable: entity work.dpram_agilex_tdp_sc
+    generic map ( addr_width => 6, data_width => 11)
+    port map
+    (
+@@ -702,7 +702,7 @@ begin
+    scaleT_address_a <= scaleT_address_WR(5 downto 1) & '1' when (clk2xIndex = '1') else scaleT_address_WR(5 downto 1) & '0';
+    scaleT_data_a    <= scaleT_data_aNext                   when (clk2xIndex = '1') else scaleT_data_aFirst;
+    
+-   iscaleTable1: entity work.dpram
++   iscaleTable1: entity work.dpram_agilex_tdp_sc
+    generic map ( addr_width => 6, data_width => 16)
+    port map
+    (
+@@ -718,7 +718,7 @@ begin
+       q_b         => scaleT1_data_b
+    );
+    
+-   iscaleTable2: entity work.dpram
++   iscaleTable2: entity work.dpram_agilex_tdp_sc
+    generic map ( addr_width => 6, data_width => 16)
+    port map
+    (
+@@ -745,7 +745,7 @@ begin
+    IDCTt_wren_a    <= ce when (idct_calc2_ena = '1' and idct_calc2_last = '1' and idct_calc2_stage = '0') else '0';
+    IDCTt_data_a    <= std_logic_vector(resize(idct_sum, 30));
+    
+-   iIDCTtTable1: entity work.dpram
++   iIDCTtTable1: entity work.dpram_agilex_tdp_sc
+    generic map ( addr_width => 6, data_width => 30)
+    port map
+    (
+@@ -761,7 +761,7 @@ begin
+       q_b         => IDCTt_dataO_b1
+    );
+    
+-   iIDCTtTable2: entity work.dpram
++   iIDCTtTable2: entity work.dpram_agilex_tdp_sc
+    generic map ( addr_width => 6, data_width => 30)
+    port map
+    (
+@@ -959,7 +959,7 @@ begin
+       end if;
+    end process;
+    
+-   iramIDCTResult: entity work.dpram
++   iramIDCTResult: entity work.dpram_agilex_tdp_sc
+    generic map 
+    ( 
+       addr_width => 10, 
+@@ -1114,7 +1114,7 @@ begin
+       end if;
+    end process;
+    
+-   iramColorResult: entity work.dpram
++   iramColorResult: entity work.dpram_agilex_tdp_sc
+    generic map 
+    ( 
+       addr_width => 8, 
+@@ -1523,4 +1523,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/memcard.vhd b/rtl/memcard.vhd
+index 315c029..8bd209c 100644
+--- a/rtl/memcard.vhd
++++ b/rtl/memcard.vhd
+@@ -249,7 +249,7 @@ begin
+       end if;
+    end process;
+    
+-   iramSectorBuffer: entity work.dpram_dif
++   iramSectorBuffer: entity work.dpram_agilex_mixed_tdp_sc
+    generic map 
+    ( 
+       addr_width_a  => 7,
+@@ -277,4 +277,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/spu.vhd b/rtl/spu.vhd
+index 30f1323..dfec056 100644
+--- a/rtl/spu.vhd
++++ b/rtl/spu.vhd
+@@ -680,7 +680,7 @@ begin
+ -- adpcmSamples
+    gram_adpcmSamples: for i in 0 to 3 generate
+    begin
+-      iram_adpcmSamples: entity mem.dpram
++      iram_adpcmSamples: entity mem.dpram_agilex_tdp_sc
+       generic map (addr_width => 8, data_width => 16)
+       port map
+       (
+@@ -2907,4 +2907,3 @@ end architecture;
+ 
+ 
+ 
+-
+diff --git a/rtl/spu_ram.vhd b/rtl/spu_ram.vhd
+index b1ae99d..e63786b 100644
+--- a/rtl/spu_ram.vhd
++++ b/rtl/spu_ram.vhd
+@@ -145,7 +145,7 @@ begin
+ 
+    captureram_we <= '1' when (ram_request = '1' and ram_rnw = '0' and ram_isCapture = '1') else '0';
+ 
+-   iram_capture: entity mem.dpram
++   iram_capture: entity mem.dpram_agilex_tdp_sc
+    generic map (addr_width => 11, data_width => 16)
+    port map
+    (
+@@ -167,7 +167,7 @@ begin
+ 
+    reverbram_we <= '1' when (ram_request = '1' and ram_rnw = '0' and ram_ReverbSpace = '1') else '0';
+ 
+-   iram_reverb: entity mem.dpram
++   iram_reverb: entity mem.dpram_agilex_tdp_sc
+    generic map (addr_width => 15, data_width => 16)
+    port map
+    (
+@@ -192,7 +192,7 @@ begin
+    -- 25 lines -> rounded up to 32
+    -- 32 * 8 QWords = 256 QWords, 1024 Words
+    
+-   icache: entity work.dpram_dif
++   icache: entity work.dpram_agilex_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 8,
+@@ -555,4 +555,3 @@ end architecture;
+ 
+ 
+ 
+-

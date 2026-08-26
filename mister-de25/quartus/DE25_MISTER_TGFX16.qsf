@@ -1,0 +1,123 @@
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.3 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_tgfx16
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+set_global_assignment -name VERILOG_CU_MODE MFCU
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_HDMI_BOB_DEINT=1"
+set_global_assignment -name VERILOG_MACRO "DE25_AGILEX=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_IGNORE_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "DE25_VIDEO_SCALER=1"
+
+set_global_assignment -name SEARCH_PATH ../rtl
+set_global_assignment -name SEARCH_PATH ../upstream/cores/TurboGrafx16
+set_global_assignment -name SEARCH_PATH ../upstream/cores/TurboGrafx16/sys
+set_global_assignment -name SEARCH_PATH ../upstream/cores/TurboGrafx16/rtl
+set_global_assignment -name SEARCH_PATH ../upstream/cores/TurboGrafx16/rtl/HUC6280
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_menu_top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_hps_warm_reset_handshake.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_reset_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_gp_bridge.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_audio.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/tgfx16_core_pll_wrapper.sv
+set_global_assignment -name VHDL_FILE ../../sys/ascal.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/adv7513_init.sv
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/sys/math.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/sys/hps_io.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/Menu/sys/osd.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/sys/video_freak.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/sys/gamma_corr.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/sys/video_freezer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/sys/hq2x.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/TurboGrafx16/sys/scandoubler.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/sys/iir_filter.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/sys/video_mixer.sv
+
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/dpram.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/de25_dpram_difclk.sv
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/CEGen.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/cd/SCSI_FIFO.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/cd/SCSI.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/cd/MSM5205.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/cd/CDDA_FIFO.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/cd/CDSUBC_FIFO.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/cd/cd.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/HUC6280_PKG.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/AddSubBCD.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/HUC6280_AG.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/HUC6280_ALU.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/HUC6280_MC.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/HUC6280_CPU.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/psg.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/HUC6280.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/huc6202.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/huc6270.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/huc6260.vhd
+set_global_assignment -name VERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/hps_ext.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/sdram.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/cache_2way.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/color_mix.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/cheatcodes.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/arcade.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/mb128.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/TurboGrafx16/rtl/xe1ap.v
+set_global_assignment -name VHDL_FILE ../upstream/cores/TurboGrafx16/rtl/pce_top.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/TurboGrafx16/TurboGrafx16.sv
+set_global_assignment -name MIF_FILE ../upstream/cores/TurboGrafx16/palette.mif
+set_global_assignment -name MIF_FILE ../upstream/cores/TurboGrafx16/rtl/huc6260_palette_init.mif
+set_global_assignment -name MIF_FILE ../upstream/cores/TurboGrafx16/rtl/HUC6280/voltab.mif
+
+set_global_assignment -name QSYS_FILE ../ip/mister_pll.qsys
+set_global_assignment -name QSYS_FILE ../ip/tgfx16_core_pll.qsys
+set_global_assignment -name IP_FILE ../ip/ip/mister_pll/mister_pll_system_pll.ip
+set_global_assignment -name IP_FILE ../ip/ip/tgfx16_core_pll/tgfx16_core_pll_iopll_0.ip
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/mister_hps.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_ddram_cdc.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_gp_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_gp_out.ip
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/jtag_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/hps_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/peripheral_subsys.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/clk_100.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/ext_hps_f2sdram_master.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/qsys_top_ace5lite_cache_coherency_translator_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/user_rst_clkgate_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/agilex_hps.ip
+set_global_assignment -name QIP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/f2sdram_adapter/f2sdram_adapter.qip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/qsys_top/emif_io96b_hps.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/fpga_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_f2sdram.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/button_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/dipsw_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/led_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/pb_cpu_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/sysid.ip
+
+set_global_assignment -name SDC_FILE DE25_MISTER_MENU.sdc
+set_global_assignment -name SDC_FILE DE25_MISTER_TGFX16.sdc
+source de25_mister_rev_b_pins.tcl
+source de25_mister_hps_partition.tcl
+
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO11
+set_global_assignment -name HPS_INITIALIZATION "HPS First"
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X4"
+set_global_assignment -name ACTIVE_SERIAL_CLOCK AS_FREQ_125MHZ
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_global_assignment -name POWER_APPLY_THERMAL_MARGIN ADDITIONAL

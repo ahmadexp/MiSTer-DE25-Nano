@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Thu, 13 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Export DE25 OSD visible state
+
+Keep the existing OSD state marker enabled on DE25 even when general file
+entry logging is disabled. This provides a lightweight board bring-up and
+remote maintenance health signal without changing other MiSTer targets.
+---
+ user_io.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/user_io.cpp b/user_io.cpp
+index dcd81fa..955423c 100644
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -4231,7 +4231,13 @@ void user_io_osd_key_enable(char on)
+ {
+ 	//printf("OSD is now %s\n", on ? "visible" : "invisible");
+ 	osd_is_visible = on;
++	#ifdef MISTER_DE25
++	// Keep an observable state marker during DE25 board bring-up even when
++	// general file-entry logging is disabled.
++	MakeFile("/tmp/OSD_VISIBLE", on ? "1" : "0");
++	#else
+ 	if (cfg.log_file_entry) MakeFile("/tmp/OSD_VISIBLE", on ? "1" : "0");
++	#endif
+ 	input_switch(-1);
+ }
+ 
+-- 
+2.43.0

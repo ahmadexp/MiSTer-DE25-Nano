@@ -1,0 +1,65 @@
+diff --git a/NES.sv b/NES.sv
+index 7b8a292..1f3dd79 100644
+--- a/NES.sv
++++ b/NES.sv
+@@ -1009,6 +1009,8 @@ wire [24:0] loader_addr_mem;
+ wire de25_loader_request_seen;
+ wire de25_loader_accept_seen;
+ wire de25_loader_complete_seen;
++wire de25_loader_verify_error;
++wire de25_loader_read_mem;
+ wire de25_ch0_busy;
+ 
+ always @(posedge clk)
+@@ -1026,10 +1028,13 @@ de25_nes_loader_bridge de25_loader_bridge
+ 	.dst_data(loader_write_data_mem),
+ 	.dst_clk(clk85),
+ 	.dst_busy(de25_ch0_busy),
++	.dst_read_data(ppu_din),
+ 	.dst_write(loader_write_mem),
++	.dst_read(de25_loader_read_mem),
+ 	.src_request_seen(de25_loader_request_seen),
+ 	.src_accept_seen(de25_loader_accept_seen),
+-	.src_complete_seen(de25_loader_complete_seen)
++	.src_complete_seen(de25_loader_complete_seen),
++	.src_verify_error(de25_loader_verify_error)
+ );
+ `else
+ reg loader_write_mem;
+@@ -1090,7 +1095,12 @@ sdram sdram
+ 	.ch0_addr   (  (downloading | loader_busy) ? loader_addr_mem       : {3'b0, ppu_addr}  ),
+ 	.ch0_wr     (                                loader_write_mem      | ppu_write ),
+ 	.ch0_din    (  (downloading | loader_busy) ? loader_write_data_mem : ppu_dout  ),
+-	.ch0_rd     ( ~(downloading | loader_busy)                         & ppu_read  ),
++	.ch0_rd     (
++`ifdef DE25_AGILEX_PLL_RECONFIG
++		de25_loader_read_mem |
++`endif
++		(~(downloading | loader_busy) & ppu_read)
++	),
+ 	.ch0_dout   ( ppu_din   ),
+ 	.ch0_busy   (
+ `ifdef DE25_AGILEX_PLL_RECONFIG
+@@ -1233,10 +1243,9 @@ always @(posedge clk) begin
+ 		de25_ppu_active <= 1'b1;
+ end
+ `ifdef DE25_NES_PIPELINE_DIAGNOSTIC
+-// Loader-to-execution diagnostic.  From MSB to LSB: loader request observed,
+-// SDRAM accepted it, SDRAM completed it, CPU read observed, CPU read data
+-// changed, and PPU read observed.  This distinguishes a failed ROM transfer
+-// from a later CPU or PPU problem without requiring access to the display.
++// Loader-to-execution diagnostic. From MSB to LSB: loader request observed,
++// SDRAM accepted it, verified transfer completed, every readback matched,
++// CPU read data changed, and PPU read observed.
+ reg  [7:0] de25_last_cpu_din = 8'd0;
+ reg        de25_cpu_read_seen = 1'b0;
+ reg        de25_cpu_data_active = 1'b0;
+@@ -1261,7 +1270,7 @@ assign de25_gpi_diagnostic = {
+ 	de25_loader_request_seen,
+ 	de25_loader_accept_seen,
+ 	de25_loader_complete_seen,
+-	de25_cpu_read_seen,
++	~de25_loader_verify_error,
+ 	de25_cpu_data_active,
+ 	de25_ppu_read_seen
+ };

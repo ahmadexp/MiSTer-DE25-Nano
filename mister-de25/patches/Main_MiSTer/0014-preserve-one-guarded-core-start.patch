@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Thu, 13 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Preserve one guarded core start
+
+The privileged candidate-test helper loads a core before starting Main. Pass
+that selected path through one root-owned marker so the first service start
+does not immediately restore Menu. Main consumes the marker before MMIO. Any
+subsequent crash restart has no marker and therefore returns to Menu.
+---
+ main.cpp | 37 +++++++++++++++++++++++++++++++------
+ 1 file changed, 31 insertions(+), 6 deletions(-)
+
+diff --git a/main.cpp b/main.cpp
+--- a/main.cpp
++++ b/main.cpp
+@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ #include <inttypes.h>
+ #include <ctype.h>
+ #include <string.h>
++#include <limits.h>
+ #include "menu.h"
+ #include "user_io.h"
+ #include "input.h"
+@@ -39,13 +40,32 @@ const char *version = "$VER:" VDATE;
+ 
+ int main(int argc, char *argv[])
+ {
++	const char *core_path_arg = argc > 1 ? argv[1] : "";
++	const char *xml_path_arg = argc > 2 ? argv[2] : NULL;
+ #ifdef MISTER_DE25
+-	// A service start or crash restart has no selected-core argument. Restore
+-	// Menu before the first MMIO access so an inaccessible bridge cannot trap
+-	// Main in a SIGBUS restart loop.
+-	if (argc == 1 && system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
++	// The privileged test helper leaves a root-owned, one-shot selected-core
++	// marker. Consume it before MMIO so the first service start keeps the
++	// candidate path. A crash restart has no marker and restores Menu before
++	// touching a potentially inaccessible bridge.
++	char selected_core[PATH_MAX] = {};
++	if (argc == 1)
+ 	{
+-		fprintf(stderr, "Unable to recover DE25 Menu fabric image\n");
+-		return 1;
++		FILE *marker = fopen("/run/mister-de25-selected-core", "r");
++		if (marker)
++		{
++			if (fgets(selected_core, sizeof(selected_core), marker))
++				selected_core[strcspn(selected_core, "\r\n")] = 0;
++			fclose(marker);
++			unlink("/run/mister-de25-selected-core");
++		}
++		if (selected_core[0] == '/' && !access(selected_core, R_OK))
++		{
++			core_path_arg = selected_core;
++		}
++		else if (system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
++		{
++			fprintf(stderr, "Unable to recover DE25 Menu fabric image\n");
++			return 1;
++		}
+ 	}
+ #endif
+@@ -59,8 +79,8 @@ int main(int argc, char *argv[])
+ 
+ 	printf("Version %s\n\n", version + 5);
+ 
+-	if (argc > 1) printf("Core path: %s\n", argv[1]);
+-	if (argc > 2) printf("XML path: %s\n", argv[2]);
++	if (core_path_arg[0]) printf("Core path: %s\n", core_path_arg);
++	if (xml_path_arg) printf("XML path: %s\n", xml_path_arg);
+ 
+ 	if (!is_fpga_ready(1))
+ 	{
+@@ -70,7 +90,7 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	FindStorage();
+-	user_io_init((argc > 1) ? argv[1] : "",(argc > 2) ? argv[2] : NULL);
++	user_io_init(core_path_arg, xml_path_arg);
+ 
+ #ifdef USE_SCHEDULER
+ 	scheduler_init();
+-- 
+2.43.0

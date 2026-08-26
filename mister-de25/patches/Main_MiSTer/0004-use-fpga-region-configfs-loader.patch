@@ -1,0 +1,135 @@
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -8,6 +8,8 @@
+ #include <termios.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <sys/mount.h>
++#include <sys/wait.h>
+ 
+ #include "fpga_io.h"
+ #include "file_io.h"
+@@ -66,18 +68,92 @@
+ 	return 0;
+ }
+ 
+-static int write_text_file(const char *path, const char *text)
++static int de25_load_region_driver()
+ {
+-	int out = open(path, O_WRONLY | O_CLOEXEC);
+-	if (out < 0) return -1;
+-	int result = write_all(out, text, strlen(text));
++	pid_t child = fork();
++	if (child < 0) return -1;
++	if (!child) {
++		execl("/sbin/modprobe", "modprobe", "of-fpga-region", (char *)NULL);
++		execl("/usr/sbin/modprobe", "modprobe", "of-fpga-region", (char *)NULL);
++		_exit(127);
++	}
++
++	int status = 0;
++	while (waitpid(child, &status, 0) < 0) {
++		if (errno != EINTR) return -1;
++	}
++	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
++		errno = ENODEV;
++		return -1;
++	}
++
++	for (unsigned int retry = 0; retry < 100; ++retry) {
++		if (access("/sys/class/fpga_region/region0", F_OK) == 0) return 0;
++		usleep(10000);
++	}
++
++	errno = ENODEV;
++	return -1;
++}
++
++static int copy_file_to_path(const char *source_path, const char *target_path)
++{
++	int in = open(source_path, O_RDONLY | O_CLOEXEC);
++	if (in < 0) return -1;
++
++	int out = open(target_path, O_WRONLY | O_CLOEXEC);
++	if (out < 0) {
++		close(in);
++		return -1;
++	}
++
++	int result = 0;
++	uint8_t buffer[4096];
++	while (true) {
++		ssize_t count = read(in, buffer, sizeof(buffer));
++		if (count < 0 && errno == EINTR) continue;
++		if (count < 0 || (count > 0 && write_all(out, buffer, count) < 0)) {
++			result = -1;
++			break;
++		}
++		if (!count) break;
++	}
++
+ 	if (close(out) < 0) result = -1;
++	if (close(in) < 0) result = -1;
+ 	return result;
+ }
+ 
++static int de25_apply_fpga_overlay()
++{
++	static const char overlay_source[] = "/usr/lib/mister-de25/fpga-load.dtbo";
++	static const char configfs_root[] = "/sys/kernel/config";
++	static const char overlay_root[] = "/sys/kernel/config/device-tree/overlays";
++	static const char overlay_dir[] = "/sys/kernel/config/device-tree/overlays/mister-de25";
++	static const char overlay_dtbo[] = "/sys/kernel/config/device-tree/overlays/mister-de25/dtbo";
++
++	if (de25_load_region_driver() < 0) return -1;
++	if (mkdir(configfs_root, 0755) < 0 && errno != EEXIST) return -1;
++	if (access(overlay_root, F_OK) < 0) {
++		if (mount("configfs", configfs_root, "configfs", 0, NULL) < 0 && errno != EBUSY)
++			return -1;
++	}
++
++	if (rmdir(overlay_dir) < 0 && errno != ENOENT) return -1;
++	if (mkdir(overlay_dir, 0755) < 0) return -1;
++
++	if (copy_file_to_path(overlay_source, overlay_dtbo) < 0) {
++		int saved_errno = errno;
++		rmdir(overlay_dir);
++		errno = saved_errno;
++		return -1;
++	}
++
++	return 0;
++}
++
+ static int de25_fpga_load(const void *rbf_data, size_t rbf_size)
+ {
+-	static const char firmware_name[] = "mister-de25-core.rbf";
+ 	static const char firmware_path[] = "/lib/firmware/mister-de25-core.rbf";
+ 
+ 	int out = open(firmware_path, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
+@@ -94,8 +170,8 @@
+ 		return -1;
+ 	}
+ 
+-	if (write_text_file("/sys/class/fpga_manager/fpga0/firmware", firmware_name) < 0) {
+-		printf("FPGA: Linux FPGA Manager rejected %s: %s\n", firmware_name, strerror(errno));
++	if (de25_apply_fpga_overlay() < 0) {
++		printf("FPGA: unable to apply the DE25 FPGA-region overlay: %s\n", strerror(errno));
+ 		return -1;
+ 	}
+ 
+@@ -546,12 +622,12 @@
+ 		}
+ 		else
+ 		{
+-			printf("Bitstream size: %lld bytes\n", st.st_size);
++			printf("Bitstream size: %lld bytes\n", (long long)st.st_size);
+ 
+ 			void *buf = malloc(st.st_size);
+ 			if (!buf)
+ 			{
+-				printf("Couldn't allocate %llu bytes.\n", st.st_size);
++				printf("Couldn't allocate %llu bytes.\n", (unsigned long long)st.st_size);
+ 				ret = -1;
+ 			}
+ 			else

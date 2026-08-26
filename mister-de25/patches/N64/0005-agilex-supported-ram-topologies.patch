@@ -1,0 +1,231 @@
+diff --git a/rtl/PI.vhd b/rtl/PI.vhd
+--- a/rtl/PI.vhd
++++ b/rtl/PI.vhd
+@@ -957,4 +957,4 @@ begin
+-   iflashpage: entity work.dpram_dif
++   iflashpage: entity work.n64_dpram_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 6,
+diff --git a/rtl/PI_DD.vhd b/rtl/PI_DD.vhd
+--- a/rtl/PI_DD.vhd
++++ b/rtl/PI_DD.vhd
+@@ -952,2 +952,2 @@ begin
+-   sector0: entity work.dpram
++   sector0: entity work.n64_dpram_tdp_sc
+    generic map(addr_width => 5, data_width => 16)
+@@ -961,2 +961,2 @@ begin
+-   sector1: entity work.dpram
++   sector1: entity work.n64_dpram_tdp_sc
+    generic map(addr_width => 5, data_width => 16)
+@@ -970,2 +970,2 @@ begin
+-   sector2: entity work.dpram
++   sector2: entity work.n64_dpram_tdp_sc
+    generic map(addr_width => 5, data_width => 16)
+@@ -979,2 +979,2 @@ begin
+-   sector3: entity work.dpram
++   sector3: entity work.n64_dpram_tdp_sc
+    generic map(addr_width => 5, data_width => 16)
+diff --git a/rtl/PIF.vhd b/rtl/PIF.vhd
+--- a/rtl/PIF.vhd
++++ b/rtl/PIF.vhd
+@@ -331,7 +331,7 @@ begin
+       wren      => pifrom_wren     
+    );
+    
+-   iPIFRAM: entity work.dpram_dif
++   iPIFRAM: entity work.n64_dpram_mixed_tdp_sc
+    generic map 
+    ( 
+       addr_width_a  => 4,
+@@ -1201,7 +1201,7 @@ begin
+ --############################### eeprom
+ --##############################################################
+    
+-   iEEPROM: entity work.dpram_dif
++   iEEPROM: entity work.n64_dpram_mixed_tdp_sc
+    generic map 
+    ( 
+       addr_width_a  => 9,
+diff --git a/rtl/RDP.vhd b/rtl/RDP.vhd
+--- a/rtl/RDP.vhd
++++ b/rtl/RDP.vhd
+@@ -797,7 +797,7 @@ begin
+       end if;
+    end process; 
+    
+-   iCommandCopyRAM: entity mem.dpram
++   iCommandCopyRAM: entity mem.n64_dpram_sdp_ab
+    generic map 
+    ( 
+       addr_width  => 5,
+@@ -924,7 +924,7 @@ begin
+    settings_tile.Tile_maskS    <= unsigned(tileSettings_RdData( 7 downto  4));
+    settings_tile.Tile_shiftS   <= unsigned(tileSettings_RdData( 3 downto  0));
+    
+-   iTextureReceiveRAM: entity mem.dpram
++   iTextureReceiveRAM: entity mem.n64_dpram_sdp_ab
+    generic map 
+    ( 
+       addr_width  => 5,
+@@ -1060,7 +1060,7 @@ begin
+    gTextureRam: for i in 0 to 7 generate
+    begin
+    
+-      iTextureRAM: entity mem.dpram
++      iTextureRAM: entity mem.n64_dpram_tdp_sc
+       generic map 
+       ( 
+          addr_width  => 8,
+@@ -1088,7 +1088,7 @@ begin
+    gPaletteRam: for i in 1 to 3 generate
+    begin
+    
+-      iPaletteRam: entity mem.dpram
++      iPaletteRam: entity mem.n64_dpram_tdp_sc
+       generic map 
+       ( 
+          addr_width  => 8,
+@@ -1111,7 +1111,7 @@ begin
+       
+    end generate;
+    
+-   iFBRAM: entity mem.dpram_dif
++   iFBRAM: entity mem.n64_dpram_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a => 10,
+@@ -1134,7 +1134,7 @@ begin
+       q_b         => FBReadData
+    );
+    
+-   iFBRAMZ: entity mem.dpram_dif
++   iFBRAMZ: entity mem.n64_dpram_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a => 10,
+@@ -1157,7 +1157,7 @@ begin
+       q_b         => FBReadDataZ
+    );
+    
+-   iFBRAM9: entity mem.dpram_dif
++   iFBRAM9: entity mem.n64_dpram_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a => 8,
+@@ -1180,7 +1180,7 @@ begin
+       q_b         => FBReadData9
+    );
+    
+-   iFBRAM9Z: entity mem.dpram_dif
++   iFBRAM9Z: entity mem.n64_dpram_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a => 8,
+diff --git a/rtl/RDRAMRegs.vhd b/rtl/RDRAMRegs.vhd
+--- a/rtl/RDRAMRegs.vhd
++++ b/rtl/RDRAMRegs.vhd
+@@ -36,7 +36,7 @@ begin
+ 
+    wren_a <= '1' when (bus_write = '1' and bus_addr(9 downto 0) <= 16#24#) else '0';
+ 
+-   iREGRAM: entity mem.dpram
++   iREGRAM: entity mem.n64_dpram_tdp_sc
+    generic map 
+    ( 
+       addr_width  => 6,
+diff --git a/rtl/RSP.vhd b/rtl/RSP.vhd
+--- a/rtl/RSP.vhd
++++ b/rtl/RSP.vhd
+@@ -700,7 +700,7 @@ begin
+    );
+    
+    -- Memory
+-   iIMEM: entity work.dpram_dif_be
++   iIMEM: entity work.n64_dpram_mixed_sdp_ab_be
+    generic map 
+    ( 
+       addr_width_a    => 9,
+@@ -741,7 +741,7 @@ begin
+       dmem_128_address_a(i) <= mem_address_a(8 downto 1);
+       
+-      iDMEM: entity work.dpram
++      iDMEM: entity work.n64_dpram_tdp_sc
+       generic map 
+       ( 
+          addr_width => 8,
+diff --git a/rtl/VI_videoout.vhd b/rtl/VI_videoout.vhd
+--- a/rtl/VI_videoout.vhd
++++ b/rtl/VI_videoout.vhd
+@@ -352,7 +352,7 @@ begin
+    glinerams: for i in 0 to 2 generate
+       signal addr9_corrected : unsigned(9 downto 0);
+    begin
+-      ilineram: entity mem.dpram_dif
++      ilineram: entity mem.n64_dpram_mixed_sdp_ab
+       generic map 
+       ( 
+          addr_width_a  => 9,
+@@ -376,7 +376,7 @@ begin
+       
+       addr9_corrected <= fetchAddr9 + addr9_offset(i);
+       
+-      ilineram9: entity mem.dpram_dif
++      ilineram9: entity mem.n64_dpram_mixed_sdp_ab
+       generic map 
+       ( 
+          addr_width_a  => 6,
+@@ -493,7 +493,7 @@ begin
+    filterram_addr_A <= filter_y_out(0) & std_logic_vector(filter_x_out);
+    filterram_di_A   <= std_logic_vector(filter_color.r) & std_logic_vector(filter_color.g) & std_logic_vector(filter_color.b);
+ 
+-   ifilterRAM: entity mem.dpram
++   ifilterRAM: entity mem.n64_dpram_tdp_sc
+    generic map 
+    ( 
+       addr_width  => 11,
+@@ -561,7 +561,7 @@ begin
+    outram_addr_A <= out_y(0) & std_logic_vector(out_x);
+    outram_di_A   <= std_logic_vector(out_color);
+ 
+-   ioutRAM: entity mem.dpram
++   ioutRAM: entity mem.n64_dpram_sdp_ab
+    generic map 
+    ( 
+       addr_width  => 11,
+diff --git a/rtl/cpu_datacache.vhd b/rtl/cpu_datacache.vhd
+--- a/rtl/cpu_datacache.vhd
++++ b/rtl/cpu_datacache.vhd
+@@ -164,7 +164,7 @@ begin
+                      '1' & tag_compare(20 downto 0);
+    
+    
+-   itagram : entity mem.dpram
++   itagram : entity mem.n64_dpram_tdp_sc
+    generic map 
+    ( 
+       addr_width  => 9,
+diff --git a/rtl/cpu_instrcache.vhd b/rtl/cpu_instrcache.vhd
+--- a/rtl/cpu_instrcache.vhd
++++ b/rtl/cpu_instrcache.vhd
+@@ -163,7 +163,7 @@ begin
+ 
+    cache_wr_a    <= ram_grant_2x and ddr3_DOUT_READY;
+ 
+-   icache: entity work.dpram_dif
++   icache: entity work.n64_dpram_mixed_sdp_ab
+    generic map 
+    ( 
+       addr_width_a  => 11,
+diff --git a/rtl/savemem.vhd b/rtl/savemem.vhd
+--- a/rtl/savemem.vhd
++++ b/rtl/savemem.vhd
+@@ -295,7 +295,7 @@ begin
+       end if;
+    end process;
+    
+-   iramSectorBuffer: entity work.dpram_dif
++   iramSectorBuffer: entity work.n64_dpram_mixed_tdp_sc
+    generic map 
+    ( 
+       addr_width_a  => 7,

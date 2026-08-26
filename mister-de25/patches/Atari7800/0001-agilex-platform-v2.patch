@@ -1,0 +1,249 @@
+diff --git a/Atari7800.sv b/Atari7800.sv
+index d1a4833..060e3d3 100644
+--- a/Atari7800.sv
++++ b/Atari7800.sv
+@@ -168,13 +168,13 @@ wire        img_mounted;
+ wire        img_readonly;
+ wire [63:0] img_size;
+ wire        ioctl_download;
+-wire [24:0] ioctl_addr;
++wire [26:0] ioctl_addr;
+ wire [7:0]  ioctl_dout;
+ wire        ioctl_wr;
+-wire [7:0]  ioctl_index;
++wire [15:0] ioctl_index;
+ wire [21:0] gamma_bus;
+ 
+-wire [15:0] joy0,joy1,joy2,joy3;
++wire [31:0] joy0,joy1,joy2,joy3;
+ wire [15:0] joya_0,joya_1,joya_2,joya_3,joyar_0,joyar_1,joyar_2,joyar_3;
+ wire  [7:0] pd_0,pd_1,pd_2,pd_3;
+ wire        ioctl_wait;
+@@ -576,6 +576,13 @@ always @(posedge clk_vid)
+ 
+ sdram sdram
+ (
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	.SDRAM_DQ_IN (de25_sdram_dq_in),
++	.SDRAM_DQ_OUT(de25_sdram_dq_out),
++	.SDRAM_DQ_OE (de25_sdram_dq_oe),
++`else
++	.SDRAM_DQ(SDRAM_DQ),
++`endif
+ 	.*,
+ 
+ 	// system interface
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+index 7bc10dc..50180d2 100644
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -23,7 +23,13 @@ module sdram
+ (
+ 
+ 	// interface to the MT48LC16M16 chip
+-	inout  reg [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input      [15:0] SDRAM_DQ_IN,
++	output     [15:0] SDRAM_DQ_OUT,
++	output            SDRAM_DQ_OE,
++`else
++	inout      [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
++`endif
+ 	output reg [12:0] SDRAM_A,    // 13 bit multiplexed address bus
+ 	output reg        SDRAM_DQML, // byte mask
+ 	output reg        SDRAM_DQMH, // byte mask
+@@ -47,6 +53,17 @@ module sdram
+ 	output reg        ch0_busy
+ );
+ 
++reg [15:0] sdram_dq_out;
++reg        sdram_dq_oe;
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++wire [15:0] sdram_dq_in = SDRAM_DQ_IN;
++assign SDRAM_DQ_OUT = sdram_dq_out;
++assign SDRAM_DQ_OE = sdram_dq_oe;
++`else
++wire [15:0] sdram_dq_in = SDRAM_DQ;
++assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'bz;
++`endif
++
+ assign SDRAM_nCS = 0;
+ assign SDRAM_CKE = 1;
+ assign {SDRAM_DQMH,SDRAM_DQML} = SDRAM_A[12:11];
+@@ -156,10 +173,15 @@ always @(posedge clk) begin
+ 
+ 	if(state == STATE_START) SDRAM_BA <= (mode == MODE_NORMAL) ? bank : 2'b00;
+ 
+-	SDRAM_DQ <= 'Z;
++	sdram_dq_out <= 16'd0;
++	sdram_dq_oe <= 1'b0;
+ 	casex({ram_req,we,mode,state})
+ 		{2'b1X, MODE_NORMAL, STATE_START}: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_ACTIVE;
+-		{2'b11, MODE_NORMAL, STATE_CONT }: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE, SDRAM_DQ} <= {CMD_WRITE, data};
++		{2'b11, MODE_NORMAL, STATE_CONT }: begin
++			{SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_WRITE;
++			sdram_dq_out <= data;
++			sdram_dq_oe <= 1'b1;
++		end
+ 		{2'b10, MODE_NORMAL, STATE_CONT }: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_READ;
+ 		{2'b0X, MODE_NORMAL, STATE_START}: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_AUTO_REFRESH;
+ 
+@@ -184,7 +206,7 @@ always @(posedge clk) begin
+ 	if(state == STATE_READY) begin
+ 		if(ch0_busy) begin
+ 			if(ram_req) begin
+-				if(!we) last_data <= SDRAM_DQ;
++				if(!we) last_data <= sdram_dq_in;
+ 			end
+ 		end
+ 	end
+@@ -192,29 +214,7 @@ end
+ 
+ assign ch0_dout = we ? data[7:0] : a[0] ? last_data[15:8] : last_data[7:0];
+ 
+-altddio_out
+-#(
+-	.extend_oe_disable("OFF"),
+-	.intended_device_family("Cyclone V"),
+-	.invert_output("OFF"),
+-	.lpm_hint("UNUSED"),
+-	.lpm_type("altddio_out"),
+-	.oe_reg("UNREGISTERED"),
+-	.power_up_high("OFF"),
+-	.width(1)
+-)
+-sdramclk_ddr
+-(
+-	.datain_h(1'b0),
+-	.datain_l(1'b1),
+-	.outclock(clk),
+-	.dataout(SDRAM_CLK),
+-	.aclr(1'b0),
+-	.aset(1'b0),
+-	.oe(1'b1),
+-	.outclocken(1'b1),
+-	.sclr(1'b0),
+-	.sset(1'b0)
+-);
++// The original constant high/low DDR output is exactly an inverted clock.
++assign SDRAM_CLK = ~clk;
+ 
+ endmodule
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+index 5f1aa23..efde25d 100644
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -113,7 +113,13 @@ output        SDRAM_CLK,
+ output        SDRAM_CKE,
+ output [12:0] SDRAM_A,
+ output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++input  [15:0] de25_sdram_dq_in,
++output [15:0] de25_sdram_dq_out,
++output        de25_sdram_dq_oe,
++`else
+ inout  [15:0] SDRAM_DQ,
++`endif
+ output        SDRAM_DQML,
+ output        SDRAM_DQMH,
+ output        SDRAM_nCS,
+diff --git a/sys/hps_io.sv b/sys/hps_io.sv
+index 1df2e02..1f4162f 100644
+--- a/sys/hps_io.sv
++++ b/sys/hps_io.sv
+@@ -259,6 +259,15 @@ reg [31:0] ps2_key_raw = 0;
+ wire       pressed  = (ps2_key_raw[15:8] != 8'hf0);
+ wire       extended = (~pressed ? (ps2_key_raw[23:16] == 8'he0) : (ps2_key_raw[15:8] == 8'he0));
+ 
++reg  [7:0] kbd_data;
++reg        kbd_we;
++wire [8:0] kbd_data_host;
++reg        kbd_rd;
++reg  [7:0] mouse_data;
++reg        mouse_we;
++wire [8:0] mouse_data_host;
++reg        mouse_rd;
++
+ reg [MAX_W:0] byte_cnt;
+ reg   [3:0] sdn_ack;
+ wire [15:0] disk = 16'd1 << io_din[11:8];
+@@ -559,11 +568,6 @@ generate
+ 			end
+ 		end
+ 
+-		reg  [7:0] kbd_data;
+-		reg        kbd_we;
+-		wire [8:0] kbd_data_host;
+-		reg        kbd_rd;
+-
+ 		ps2_device keyboard
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -582,11 +586,6 @@ generate
+ 			.rd(kbd_rd)
+ 		);
+ 
+-		reg  [7:0] mouse_data;
+-		reg        mouse_we;
+-		wire [8:0] mouse_data_host;
+-		reg        mouse_rd;
+-
+ 		ps2_device mouse
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -1026,9 +1025,12 @@ module confstr_rom #(parameter CONF_STR, STRLEN)
+ 	output reg [7:0] conf_byte
+ );
+ 
+-reg [7:0] rom[STRLEN];
++localparam ADDR_WIDTH = $clog2(STRLEN+1);
++localparam ROM_DEPTH = 1 << ADDR_WIDTH;
++reg [7:0] rom[ROM_DEPTH];
+ 
+ initial begin
++	for(int i = 0; i < ROM_DEPTH; i++) rom[i] = 0;
+ 	if( CONF_STR=="" )
+ 		$readmemh("cfgstr.hex",rom);
+ 	else
+diff --git a/sys/hq2x.sv b/sys/hq2x.sv
+index f5fcc71..deef1fc 100644
+--- a/sys/hq2x.sv
++++ b/sys/hq2x.sv
+@@ -306,7 +306,7 @@ module Blend
+ 	input  [23:0] D,
+ 	input  [23:0] F,
+ 	input  [23:0] H,
+-	output [23:0] Result
++	output reg [23:0] Result
+ );
+ 
+ 	localparam BLEND1 = 7'b110_10_00; // (A * 12 + B * 4        ) >> 4
+diff --git a/sys/video_mixer.sv b/sys/video_mixer.sv
+index e53e1c0..dc718df 100644
+--- a/sys/video_mixer.sv
++++ b/sys/video_mixer.sv
+@@ -19,8 +19,9 @@
+ module video_mixer
+ #(
+ 	parameter LINE_LENGTH  = 768,
+-	parameter HALF_DEPTH   = 0,
+-	parameter GAMMA        = 0
++	parameter HALF_DEPTH   = 0,
++	parameter GAMMA        = 0,
++	parameter DWIDTH       = HALF_DEPTH ? 3 : 7
+ )
+ (
+ 	input            CLK_VIDEO, // should be multiple by (ce_pix*4)
+@@ -59,9 +60,9 @@ module video_mixer
+ 	output reg       VGA_DE
+ );
+ 
+-localparam DWIDTH = HALF_DEPTH ? 3 : 7;
+-localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
+-localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
++localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam RIN_DWIDTH = GAMMA ? 7 : DWIDTH;
+ 
+ wire frz_hs, frz_vs;
+ wire frz_hbl, frz_vbl;

@@ -1,0 +1,13 @@
+diff --git a/rtl/Shiftreg.vhd b/rtl/Shiftreg.vhd
+--- a/rtl/Shiftreg.vhd
++++ b/rtl/Shiftreg.vhd
+@@ -33,7 +33,7 @@ begin
+       (
+          number_of_taps    => 1,
+          tap_distance      => DEPTH,
+          width             => BITS,
+-         lpm_hint          => "RAM_BLOCK_TYPE=M10K",
++         lpm_hint          => "RAM_BLOCK_TYPE=M20K",
+          lpm_type          => "altshift_taps"
+       )
+       port map 

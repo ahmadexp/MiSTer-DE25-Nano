@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+core_id=${1:-}
+if [[ $# -ne 1 ]]; then
+    echo "Usage: mister-de25-select-core CORE_ID" >&2
+    exit 2
+fi
+fat_root=${MISTER_DE25_FAT_ROOT:-/media/fat}
+catalog=${MISTER_DE25_CORE_CATALOG:-/etc/mister-de25/cores.tsv}
+test_helper=${MISTER_DE25_TEST_HELPER:-/usr/libexec/mister-de25-test-rbf}
+rollback=$fat_root/menu.rbf
+
+if [[ ! $core_id =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    echo "Usage: mister-de25-select-core CORE_ID" >&2
+    exit 2
+fi
+if [[ ! -s $catalog ]]; then
+    echo "DE25-Nano runtime core catalog is missing: $catalog" >&2
+    exit 1
+fi
+if [[ ! -x $test_helper ]]; then
+    echo "DE25-Nano guarded core loader is missing: $test_helper" >&2
+    exit 1
+fi
+
+tab=$'\t'
+relative=$(
+    awk -F "$tab" -v wanted="$core_id" '
+        $1 == wanted {
+            if (found++) exit 2
+            value = $2
+        }
+        END {
+            if (found != 1) exit 1
+            print value
+        }
+    ' "$catalog"
+) || {
+    echo "Unknown or duplicate DE25-Nano core ID: $core_id" >&2
+    exit 1
+}
+
+case "$relative" in
+    menu.rbf|_[A-Za-z0-9_.-]*/[A-Za-z0-9_.\ -]*.rbf) ;;
+    *)
+        echo "Unsafe DE25-Nano core catalog path: $relative" >&2
+        exit 1
+        ;;
+esac
+if [[ $relative == *../* || $relative == */.. || $relative == /* ]]; then
+    echo "Unsafe DE25-Nano core catalog path: $relative" >&2
+    exit 1
+fi
+
+candidate=$fat_root/$relative
+exec "$test_helper" "$candidate" "$rollback"

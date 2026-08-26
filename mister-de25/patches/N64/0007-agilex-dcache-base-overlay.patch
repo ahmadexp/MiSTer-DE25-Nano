@@ -1,0 +1,63 @@
+diff --git a/rtl/cpu_datacache.vhd b/rtl/cpu_datacache.vhd
+--- a/rtl/cpu_datacache.vhd
++++ b/rtl/cpu_datacache.vhd
+@@ -92,6 +92,7 @@ architecture arch of cpu_datacache is
+    signal ram_grant_2x     : std_logic := '0';
+    signal cache_addr_a     : unsigned(9 downto 0) := (others => '0');
+    signal cache_wr_a       : std_logic;
++   signal cache_fill_invalidate : std_logic;
+    
+    signal cache_address_b  : std_logic_vector(9 downto 0);
+    signal cache_data_b     : std_logic_vector(63 downto 0);
+@@ -244,29 +245,27 @@ begin
+ 
+    cache_wr_a    <= ram_grant_2x and ddr3_DOUT_READY;
+ 
+-   gcache: for i in 0 to 7 generate
+-   begin
+-      icache: entity work.dpram
+-      generic map 
+-      ( 
+-         addr_width  => 10,
+-         data_width  => 8
+-      )
+-      port map
+-      (
+-         clock_a     => clk2x,
+-         address_a   => std_logic_vector(cache_addr_a),
+-         data_a      => ddr3_DOUT(((i * 8) + 7) downto (i*8)),
+-         wren_a      => cache_wr_a,
+-         
+-         clock_b     => clk93,
+-         address_b   => cache_address_b,
+-         data_b      => cache_data_b(((i * 8) + 7) downto (i*8)),
+-         wren_b      => cache_we_b and cache_be_b(i),
+-         q_b         => cache_q_b(((i * 8) + 7) downto (i*8))
+-      );
+-   end generate;
++   -- Agilex 5 M20Ks cannot be written from both clk2x and clk93. Keep DDR
++   -- fills in a dual-clock base RAM and CPU writes in a byte-valid overlay.
++   -- The overlay is invalidated atomically for both words at the first FILL
++   -- cycle, preserving the original cache-line replacement semantics.
++   cache_fill_invalidate <= '1' when
++      (state = FILL and ram_request = '1') else '0';
++
++   icache: entity work.n64_dcache_ram
++   port map
++   (
++      fill_clock           => clk2x,
++      fill_address         => std_logic_vector(cache_addr_a),
++      fill_data            => ddr3_DOUT,
++      fill_wren            => cache_wr_a,
++      cpu_clock            => clk93,
++      cpu_address          => cache_address_b,
++      cpu_data             => cache_data_b,
++      cpu_byteena          => cache_be_b,
++      cpu_wren             => cache_we_b,
++      invalidate_fill_line => cache_fill_invalidate,
++      fill_line_address    => std_logic_vector(tag_read_addr(12 downto 4)),
++      cpu_q                => cache_q_b
++   );
+    
+    cache_address_b <= std_logic_vector(tag_read_addr(12 downto 3)) when (state /= IDLE) else 
+                       std_logic_vector(tag_addr_1(12 downto 3)) when (ce_fetch = '0' or write_ena = '1') else 

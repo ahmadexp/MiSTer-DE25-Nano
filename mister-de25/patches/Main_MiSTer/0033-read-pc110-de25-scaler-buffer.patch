@@ -1,0 +1,24 @@
+From: DE25-Nano port
+Subject: [PATCH] Read the PC110 DE25 scaler buffer
+
+PC110 reserves logical DDR 0x30000000 for PC RAM, just like ao486, so its
+shared-shell scaler also lives at 0x20000000. Select that buffer for native
+PC110 screenshots instead of reading the unrelated 0x30000000 PC RAM window.
+
+diff --git a/scaler.cpp b/scaler.cpp
+--- a/scaler.cpp
++++ b/scaler.cpp
+@@ -44,9 +44,10 @@ mister_scaler * mister_scaler_init()
+     int offset = MISTER_SCALER_BASEADDR;
+ #ifdef MISTER_DE25
+-    // ao486 owns logical DDR 0x30000000 for its PC RAM. Its scaler is placed
+-    // at 0x20000000 so screenshots must follow the core-specific FPGA layout.
++    // ao486 and PC110 own logical DDR 0x30000000 for PC RAM. Their scalers are
++    // placed at 0x20000000 so screenshots follow the core-specific layout.
+     const char *core_name = user_io_get_core_name(1);
+-    if (core_name && !strcasecmp(core_name, "AO486"))
++    if (core_name && (!strcasecmp(core_name, "AO486") ||
++                      !strcasecmp(core_name, "PC110")))
+         offset = MISTER_AO486_SCALER_BASEADDR;
+ #endif
+     int	map_start = offset & ~(pagesize - 1);

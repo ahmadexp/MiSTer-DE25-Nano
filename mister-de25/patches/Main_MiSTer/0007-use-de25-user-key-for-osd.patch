@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Thu, 13 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Use DE25 user key for OSD
+
+The DE25 shell exposes its physical KEY1 through the MiSTer user-button bit,
+while the board has no separate physical OSD button. Treat that input as the
+menu button in the DE25 ARM64 build so Menu is usable before USB input is
+attached. Leave every other target unchanged.
+---
+ user_io.cpp | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/user_io.cpp b/user_io.cpp
+index ac1b27b..dcd81fa 100644
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -3005,12 +3005,22 @@ char *user_io_get_confstr(int index)
+ static char cur_btn = 0;
+ char user_io_menu_button()
+ {
++	#ifdef MISTER_DE25
++	// DE25-Nano has one HPS-visible user key in the MiSTer shell. Use it as
++	// the OSD key so the Menu remains usable before a USB-C OTG hub is fitted.
++	return (cur_btn & (BUTTON_OSD | BUTTON_USR)) ? 1 : 0;
++	#else
+ 	return (cur_btn & BUTTON_OSD) ? 1 : 0;
++	#endif
+ }
+ 
+ char user_io_user_button()
+ {
++	#ifdef MISTER_DE25
++	return 0;
++	#else
+ 	return (cur_btn & BUTTON_USR) ? 1 : 0;
++	#endif
+ }
+ 
+ static int vga_fb = 0;
+-- 
+2.43.0

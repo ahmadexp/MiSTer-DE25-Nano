@@ -1,0 +1,38 @@
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+index 3aab1f7..c69fcd7 100644
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -92,13 +92,13 @@ static int write_all(int out, const void *data, size_t size)
+ 	return 0;
+ }
+ 
+-static int de25_load_region_driver()
++static int de25_modprobe(const char *module)
+ {
+ 	pid_t child = fork();
+ 	if (child < 0) return -1;
+ 	if (!child) {
+-		execl("/sbin/modprobe", "modprobe", "of-fpga-region", (char *)NULL);
+-		execl("/usr/sbin/modprobe", "modprobe", "of-fpga-region", (char *)NULL);
++		execl("/sbin/modprobe", "modprobe", module, (char *)NULL);
++		execl("/usr/sbin/modprobe", "modprobe", module, (char *)NULL);
+ 		_exit(127);
+ 	}
+ 
+@@ -110,6 +110,16 @@ static int de25_load_region_driver()
+ 		errno = ENODEV;
+ 		return -1;
+ 	}
++	return 0;
++}
++
++static int de25_load_region_driver()
++{
++	// region0 depends on the Agilex secure-service FPGA manager. Load both
++	// modules explicitly instead of racing udev coldplug during early boot.
++	if (de25_modprobe("stratix10_soc") < 0 ||
++	    de25_modprobe("of-fpga-region") < 0) return -1;
++
+ 	for (unsigned int retry = 0; retry < 100; ++retry) {
+ 		if (access("/sys/class/fpga_region/region0", F_OK) == 0) return 0;
+ 		usleep(10000);

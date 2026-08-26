@@ -1,0 +1,803 @@
+diff --git a/Jaguar.sv b/Jaguar.sv
+index ebf7f52..622bf58 100644
+--- a/Jaguar.sv
++++ b/Jaguar.sv
+@@ -56,20 +56,28 @@ wire save_busy;
+ wire save_pending;
+ assign LED_USER = ioctl_download | save_busy | save_pending;
+ 
+-`define FAST_CLOCK
+-`include "rtl/defines.vh"
+-
+-wire clk_106m, clk_26m, clk_53m;
++// The 106 MHz FAST_CLOCK branch relies on Cyclone V half-cycle timing. Its
++// inverted-edge Jaguar paths need about 8.8 ns on Agilex 5, so use the
++// upstream 53 MHz branch for the DE25 persona while retaining the official
++// default on other targets.
++`ifndef DE25_JAGUAR_SAFE_CLOCK
++`define FAST_CLOCK
++`endif
++`include "rtl/defines.vh"
++wire clk_106m, clk_26m, clk_53m;
++wire clk_sdram, clk_sdram_capture;
+ 
+ wire pll_locked;
+ pll pll
+ (
+ 	.refclk(CLK_50M),
+ 	.rst(0),
+-	.outclk_0(clk_106m),
+-	.outclk_1(clk_26m),
+-	.outclk_2(clk_53m),
+-	.locked(pll_locked)
++	.outclk_0(clk_106m),
++	.outclk_1(clk_26m),
++	.outclk_2(clk_53m),
++	.outclk_3(clk_sdram),
++	.outclk_4(clk_sdram_capture),
++	.locked(pll_locked)
+ );
+ 
+ `ifdef FAST_CLOCK
+@@ -80,6 +88,16 @@ wire clk_sys = clk_53m;
+ 
+ wire clk_ram = clk_106m;
+ 
++// PLL lock is generated in the reference-clock domain. Synchronize it before
++// using it as the synchronous SDRAM-controller initializer. The first stage
++// is the only intentional asynchronous endpoint; the second stage provides a
++// stable C0-domain release after two controller clocks.
++(* async_reg = "true" *) reg [1:0] pll_locked_ram_sync = 2'b00;
++always @(posedge clk_ram) begin
++	pll_locked_ram_sync <= {pll_locked_ram_sync[0], pll_locked};
++end
++wire pll_locked_ram = pll_locked_ram_sync[1];
++
+ wire [2:0] scan_fx = status[97:95];
+ wire [2:0] scanlines = scan_fx ? (scan_fx - 3'd1) : 3'd0;
+ wire [1:0] ar = status[8:7];
+@@ -200,9 +218,9 @@ wire [31:0] joystick_4;
+ wire [11:0] numstick_keypad;
+ wire        ioctl_download;
+ wire        ioctl_wr;
+-wire [24:0] ioctl_addr;
++wire [26:0] ioctl_addr;
+ wire [15:0] ioctl_data;
+-wire  [7:0] ioctl_index;
++wire [15:0] ioctl_index;
+ //reg         ioctl_wait;
+ wire        ioctl_wait;
+ wire [31:0] sd_lba;
+@@ -522,15 +540,15 @@ always @(posedge clk_sys) begin
+ 		end
+ 		if (old_download && ~ioctl_download && cart_index) begin
+ 			cd_loaded <= 0;
+-			cart_mask[22:20] = 3'h7; //not exact=don't modify
+-			if (loader_addr[19:0]==20'h0) begin
+-				if (loader_addr[24:20]==5'h1) begin
+-					cart_mask[22:20] = 3'h0; // 1MB
+-				end else if (loader_addr[24:20]==5'h2) begin
+-					cart_mask[22:20] = 3'h1; // 2MB
+-				end else if (loader_addr[24:20]==5'h4) begin
+-					cart_mask[22:20] = 3'h3; // 4MB
+-				end
++			cart_mask[22:20] <= 3'h7; //not exact=don't modify
++			if (loader_addr[19:0]==20'h0) begin
++				if (loader_addr[24:20]==5'h1) begin
++					cart_mask[22:20] <= 3'h0; // 1MB
++				end else if (loader_addr[24:20]==5'h2) begin
++					cart_mask[22:20] <= 3'h1; // 2MB
++				end else if (loader_addr[24:20]==5'h4) begin
++					cart_mask[22:20] <= 3'h3; // 4MB
++				end
+ 			end
+ 			if (loader_addr[23:0]==24'hFE0000) begin //technically should check next address
+ 	//			bios_overwrote <= 1;
+@@ -1447,11 +1465,18 @@ wire  [1:0] cart_ch2_be = (loader_en) ? 2'b11 : abus_out[1] ? ch1_be[1:0] : ch1_
+ wire        sdram_ch2_ready;
+ sdram sdram
+ (
+-	.init               (~pll_locked || (~old_ramreset && status[15])),
+-
+-	.clk                (clk_ram),
++	.init               (~pll_locked_ram || (~old_ramreset && status[15])),
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	.SDRAM_DQ_IN        (de25_sdram_dq_in),
++	.SDRAM_DQ_OUT       (de25_sdram_dq_out),
++	.SDRAM_DQ_OE        (de25_sdram_dq_oe),
++`else
++	.SDRAM_DQ           (SDRAM_DQ),
++`endif
++	.clk                (clk_ram),
++	.clk_physical       (clk_sdram),
++	.clk_capture        (clk_sdram_capture),
+ 
+-	.SDRAM_DQ           (SDRAM_DQ),
+ 	.SDRAM_A            (SDRAM_A),
+ 	.SDRAM_DQML         (SDRAM_DQML),
+ 	.SDRAM_DQMH         (SDRAM_DQMH),
+@@ -1502,8 +1527,10 @@ sdram sdram
+ `ifdef MISTER_DUAL_SDRAM
+ sdram sdram2
+ (
+-	.init               (~pll_locked || (~old_ramreset && status[15])),
+-	.clk                (clk_ram),
++	.init               (~pll_locked_ram || (~old_ramreset && status[15])),
++	.clk                (clk_ram),
++	.clk_physical       (clk_sdram),
++	.clk_capture        (clk_sdram_capture),
+ 
+ 	.SDRAM_DQ           (SDRAM2_DQ),
+ 	.SDRAM_A            (SDRAM2_A),
+diff --git a/rtl/Tom/ab8016a.v b/rtl/Tom/ab8016a.v
+index cab1e9d..da48cf5 100644
+--- a/rtl/Tom/ab8016a.v
++++ b/rtl/Tom/ab8016a.v
+@@ -88,7 +88,7 @@ assign z_in_r = z_in;
+ 	defparam
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_output_a = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone III",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_hint = "ENABLE_RUNTIME_MOD=NO",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 256,
+@@ -96,7 +96,7 @@ assign z_in_r = z_in;
+ 		altsyncram_component.outdata_aclr_a = "NONE",
+ 		altsyncram_component.outdata_reg_a = "CLOCK0",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
++		altsyncram_component.read_during_write_mode_port_a = "DONT_CARE",
+ 		altsyncram_component.widthad_a = 8,
+ 		altsyncram_component.width_a = 16,
+ 		altsyncram_component.width_byteena_a = 1;
+@@ -104,4 +104,4 @@ assign z_in_r = z_in;
+ `endif
+ 
+ endmodule
+-/* verilator lint_on LITENDIAN */
+\ No newline at end of file
++/* verilator lint_on LITENDIAN */
+diff --git a/rtl/Tom/ab8616a.v b/rtl/Tom/ab8616a.v
+index 47e6e06..df12e3d 100644
+--- a/rtl/Tom/ab8616a.v
++++ b/rtl/Tom/ab8616a.v
+@@ -90,7 +90,7 @@ assign z_in_r = z_in;
+ 	defparam
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_output_a = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone III",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_hint = "ENABLE_RUNTIME_MOD=NO",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 512,
+@@ -98,7 +98,7 @@ assign z_in_r = z_in;
+ 		altsyncram_component.outdata_aclr_a = "NONE",
+ 		altsyncram_component.outdata_reg_a = "CLOCK0",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
++		altsyncram_component.read_during_write_mode_port_a = "DONT_CARE",
+ 		altsyncram_component.widthad_a = 9,
+ 		altsyncram_component.width_a = 16,
+ 		altsyncram_component.width_byteena_a = 1;
+@@ -106,4 +106,4 @@ assign z_in_r = z_in;
+ `endif
+ 
+ endmodule
+-/* verilator lint_on LITENDIAN */
+\ No newline at end of file
++/* verilator lint_on LITENDIAN */
+diff --git a/rtl/Tom/abus.v b/rtl/Tom/abus.v
+index 01ef838..3d1beb8 100644
+--- a/rtl/Tom/abus.v
++++ b/rtl/Tom/abus.v
+@@ -169,7 +169,7 @@ wire [1:0] match_;
+ wire [1:0] m;
+ wire intd0;
+ wire intd1;
+-wire fcl[0];
++wire [0:0] fcl;
+ wire intd;
+ reg ouracki = 1'b0;
+ wire notourack;
+diff --git a/rtl/jaguar_common/rd64x32.v b/rtl/jaguar_common/rd64x32.v
+index 1d81dc9..757cbbc 100644
+--- a/rtl/jaguar_common/rd64x32.v
++++ b/rtl/jaguar_common/rd64x32.v
+@@ -94,7 +94,7 @@ end
+ 		altsyncram_component.clock_enable_output_a = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+ 		altsyncram_component.indata_reg_b = "CLOCK0",
+-		altsyncram_component.intended_device_family = "Cyclone III",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_hint = "ENABLE_RUNTIME_MOD=NO",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 64,
+@@ -105,8 +105,7 @@ end
+ 		altsyncram_component.outdata_reg_a = "CLOCK0",
+ 		altsyncram_component.outdata_reg_b = "CLOCK0",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		//GE altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+-		altsyncram_component.read_during_write_mode_mixed_ports = "OLD_DATA", //GE
++		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = 6,
+ 		altsyncram_component.widthad_b = 6,
+ 		altsyncram_component.width_a = 32,
+diff --git a/rtl/mem/bram.vhd b/rtl/mem/bram.vhd
+index 8272897..7650b28 100644
+--- a/rtl/mem/bram.vhd
++++ b/rtl/mem/bram.vhd
+@@ -29,8 +29,27 @@ END spram;
+ 
+ 
+ ARCHITECTURE SYN OF spram IS
++	COMPONENT spram_sz IS
++		generic (
++			addr_width    : integer := 8;
++			data_width    : integer := 8;
++			numwords      : integer := 2**8;
++			mem_init_file : string := " ";
++			mem_name      : string := "MEM"
++		);
++		PORT
++		(
++			clock   : in  STD_LOGIC;
++			address : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0);
++			data    : in  STD_LOGIC_VECTOR (data_width-1 DOWNTO 0) := (others => '0');
++			enable  : in  STD_LOGIC := '1';
++			wren    : in  STD_LOGIC := '0';
++			q       : out STD_LOGIC_VECTOR (data_width-1 DOWNTO 0);
++			cs      : in  std_logic := '1'
++		);
++	END COMPONENT;
+ BEGIN
+-	spram_sz : work.spram_sz
++	spram_sz_inst : spram_sz
+ 	generic map(addr_width, data_width, 2**addr_width, mem_init_file, mem_name)
+ 	port map(clock,address,data,enable,wren,q,cs);
+ END SYN;
+@@ -75,7 +94,7 @@ BEGIN
+ 	GENERIC MAP (
+ 		clock_enable_input_a => "BYPASS",
+ 		clock_enable_output_a => "BYPASS",
+-		intended_device_family => "Cyclone V",
++		intended_device_family => "Agilex 5",
+ 		lpm_hint => "ENABLE_RUNTIME_MOD=YES,INSTANCE_NAME="&mem_name,
+ 		lpm_type => "altsyncram",
+ 		numwords_a => numwords,
+@@ -83,7 +102,7 @@ BEGIN
+ 		outdata_aclr_a => "NONE",
+ 		outdata_reg_a => "UNREGISTERED",
+ 		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
++		read_during_write_mode_port_a => "DONT_CARE",
+ 		init_file => mem_init_file, 
+ 		widthad_a => addr_width,
+ 		width_a => data_width,
+@@ -136,8 +155,33 @@ end entity;
+ 
+ 
+ ARCHITECTURE SYN OF dpram IS
++	COMPONENT dpram_dif IS
++		generic (
++			addr_width_a  : integer := 8;
++			data_width_a  : integer := 8;
++			addr_width_b  : integer := 8;
++			data_width_b  : integer := 8;
++			mem_init_file : string := " "
++		);
++		PORT
++		(
++			clock     : in  STD_LOGIC;
++			address_a : in  STD_LOGIC_VECTOR (addr_width_a-1 DOWNTO 0);
++			data_a    : in  STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0) := (others => '0');
++			enable_a  : in  STD_LOGIC := '1';
++			wren_a    : in  STD_LOGIC := '0';
++			q_a       : out STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0);
++			cs_a      : in  std_logic := '1';
++			address_b : in  STD_LOGIC_VECTOR (addr_width_b-1 DOWNTO 0) := (others => '0');
++			data_b    : in  STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0) := (others => '0');
++			enable_b  : in  STD_LOGIC := '1';
++			wren_b    : in  STD_LOGIC := '0';
++			q_b       : out STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0);
++			cs_b      : in  std_logic := '1'
++		);
++	END COMPONENT;
+ BEGIN
+-	ram : work.dpram_dif generic map(addr_width,data_width,addr_width,data_width,mem_init_file)
++	ram : dpram_dif generic map(addr_width,data_width,addr_width,data_width,mem_init_file)
+ 	port map(clock,address_a,data_a,enable_a,wren_a,q_a,cs_a,address_b,data_b,enable_b,wren_b,q_b,cs_b);
+ END SYN;
+ 
+@@ -190,13 +234,13 @@ BEGIN
+ 
+ 	altsyncram_component : altsyncram
+ 	GENERIC MAP (
+-		address_reg_b => "CLOCK1",
++		address_reg_b => "CLOCK0",
+ 		clock_enable_input_a => "NORMAL",
+ 		clock_enable_input_b => "NORMAL",
+ 		clock_enable_output_a => "BYPASS",
+ 		clock_enable_output_b => "BYPASS",
+-		indata_reg_b => "CLOCK1",
+-		intended_device_family => "Cyclone V",
++		indata_reg_b => "CLOCK0",
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",
+ 		numwords_a => 2**addr_width_a,
+ 		numwords_b => 2**addr_width_b,
+@@ -206,8 +250,8 @@ BEGIN
+ 		outdata_reg_a => "UNREGISTERED",
+ 		outdata_reg_b => "UNREGISTERED",
+ 		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
+-		read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
++		read_during_write_mode_port_a => "DONT_CARE",
++		read_during_write_mode_port_b => "DONT_CARE",
+ 		init_file => mem_init_file, 
+ 		widthad_a => addr_width_a,
+ 		widthad_b => addr_width_b,
+@@ -215,15 +259,13 @@ BEGIN
+ 		width_b => data_width_b,
+ 		width_byteena_a => 1,
+ 		width_byteena_b => 1,
+-		wrcontrol_wraddress_reg_b => "CLOCK1"
++		wrcontrol_wraddress_reg_b => "CLOCK0"
+ 	)
+ 	PORT MAP (
+ 		address_a => address_a,
+ 		address_b => address_b,
+ 		clock0 => clock,
+-		clock1 => clock,
+ 		clocken0 => enable_a,
+-		clocken1 => enable_b,
+ 		data_a => data_a,
+ 		data_b => data_b,
+ 		wren_a => wren_a and cs_a,
+@@ -418,4 +460,4 @@ BEGIN
+ 		q_b => q1
+ 	);
+ 
+-END SYN;
+\ No newline at end of file
++END SYN;
+diff --git a/rtl/mem/sdram_dual.sv b/rtl/mem/sdram_dual.sv
+index d229e58..493e1ee 100644
+--- a/rtl/mem/sdram_dual.sv
++++ b/rtl/mem/sdram_dual.sv
+@@ -40,8 +40,16 @@ module sdram
+ (
+ 	input             init,        // reset to initialize RAM
+ 	input             clk,         // clock ~100MHz
+-
+-	inout  reg [15:0] SDRAM_DQ,    // 16 bit bidirectional data bus
++	input             clk_physical,// phase-shifted clock forwarded to SDRAM
++	input             clk_capture, // phase-shifted SDRAM input capture clock
++
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input      [15:0] SDRAM_DQ_IN,
++	output     [15:0] SDRAM_DQ_OUT,
++	output            SDRAM_DQ_OE,
++`else
++	inout      [15:0] SDRAM_DQ,    // 16 bit bidirectional data bus
++`endif
+ 	output reg [12:0] SDRAM_A,     // 13 bit multiplexed address bus
+ 	output            SDRAM_DQML,  // two byte masks
+ 	output            SDRAM_DQMH,  //
+@@ -56,7 +64,7 @@ module sdram
+ //	input      [26:1] ch1_addr,    // 24 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
+ 	input      [10:3] ch1_addr,    // 24 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
+ 	input      [12:0] ch1_caddr,   // direct control.
+-	output     [63:0] ch1_dout,    // data output to cpu
++	output reg [63:0] ch1_dout,    // data output to cpu
+ 	input      [63:0] ch1_din,     // data input from cpu
+ 	input             ch1_reqr,    // request
+ 	input             ch1_reqw,    // request
+@@ -89,6 +97,19 @@ module sdram
+ 	input             self_refresh // 1 - self control, 0 - refresh on ch1_ref
+ );
+ 
++reg [15:0] sdram_dq_out;
++reg        sdram_dq_oe;
++reg  [2:0] command;
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++wire [15:0] sdram_dq_in = SDRAM_DQ_IN;
++wire [15:0] SDRAM_DQ = SDRAM_DQ_IN;
++assign SDRAM_DQ_OUT = sdram_dq_out;
++assign SDRAM_DQ_OE = sdram_dq_oe;
++`else
++wire [15:0] sdram_dq_in = SDRAM_DQ;
++assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'bz;
++`endif
++
+ assign SDRAM_nCS  = 0;
+ assign SDRAM_nRAS = command[2];
+ assign SDRAM_nCAS = command[1];
+@@ -96,6 +117,10 @@ assign SDRAM_nWE  = command[0];
+ assign SDRAM_CKE  = 1;
+ assign {SDRAM_DQMH,SDRAM_DQML} = SDRAM_A[12:11];
+ 
++wire [3:0] ch_tmp = ch2_addr[23:20]==4'h5 ? ch3_addr[23:20] : ch2_addr[23:20]==4'h4 ? ch3_addr[19:16] : ch2_addr[23:20]==4'h3 ? ch3_addr[15:12]
++                  : ch2_addr[23:20]==4'h2 ? ch3_addr[11:8]  : ch2_addr[23:20]==4'h1 ? ch3_addr[7:4]   : ch2_addr[23:20]==4'h0 ? ch3_addr[3:0]
++						: ch2_addr[23:20];
++
+ 
+ // Burst length = 4
+ localparam BURST_LENGTH        = 2;
+@@ -122,8 +147,6 @@ wire [2:0] CMD_AUTO_REFRESH    = 3'b001;
+ wire [2:0] CMD_LOAD_MODE       = 3'b000;
+ 
+ reg [13:0] refresh_count = startup_refresh_max - sdram_startup_cycles;
+-reg  [2:0] command;
+-
+ localparam STATE_STARTUP = 0;
+ localparam STATE_WAIT    = 1;
+ localparam STATE_RW1     = 2;
+@@ -143,10 +166,22 @@ localparam STATE_ACT2    = 15;
+ localparam STATE_PRE1    = 16;
+ localparam STATE_PRE2    = 17;
+ 
+-(*noprune*) reg [CAS_LATENCY+BURST_LENGTH+2:0] data_ready_delay1, data_ready_delay2;
+-reg [15:0] dq_reg;
++(*noprune*) reg [CAS_LATENCY+BURST_LENGTH+3:0] data_ready_delay1, data_ready_delay2;
++reg [15:0] dq_capture;
++reg [15:0] dq_pipe;
+ //reg [31:0] ch1_dout_;
+-//assign ch1_dout[31:0] = {ch1_dout_[31:16],data_ready_delay1[0] ? dq_reg[15:0] : ch1_dout_[15:0]};
++//assign ch1_dout[31:0] = {ch1_dout_[31:16],data_ready_delay1[0] ? dq_pipe[15:0] : ch1_dout_[15:0]};
++
++// The original controller sampled the pin on its own rising edge, only half
++// a cycle after the SDRAM launched data. At 106.25 MHz that is shorter than
++// the device's 5.5 ns maximum clock-to-data time. Capture on a dedicated PLL
++// phase on the following cycle. The Agilex HVIO input register then crosses
++// into a falling-edge controller-clock register, splitting the periphery-to-
++// fabric path from the following rising-edge consumer. This retains one word
++// per controller cycle while avoiding an impossible C4-to-C0 transfer of only
++// 1.9 ns. The ready pipeline is extended by one cycle to match this stage.
++always @(posedge clk_capture) dq_capture <= sdram_dq_in;
++always @(negedge clk) dq_pipe <= dq_capture;
+ 
+ always @(posedge clk) begin
+ 
+@@ -183,21 +218,20 @@ always @(posedge clk) begin
+ 	data_ready_delay1 <= data_ready_delay1>>1;
+ 	data_ready_delay2 <= data_ready_delay2>>1;
+ 
+-	dq_reg <= SDRAM_DQ;
+-
+ 	// MSB Byte is read/written FIRST now. ElectronAsh.
+-	if(data_ready_delay1[3]) ch1_dout[31:16] <= dq_reg;
+-	if(data_ready_delay1[2]) ch1_dout[15:00] <= dq_reg;
+-	if(data_ready_delay1[1]) ch1_dout[63:48] <= dq_reg;
+-	if(data_ready_delay1[0]) ch1_dout[47:32] <= dq_reg;
++	if(data_ready_delay1[3]) ch1_dout[31:16] <= dq_pipe;
++	if(data_ready_delay1[2]) ch1_dout[15:00] <= dq_pipe;
++	if(data_ready_delay1[1]) ch1_dout[63:48] <= dq_pipe;
++	if(data_ready_delay1[0]) ch1_dout[47:32] <= dq_pipe;
+ 	if(data_ready_delay1[2] && ~ch1_64) ch1_ready <= 1;
+ 	if(data_ready_delay1[0] && ch1_64) ch1_ready <= 1;
+ 
+-	if(data_ready_delay2[1]) ch2_dout[31:16] <= dq_reg;
+-	if(data_ready_delay2[0]) ch2_dout[15:00] <= dq_reg;
++	if(data_ready_delay2[1]) ch2_dout[31:16] <= dq_pipe;
++	if(data_ready_delay2[0]) ch2_dout[15:00] <= dq_pipe;
+ 	if(data_ready_delay2[0]) ch2_ready <= 1;
+ 
+-	SDRAM_DQ <= 16'bZ;
++	sdram_dq_out <= 16'd0;
++	sdram_dq_oe <= 1'b0;
+ 
+ 	if (ch2_req) begin
+ 		ch2_rq      <= 1;
+@@ -249,21 +283,24 @@ always @(posedge clk) begin
+ 				// activate bank 0
+ 				SDRAM_A <= {13'h0000}; // no auto precharge
+ 				command  <= CMD_WRITE;
+-				SDRAM_DQ <= 16'h0;
++				sdram_dq_out <= 16'h0;
++				sdram_dq_oe <= 1'b1;
+ 				SDRAM_A[12:11] <= 2'b00; //~be; always write
+ 			end
+ 			if (refresh_count == startup_refresh_max-28) begin
+ 				// Write 2 to column 0
+ 				SDRAM_A <= {13'h0000}; // no auto precharge
+ 				command  <= CMD_WRITE;
+-				SDRAM_DQ <= 16'h2;
++				sdram_dq_out <= 16'h2;
++				sdram_dq_oe <= 1'b1;
+ 				SDRAM_A[12:11] <= 2'b00; //~be; always write
+ 			end
+ 			if (refresh_count == startup_refresh_max-27) begin
+ 				// Write 1 to column bit-9
+ 				SDRAM_A <= {13'h0200}; // no auto precharge
+ 				command  <= CMD_WRITE;
+-				SDRAM_DQ <= 16'h1;
++				sdram_dq_out <= 16'h1;
++				sdram_dq_oe <= 1'b1;
+ 				SDRAM_A[12:11] <= 2'b00; //~be; always write
+ 			end
+ 			if (refresh_count == startup_refresh_max-26) begin
+@@ -271,9 +308,9 @@ always @(posedge clk) begin
+ 				SDRAM_A <= {13'h0000}; // no auto precharge
+ 				command <= CMD_READ;
+ 			end
+-			if (refresh_count == startup_refresh_max-24+CAS_LATENCY) begin
++			if (refresh_count == startup_refresh_max-23+CAS_LATENCY) begin
+ 				// If column 9-bit write didn't overwrite column 0 then 64MB
+-				ram64 <= (dq_reg[0] == 1'b0);
++				ram64 <= (dq_pipe[0] == 1'b0);
+ 			end
+ 			if (refresh_count == startup_refresh_max-24+CAS_LATENCY+BURST_LENGTH) begin
+ 				// Close bank
+@@ -344,7 +381,7 @@ always @(posedge clk) begin
+ 				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,1'b0,ch1_reqr?ch1_addr[10:3]:saved_addr[10:3],1'b0}; // no auto precharge
+ 				command <= CMD_READ;
+ 				state   <= ch1_64 ? STATE_RW1 : STATE_IDLE_4;
+-				data_ready_delay1[CAS_LATENCY+BURST_LENGTH+2] <= 1;
++				data_ready_delay1[CAS_LATENCY+BURST_LENGTH+3] <= 1;
+ 				saved_addr <= ch1_reqr?ch1_addr[10:3]:saved_addr[10:3];
+ 				saved_wr   <= 0;
+ 				ch1_rqr <= 0;
+@@ -354,7 +391,8 @@ always @(posedge clk) begin
+ 														// Note: this will only work for accesses where we're in STATE_IDLE when ch1_req pulses High.
+ 				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,1'b0,ch1_caddr[7:0],1'b0}; // no auto precharge
+ 				command  <= CMD_WRITE;
+-				SDRAM_DQ <= ch1_din[31:16];
++				sdram_dq_out <= ch1_din[31:16];
++				sdram_dq_oe <= 1'b1;
+ 				SDRAM_A[12:11] <= ~ch1_be[3:2];
+ 				state <= STATE_RW2;
+ 				saved_data <= ch1_din;
+@@ -386,13 +424,14 @@ always @(posedge clk) begin
+ 			SDRAM_A <= cas_addr;
+ 			if(saved_wr) begin
+ 				command  <= CMD_WRITE;
+-				SDRAM_DQ <= saved_data[31:16];
++				sdram_dq_out <= saved_data[31:16];
++				sdram_dq_oe <= 1'b1;
+ 				SDRAM_A[12:11] <= saved_mask[3:2];//(ch == 0) ? saved_mask[3:2] : 2'b00; //~be; always write
+ 				state <= (ch == 0) ? STATE_RW2 : STATE_IDLE_3;
+ 			end else if (ch == 1) begin
+ 				command <= CMD_READ;
+ 				state   <= STATE_IDLE_3;
+-				data_ready_delay2[CAS_LATENCY+BURST_LENGTH] <= 1;
++				data_ready_delay2[CAS_LATENCY+BURST_LENGTH+1] <= 1;
+ 			end else begin
+ 				state   <= STATE_RW2;
+ 			end
+@@ -402,7 +441,8 @@ always @(posedge clk) begin
+ 			if (saved_wr) begin
+ 				state       <= ch1_64 ? STATE_RW3 : STATE_IDLE;
+ 				command     <= CMD_WRITE;
+-				SDRAM_DQ <= saved_data[15:0];
++				sdram_dq_out <= saved_data[15:0];
++				sdram_dq_oe <= 1'b1;
+ 				SDRAM_A[12:11] <= saved_mask[1:0];
+ 				SDRAM_A[0] <= 1'b1;
+ 				ch1_ready   <= ch1_64 ? 1'b0 : 1'b1;
+@@ -416,7 +456,8 @@ always @(posedge clk) begin
+ 		STATE_RW3: begin
+ 			state       <= STATE_RW4;
+ 			command     <= CMD_WRITE;
+-			SDRAM_DQ <= saved_data[63:48];
++			sdram_dq_out <= saved_data[63:48];
++			sdram_dq_oe <= 1'b1;
+ 			SDRAM_A[12:11] <= saved_mask[7:6];
+ 			SDRAM_BA <= {2'b01};
+ 			SDRAM_A[0] <= 1'b0;
+@@ -425,7 +466,8 @@ always @(posedge clk) begin
+ 		STATE_RW4: begin
+ 			state       <= STATE_IDLE;
+ 			command     <= CMD_WRITE;
+-			SDRAM_DQ <= saved_data[47:32];
++			sdram_dq_out <= saved_data[47:32];
++			sdram_dq_oe <= 1'b1;
+ 			SDRAM_A[12:11] <= saved_mask[5:4];
+ 			SDRAM_A[0] <= 1'b1;
+ 			ch1_ready   <= 1;
+@@ -464,34 +506,8 @@ always @(posedge clk) begin
+ 		ch2_ready <= 0;
+ 	end
+ end
+-wire [3:0] ch_tmp = ch2_addr[23:20]==4'h5 ? ch3_addr[23:20] : ch2_addr[23:20]==4'h4 ? ch3_addr[19:16] : ch2_addr[23:20]==4'h3 ? ch3_addr[15:12]
+-                  : ch2_addr[23:20]==4'h2 ? ch3_addr[11:8]  : ch2_addr[23:20]==4'h1 ? ch3_addr[7:4]   : ch2_addr[23:20]==4'h0 ? ch3_addr[3:0]
+-						: ch2_addr[23:20];
+-
+-altddio_out
+-#(
+-	.extend_oe_disable("OFF"),
+-	.intended_device_family("Cyclone V"),
+-	.invert_output("OFF"),
+-	.lpm_hint("UNUSED"),
+-	.lpm_type("altddio_out"),
+-	.oe_reg("UNREGISTERED"),
+-	.power_up_high("OFF"),
+-	.width(1)
+-)
+-sdramclk_ddr
+-(
+-	.datain_h(1'b0),
+-	.datain_l(1'b1),
+-	.outclock(clk),
+-	.dataout(SDRAM_CLK),
+-	.aclr(1'b0),
+-	.aset(1'b0),
+-	.oe(1'b1),
+-	.outclocken(1'b1),
+-	.sclr(1'b0),
+-	.sset(1'b0)
+-);
++// Dedicated PLL output replaces the removed Cyclone V DDR clock primitive.
++assign SDRAM_CLK = clk_physical;
+ 
+ endmodule
+ 
+@@ -588,4 +604,3 @@ dpram #(.addr_width(15), .data_width(8)) dram_bram_inst3
+ 	.q_b       ( dout_b[7:0] )
+ );
+ endmodule
+-
+diff --git a/rtl/nuked-68k/68k.v b/rtl/nuked-68k/68k.v
+index bd9bf3f..d789aae 100644
+--- a/rtl/nuked-68k/68k.v
++++ b/rtl/nuked-68k/68k.v
+@@ -572,8 +572,8 @@ module m68kcpu
+ 	reg [67:0] w529;
+ 	//reg [271:0] ucode[0:33];
+ 	//reg [271:0] ncode[0:83];
+-	(* ramstyle = "M10K" *) reg [271:0] ucode[0:63];
+-	(* ramstyle = "M10K" *) reg [271:0] ncode[0:255];
++	(* ramstyle = "AUTO" *) reg [271:0] ucode[0:63];
++	(* ramstyle = "AUTO" *) reg [271:0] ncode[0:255];
+ 	reg [15:0] w530;
+ 	wire [170:0] a0_pla;
+ 	reg [164:20] a0_pla_mem;
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+index ad59e00..bbfedba 100644
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -113,7 +113,13 @@ output        SDRAM_CLK,
+ output        SDRAM_CKE,
+ output [12:0] SDRAM_A,
+ output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++input  [15:0] de25_sdram_dq_in,
++output [15:0] de25_sdram_dq_out,
++output        de25_sdram_dq_oe,
++`else
+ inout  [15:0] SDRAM_DQ,
++`endif
+ output        SDRAM_DQML,
+ output        SDRAM_DQMH,
+ output        SDRAM_nCS,
+diff --git a/sys/hps_io.sv b/sys/hps_io.sv
+index 1df2e02..1f4162f 100644
+--- a/sys/hps_io.sv
++++ b/sys/hps_io.sv
+@@ -259,6 +259,15 @@ reg [31:0] ps2_key_raw = 0;
+ wire       pressed  = (ps2_key_raw[15:8] != 8'hf0);
+ wire       extended = (~pressed ? (ps2_key_raw[23:16] == 8'he0) : (ps2_key_raw[15:8] == 8'he0));
+ 
++reg  [7:0] kbd_data;
++reg        kbd_we;
++wire [8:0] kbd_data_host;
++reg        kbd_rd;
++reg  [7:0] mouse_data;
++reg        mouse_we;
++wire [8:0] mouse_data_host;
++reg        mouse_rd;
++
+ reg [MAX_W:0] byte_cnt;
+ reg   [3:0] sdn_ack;
+ wire [15:0] disk = 16'd1 << io_din[11:8];
+@@ -559,11 +568,6 @@ generate
+ 			end
+ 		end
+ 
+-		reg  [7:0] kbd_data;
+-		reg        kbd_we;
+-		wire [8:0] kbd_data_host;
+-		reg        kbd_rd;
+-
+ 		ps2_device keyboard
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -582,11 +586,6 @@ generate
+ 			.rd(kbd_rd)
+ 		);
+ 
+-		reg  [7:0] mouse_data;
+-		reg        mouse_we;
+-		wire [8:0] mouse_data_host;
+-		reg        mouse_rd;
+-
+ 		ps2_device mouse
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -1026,9 +1025,12 @@ module confstr_rom #(parameter CONF_STR, STRLEN)
+ 	output reg [7:0] conf_byte
+ );
+ 
+-reg [7:0] rom[STRLEN];
++localparam ADDR_WIDTH = $clog2(STRLEN+1);
++localparam ROM_DEPTH = 1 << ADDR_WIDTH;
++reg [7:0] rom[ROM_DEPTH];
+ 
+ initial begin
++	for(int i = 0; i < ROM_DEPTH; i++) rom[i] = 0;
+ 	if( CONF_STR=="" )
+ 		$readmemh("cfgstr.hex",rom);
+ 	else
+diff --git a/sys/hq2x.sv b/sys/hq2x.sv
+index f5fcc71..deef1fc 100644
+--- a/sys/hq2x.sv
++++ b/sys/hq2x.sv
+@@ -306,7 +306,7 @@ module Blend
+ 	input  [23:0] D,
+ 	input  [23:0] F,
+ 	input  [23:0] H,
+-	output [23:0] Result
++	output reg [23:0] Result
+ );
+ 
+ 	localparam BLEND1 = 7'b110_10_00; // (A * 12 + B * 4        ) >> 4
+diff --git a/sys/video_mixer.sv b/sys/video_mixer.sv
+index e53e1c0..6ccf4f9 100644
+--- a/sys/video_mixer.sv
++++ b/sys/video_mixer.sv
+@@ -20,7 +20,8 @@ module video_mixer
+ #(
+ 	parameter LINE_LENGTH  = 768,
+ 	parameter HALF_DEPTH   = 0,
+-	parameter GAMMA        = 0
++	parameter GAMMA        = 0,
++	parameter DWIDTH       = HALF_DEPTH ? 3 : 7
+ )
+ (
+ 	input            CLK_VIDEO, // should be multiple by (ce_pix*4)
+@@ -59,9 +60,13 @@ module video_mixer
+ 	output reg       VGA_DE
+ );
+ 
+-localparam DWIDTH = HALF_DEPTH ? 3 : 7;
+-localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
+-localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
++localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam RIN_DWIDTH = GAMMA ? 7 : DWIDTH;
++
++wire [RIN_DWIDTH:0] R_in;
++wire [RIN_DWIDTH:0] G_in;
++wire [RIN_DWIDTH:0] B_in;
+ 
+ wire frz_hs, frz_vs;
+ wire frz_hbl, frz_vbl;
+@@ -88,17 +93,17 @@ always @(posedge CLK_VIDEO) begin
+ 	frz  <= frz1;
+ end
+ 
+-generate
+-	if(GAMMA && HALF_DEPTH) begin
+-		wire [7:0] R_in  = frz ? 8'd0 : {R,R};
+-		wire [7:0] G_in  = frz ? 8'd0 : {G,G};
+-		wire [7:0] B_in  = frz ? 8'd0 : {B,B};
+-	end else begin
+-		wire [DWIDTH:0] R_in = frz ? 1'd0 : R;
+-		wire [DWIDTH:0] G_in = frz ? 1'd0 : G;
+-		wire [DWIDTH:0] B_in = frz ? 1'd0 : B;
+-	end
+-endgenerate
++generate
++	if(GAMMA && HALF_DEPTH) begin
++		assign R_in = frz ? 8'd0 : {R,R};
++		assign G_in = frz ? 8'd0 : {G,G};
++		assign B_in = frz ? 8'd0 : {B,B};
++	end else begin
++		assign R_in = frz ? '0 : R;
++		assign G_in = frz ? '0 : G;
++		assign B_in = frz ? '0 : B;
++	end
++endgenerate
+ 
+ wire hs_g, vs_g;
+ wire hb_g, vb_g;

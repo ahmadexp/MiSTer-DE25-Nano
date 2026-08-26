@@ -1,0 +1,48 @@
+diff --git a/sys/osd.v b/sys/osd.v
+index 4d04b5b..2f27fbe 100644
+--- a/sys/osd.v
++++ b/sys/osd.v
+@@ -4,6 +4,7 @@
+ module osd
+ (
+ 	input         clk_sys,
++	input         menu_core,
+ 	input         io_osd,
+ 	input         io_strobe,
+ 	input  [15:0] io_din,
+@@ -22,15 +23,14 @@ module osd
+ );
+ 
+ parameter  OSD_COLOR    =  3'd4;
+-parameter  MENU_CORE    =  0;
+ 
+ localparam OSD_WIDTH    = 12'd256;
+ localparam OSD_HEIGHT   = 12'd64;
+ 
+-localparam OSD_HDR      = MENU_CORE ? 12'd24 : 12'd0;
++wire [11:0] osd_hdr     = menu_core ? 12'd24 : 12'd0;
+ 
+ reg        osd_enable;
+-(* ramstyle="no_rw_check" *) reg  [7:0] osd_buffer[0:(OSD_HDR ? (4096+1024) : 4096)-1];
++(* ramstyle="no_rw_check" *) reg  [7:0] osd_buffer[0:5119];
+ 
+ reg        info = 0;
+ reg  [8:0] infoh;
+@@ -124,7 +124,7 @@ reg        v_cnt_h, v_cnt_1, v_cnt_2, v_cnt_3, v_cnt_4;
+ reg [21:0] v_osd_start_h, v_osd_start_1, v_osd_start_2, v_osd_start_3, v_osd_start_4, v_osd_start_5;
+ reg [21:0] v_info_start_h, v_info_start_1, v_info_start_2, v_info_start_3, v_info_start_4, v_info_start_5;
+ 
+-wire [21:0] osd_h_hdr = (info || rot) ? osd_h : (osd_h + OSD_HDR);
++wire [21:0] osd_h_hdr = (info || rot) ? osd_h : (osd_h + osd_hdr);
+ 
+ // pipeline the comparisons a bit
+ always @(posedge clk_video) if(ce_pix) begin
+@@ -241,7 +241,7 @@ always @(posedge clk_video) begin
+ 			if(v_osd_start == v_cnt) begin
+ 				{osd_div,osd_vcnt} <= 0;
+ 				if(info && rot == 3) osd_vcnt <= 22'd256-infow;
+-				else if(OSD_HDR && !rot) osd_vcnt <= {~info, 3'b000, ~info, 7'b0000000};
++				else if(osd_hdr != 0 && !rot) osd_vcnt <= {~info, 3'b000, ~info, 7'b0000000};
+ 			end
+ 		end
+ 

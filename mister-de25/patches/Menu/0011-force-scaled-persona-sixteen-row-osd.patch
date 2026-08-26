@@ -1,0 +1,38 @@
+From: DE25-Nano port
+Subject: [PATCH] Keep fixed-scaled persona OSD at sixteen rows
+
+Main may enable an in-core menu before its line-8 bitmap transaction reaches
+the compositor. Accept an explicit platform geometry input so fixed-scaled
+DE25 personas expose all sixteen buffered rows immediately. Informational
+overlays retain their requested dimensions.
+
+diff --git a/sys/osd.v b/sys/osd.v
+--- a/sys/osd.v
++++ b/sys/osd.v
+@@ -6,6 +6,7 @@ module osd
+ (
+ 	input         clk_sys,
+ 	input         menu_core,
++	input         force_highres,
+ 	input         io_osd,
+ 	input         io_strobe,
+ 	input  [15:0] io_din,
+@@ -53,12 +54,13 @@ always@(posedge clk_sys) begin
+ 
+ 	osd_t <= rot[0] ? OSD_WIDTH : (OSD_HEIGHT<<1);
+-	// The Menu persona always owns a 16-row bitmap. Main may issue a partial
+-	// redraw before sending the high-resolution write flag, so do not let that
+-	// transient collapse the viewport to eight rows and clip its lower half.
++	// Menu and fixed-scaled DE25 personas always own a 16-row bitmap. Main may
++	// enable an in-core menu before sending the line-8 write that normally sets
++	// highres, so keep their viewport tall enough to expose every buffered row.
+ 	osd_h <= rot[0] ? (info ? infow : OSD_WIDTH) :
+-	         info ? infoh : (OSD_HEIGHT<<(highres | menu_core));
++	         info ? infoh : (OSD_HEIGHT<<(highres | menu_core | force_highres));
+ 	osd_w <= rot[0] ? (info ? infoh :
+-	         (OSD_HEIGHT<<(highres | menu_core))) : (info ? infow : OSD_WIDTH);
++	         (OSD_HEIGHT<<(highres | menu_core | force_highres))) :
++	         (info ? infow : OSD_WIDTH);
+ 
+ 	old_strobe <= io_strobe;
+ 

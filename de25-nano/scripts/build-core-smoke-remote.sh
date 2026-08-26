@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+target_root="$repo_root/de25-nano"
+remote=${DE25_BUILD_HOST:-user@192.168.1.18}
+remote_root=${DE25_REMOTE_ROOT:-PC110-Mister-de25}
+
+ssh "$remote" "mkdir -p '$remote_root/de25-nano' '$remote_root/rtl'"
+rsync -az --delete "$repo_root/rtl/" "$remote:$remote_root/rtl/"
+rsync -az --delete \
+    --exclude artifacts \
+    --exclude ip/ip \
+    --exclude ip/pc110_pll \
+    --exclude ip/pc110_pll.qsys \
+    --exclude quartus/db \
+    --exclude quartus/dni \
+    --exclude quartus/incremental_db \
+    --exclude quartus/output_files \
+    --exclude quartus/output_files_clocks \
+    --exclude quartus/output_files_core_smoke \
+    --exclude quartus/qdb \
+    "$target_root/" "$remote:$remote_root/de25-nano/"
+
+ssh -t "$remote" "cd '$remote_root/de25-nano' && chmod +x scripts/*.sh && scripts/build-core-smoke.sh"
+
+mkdir -p "$target_root/artifacts"
+rsync -az \
+    "$remote:$remote_root/de25-nano/quartus/output_files_core_smoke/DE25_PC110_CORE_SMOKE.sof" \
+    "$target_root/artifacts/"

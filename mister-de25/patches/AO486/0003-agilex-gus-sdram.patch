@@ -1,0 +1,306 @@
+diff --git a/ao486.sv b/ao486.sv
+index 07e3a06..d45c3db 100644
+--- a/ao486.sv
++++ b/ao486.sv
+@@ -24,7 +24,7 @@ module emu
+ 	`ifdef DE25_AGILEX_PLL
+ 	input wire DE25_CLK_VGA,
+ 	`endif
+-	`include "sys/emu_ports.vh"
++	`include "sys/emu_ports.vh"
+ );
+ 
+ //`define DEBUG
+@@ -238,6 +238,9 @@ hps_ext hps_ext
+ /////////////////////////////  PLL  ////////////////////////////////////
+ 
+ wire clk_sys, clk_uart1, clk_uart2, clk_mpu, clk_vga;
++`ifdef DE25_AGILEX_PLL
++wire clk_sdram_physical;
++`endif
+ wire pll_locked;
+ wire pll_busy;
+ wire pll_error;
+@@ -363,6 +366,7 @@ de25_ao486_pll pll
+ 	.speed(speed),
+ 	.uart_slow(uspeed),
+ 	.clk_sys(clk_sys),
++	.clk_sdram_physical(clk_sdram_physical),
+ 	.clk_uart1(clk_uart1),
+ 	.clk_uart2(clk_uart2),
+ 	.clk_mpu(clk_mpu),
+@@ -803,6 +807,9 @@ system system
+ 	.DDRAM_WE             (DDRAM_WE),
+ 
+ 	.pll_locked           (pll_locked),
++`ifdef DE25_AGILEX_PLL
++	.sdram_clk_physical   (clk_sdram_physical),
++`endif
+ `ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
+ 	.SDRAM_DQ_IN          (de25_sdram_dq_in),
+ 	.SDRAM_DQ_OUT         (de25_sdram_dq_out),
+diff --git a/rtl/soc/gus/gus.v b/rtl/soc/gus/gus.v
+index 3044eae..78a13c1 100644
+--- a/rtl/soc/gus/gus.v
++++ b/rtl/soc/gus/gus.v
+@@ -26,6 +26,9 @@ module gus    // ULTRASND IO = 240, IRQ = 7, DMA = 7
+ 	output [15:0] audio_r,
+ 
+ 	input         pll_locked,
++`ifdef DE25_AGILEX_PLL
++	input         sdram_clk_physical,
++`endif
+ 	output        SDRAM_CLK,
+ 	output        SDRAM_CKE,
+ 	output [12:0] SDRAM_A,
+@@ -73,6 +76,11 @@ wire dram_we;
+ sdram sdram (
+ 	.init             (~pll_locked),
+ 	.clk              (clk),
++	.clock_rate       (clock_rate),
++	.active           (pll_locked),
++`ifdef DE25_AGILEX_PLL
++	.clk_physical     (sdram_clk_physical),
++`endif
+ 	.addr             (dram_addr),
+ 	.dout             (DRAM_i),
+ 	.din              (DRAM_o),
+diff --git a/rtl/soc/gus/sdram.sv b/rtl/soc/gus/sdram.sv
+index 66ada3d..41718c6 100644
+--- a/rtl/soc/gus/sdram.sv
++++ b/rtl/soc/gus/sdram.sv
+@@ -30,6 +30,11 @@ module sdram
+ (
+    input             init,        // reset to initialize RAM
+    input             clk,         // clock ~100MHz
++   input      [27:0] clock_rate,  // actual controller clock frequency
++   input             active,      // low before or during PLL reconfiguration
++`ifdef DE25_AGILEX_PLL
++   input             clk_physical,// phase-shifted clock forwarded to SDRAM
++`endif
+                                   //
+                                   // SDRAM_* - signals to the MT48LC16M16 chip
+ `ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
+@@ -60,7 +65,9 @@ module sdram
+    output reg        ready        // dout is valid. Ready to accept new read/write.
+ );
+ 
+-assign SDRAM_CKE  = 1;
++reg  [2:0] command;
++
++assign SDRAM_CKE  = active;
+ assign SDRAM_nCS  = 0;
+ assign SDRAM_nRAS = command[2];
+ assign SDRAM_nCAS = command[1];
+@@ -83,10 +90,27 @@ localparam OP_MODE             = 2'b00;    // only 00 (standard operation) allow
+ localparam NO_WRITE_BURST      = 1'b1;     // 0= write burst enabled, 1=only single access write
+ localparam MODE                = {3'b000, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
+ 
+-localparam sdram_startup_cycles= 14'd12100;// 100us, plus a little more, @ 100MHz
+-localparam cycles_per_refresh  = 14'd780;  // (64000*100)/8192-1 Calc'd as (64ms @ 100MHz)/8192 rose
++localparam sdram_startup_cycles= 14'd12100;// >=100us for every supported rate
+ localparam startup_refresh_max = 14'b11111111111111;
+ 
++// Leave enough margin for the longest in-flight GUS access before issuing an
++// AUTO REFRESH. The old fixed 780-cycle limit was valid only near 100 MHz and
++// under-refreshed the SDRAM at ao486's 56.25, 30, and 15 MHz profiles.
++function automatic [13:0] refresh_limit(input [27:0] rate);
++begin
++	case(rate)
++		100_000_000: refresh_limit = 14'd700;
++		 90_000_000: refresh_limit = 14'd630;
++		 56_250_000: refresh_limit = 14'd394;
++		 30_000_000: refresh_limit = 14'd210;
++		 15_000_000: refresh_limit = 14'd105;
++		default:     refresh_limit = 14'd630;
++	endcase
++end
++endfunction
++
++wire [13:0] cycles_per_refresh = refresh_limit(clock_rate);
++
+ // SDRAM commands
+ wire [2:0] CMD_NOP             = 3'b111;
+ wire [2:0] CMD_ACTIVE          = 3'b011;
+@@ -97,7 +121,6 @@ wire [2:0] CMD_AUTO_REFRESH    = 3'b001;
+ wire [2:0] CMD_LOAD_MODE       = 3'b000;
+ 
+ reg [13:0] refresh_count = startup_refresh_max - sdram_startup_cycles;
+-reg  [2:0] command;
+ reg [24:0] save_addr;
+ reg        save_word;
+ 
+@@ -112,17 +135,19 @@ typedef enum
+ 	STATE_IDLE_4, STATE_IDLE_5, STATE_IDLE_6, STATE_IDLE_7
+ } state_t;
+ 
+-always @(posedge clk) begin
+-	reg old_we, old_rd;
+-	reg [CAS_LATENCY:0] data_ready_delay;
+-
+-	reg [15:0] new_data;
+-	reg        new_we;
+-	reg        new_rd;
+-	reg        save_we = 1;
+-
+-	state_t state = STATE_STARTUP;
++// Keep controller state at module scope. Quartus Pro can incorrectly fold
++// procedural block declarations in this legacy controller, which removed the
++// GUS read/write datapath and left the physical DQ output undriven.
++reg old_we;
++reg old_rd;
++reg [CAS_LATENCY:0] data_ready_delay;
++reg [15:0] new_data;
++reg new_we;
++reg new_rd;
++reg save_we;
++state_t state;
+ 
++always @(posedge clk) begin
+ 	SDRAM_DQ_OE <= 1'b0;
+ 	command  <= CMD_NOP;
+ 	refresh_count  <= refresh_count+1'b1;
+@@ -168,7 +193,7 @@ always @(posedge clk) begin
+ 		STATE_IDLE_1: begin
+ 			state      <= STATE_IDLE;
+ 			// mask possible refresh to reduce colliding.
+-			if(refresh_count > cycles_per_refresh) begin
++			if(refresh_count >= cycles_per_refresh) begin
+ 				state    <= STATE_IDLE_7;
+ 				command  <= CMD_AUTO_REFRESH;
+ 				refresh_count <= 0;
+@@ -177,7 +202,7 @@ always @(posedge clk) begin
+ 
+ 		STATE_IDLE: begin
+ 			// Priority is to issue a refresh if one is outstanding
+-			if(refresh_count > (cycles_per_refresh<<1)) state <= STATE_IDLE_1;
++			if(refresh_count >= cycles_per_refresh) state <= STATE_IDLE_1;
+ 			else if(new_rd | new_we) begin
+ 				new_we   <= 0;
+ 				new_rd   <= 0;
+@@ -213,6 +238,14 @@ always @(posedge clk) begin
+ 	if(init) begin
+ 		state <= STATE_STARTUP;
+ 		refresh_count <= startup_refresh_max - sdram_startup_cycles;
++		data_ready_delay <= '0;
++		{old_we, old_rd, new_we, new_rd} <= '0;
++		new_data <= '0;
++		save_we <= 1'b1;
++		ready <= 1'b0;
++		SDRAM_DQ_OE <= 1'b0;
++		SDRAM_DQ_OUT <= '0;
++		command <= CMD_NOP;
+ 	end
+ 
+ 	old_we <= we;
+@@ -226,9 +259,9 @@ always @(posedge clk) begin
+ end
+ 
+ `ifdef DE25_AGILEX_PLL
+-// The Cyclone V altddio emitted a clock that is low during clk's high half.
+-// Agilex 5's clear-box flow cannot elaborate that legacy megafunction.
+-assign SDRAM_CLK = ~clk;
++// C1 is phase-related to the controller C0 output at every runtime profile.
++// Forwarding the IOPLL clock directly avoids fabric-inverter and routing skew.
++assign SDRAM_CLK = clk_physical;
+ `else
+ altddio_out
+ #(
+diff --git a/rtl/system.v b/rtl/system.v
+index 167fe23..3fa6731 100644
+--- a/rtl/system.v
++++ b/rtl/system.v
+@@ -100,9 +100,9 @@ module system
+ 	output        video_blank_n,
+ 	output        video_hsync,
+ 	output        video_vsync,
+-	output [7:0]  video_r,
+-	output [7:0]  video_g,
+-	output [7:0]  video_b,
++	output [7:0]  video_r,
++	output [7:0]  video_g,
++	output [7:0]  video_b,
+ 	output [4:0]  video_debug,
+ 	input         video_f60,
+ 	output [7:0]  video_pal_a,
+@@ -129,19 +129,22 @@ module system
+ 	output  [7:0] DDRAM_BE,
+ 	output        DDRAM_WE,
+ 
+-	input         pll_locked,
+-	output        SDRAM_CLK,
++	input         pll_locked,
++`ifdef DE25_AGILEX_PLL
++	input         sdram_clk_physical,
++`endif
++	output        SDRAM_CLK,
+ 	output        SDRAM_CKE,
+-	output [12:0] SDRAM_A,
+-	output  [1:0] SDRAM_BA,
++	output [12:0] SDRAM_A,
++	output  [1:0] SDRAM_BA,
+ `ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
+ 	input  [15:0] SDRAM_DQ_IN,
+ 	output [15:0] SDRAM_DQ_OUT,
+ 	output        SDRAM_DQ_OE,
+ `else
+-	inout  [15:0] SDRAM_DQ,
++	inout  [15:0] SDRAM_DQ,
+ `endif
+-	output        SDRAM_DQML,
++	output        SDRAM_DQML,
+ 	output        SDRAM_DQMH,
+ 	output        SDRAM_nCS,
+ 	output        SDRAM_nCAS,
+@@ -383,8 +386,8 @@ ao486 ao486
+ 	.dma_writedata     (dma_writedata)
+ );
+ 
+-always @(posedge clk_sys) begin
+-	ide0_cs       <= ({iobus_address[15:3], 3'd0} == 16'h01F0) || ({iobus_address[15:0]} == 16'h03F6);
++always @(posedge clk_sys) begin
++	ide0_cs       <= ({iobus_address[15:3], 3'd0} == 16'h01F0) || ({iobus_address[15:0]} == 16'h03F6);
+ 	ide1_cs       <= ({iobus_address[15:3], 3'd0} == 16'h0170) || ({iobus_address[15:0]} == 16'h0376);
+ 	joy_cs        <= ({iobus_address[15:0]      } == 16'h0201);
+ 	floppy0_cs    <= ({iobus_address[15:2], 2'd0} == 16'h03F0) || ({iobus_address[15:1], 1'd0} == 16'h03F4) || ({iobus_address[15:0]} == 16'h03F7) ;
+@@ -406,9 +409,9 @@ always @(posedge clk_sys) begin
+ 	vga_b_cs      <= ({iobus_address[15:4], 4'd0} == 16'h03B0);
+ 	vga_c_cs      <= ({iobus_address[15:4], 4'd0} == 16'h03C0);
+ 	vga_d_cs      <= ({iobus_address[15:4], 4'd0} == 16'h03D0);
+-	sysctl_cs     <= ({iobus_address[15:0]      } == 16'h8888);
+-end
+-
++	sysctl_cs     <= ({iobus_address[15:0]      } == 16'h8888);
++end
++
+ `ifdef DE25_PLL_DIAGNOSTIC
+ // Keep the most recent BIOS POST byte observable through the DE25 HPS
+ // diagnostic path. Port 80h is also decoded by the DMA page block, but BIOS
+@@ -421,7 +424,7 @@ always @(posedge clk_sys) begin
+ end
+ `endif
+ 
+-reg [7:0] ctlport = 0;
++reg [7:0] ctlport = 0;
+ always @(posedge clk_sys) begin
+ 	reg in_reset = 1;
+ 	if(reset) begin
+@@ -800,13 +803,16 @@ gus gus
+ 
+ 	.irq               (gus_irq),
+ 
+-	.pll_locked        (pll_locked),
++	.pll_locked        (pll_locked),
++`ifdef DE25_AGILEX_PLL
++	.sdram_clk_physical(sdram_clk_physical),
++`endif
+ `ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
+ 	.SDRAM_DQ_IN       (SDRAM_DQ_IN),
+ 	.SDRAM_DQ_OUT      (SDRAM_DQ_OUT),
+ 	.SDRAM_DQ_OE       (SDRAM_DQ_OE),
+ `else
+-	.SDRAM_DQ          (SDRAM_DQ),
++	.SDRAM_DQ          (SDRAM_DQ),
+ `endif
+ 	.SDRAM_A           (SDRAM_A),
+ 	.SDRAM_DQML        (SDRAM_DQML),

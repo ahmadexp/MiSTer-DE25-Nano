@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Fri, 14 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Use watchdog-guarded runtime loader
+
+Delegate DE25 fabric programming to the platform loader so Main uses the same
+payload validation, persistent recovery marker, and HPS hardware watchdog as
+systemd core switches. Do not restart Main after a failed transaction.
+---
+ fpga_io.cpp | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+index 1d59b68..6de2501 100644
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -159,6 +159,27 @@ static int de25_check_rbf_compatibility(const char *rbf_path)
+ 	return 0;
+ }
+ 
++static int de25_load_rbf_path(const char *rbf_path)
++{
++	pid_t child = fork();
++	if (child < 0) return -1;
++	if (!child) {
++		execl("/usr/libexec/mister-de25-load", "mister-de25-load",
++		      rbf_path, (char *)NULL);
++		_exit(127);
++	}
++
++	int status = 0;
++	while (waitpid(child, &status, 0) < 0) {
++		if (errno != EINTR) return -1;
++	}
++	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
++		errno = EIO;
++		return -1;
++	}
++	return 0;
++}
++
+ static int copy_file_to_path(const char *source_path, const char *target_path)
+ {
+ 	int in = open(source_path, O_RDONLY | O_CLOEXEC);
+@@ -680,6 +701,23 @@ int fpga_load_rbf(const char *name, const char *cfg, const char *xml)
+ 
+ 	printf("Loading RBF: %s\n", name);
+ 
++#ifdef MISTER_DE25
++	// Keep every runtime reconfiguration behind the same checksum, persistent
++	// recovery marker, and HPS hardware-watchdog transaction used by systemd.
++	// If the kernel or SDM stalls, the watchdog reboots and preload restores
++	// Menu. Do not restart Main when the guarded loader reports a failure.
++	ret = de25_load_rbf_path(path);
++	if (ret) {
++		char error[4096];
++		snprintf(error, sizeof(error), "%s\nDE25-Nano FPGA load failed", name);
++		printf("Guarded FPGA load failed for %s: %s\n", path, strerror(errno));
++		Info(error, 5000);
++		return -1;
++	}
++	app_restart(!strcasecmp(name, "menu.rbf") ? "menu.rbf" : path, xml);
++	return 0;
++#endif
++
+ 	int rbf = open(path, O_RDONLY);
+ 	if (rbf < 0)
+ 	{
+-- 
+2.43.0

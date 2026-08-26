@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+action=${1:-}
+case $action in
+    enable) value=1 ;;
+    disable) value=0 ;;
+    *)
+        echo "usage: $0 enable|disable" >&2
+        exit 2
+        ;;
+esac
+
+# Do not access Agilex 5 reset/system-manager registers through /dev/mem.
+# Those registers are owned by EL3 firmware and a userspace access raises an
+# asynchronous SError. If the device tree exposes kernel FPGA bridge drivers,
+# use their sysfs interface. Otherwise the secure FPGA-manager transaction
+# retains control of the bridge isolation state.
+shopt -s nullglob
+bridges=(/sys/class/fpga_bridge/*)
+if ((${#bridges[@]} == 0)); then
+    echo "DE25-Nano kernel exposes no FPGA bridge controls; secure firmware owns isolation"
+    exit 0
+fi
+
+for bridge in "${bridges[@]}"; do
+    if [[ -w $bridge/enable ]]; then
+        printf '%s\n' "$value" >"$bridge/enable"
+    fi
+done
+
+echo "DE25-Nano kernel FPGA bridges ${action}d"

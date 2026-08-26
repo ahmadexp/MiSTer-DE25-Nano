@@ -1,0 +1,164 @@
+diff --git a/NES.sv b/NES.sv
+--- a/NES.sv
++++ b/NES.sv
+@@ -275,7 +275,11 @@ wire  [7:0] filetype;
+ wire        ioctl_downloading;
+ reg         ioctl_download;
+ wire [24:0] ioctl_addr;
++`ifdef DE25_AGILEX_PLL_RECONFIG
++wire        ioctl_wait;
++`else
+ reg         ioctl_wait;
++`endif
+ 
+ wire [24:0] ps2_mouse;
+ wire [15:0] joy_analog0, joy_analog1;
+@@ -992,13 +996,46 @@ spram #(12, 8, "../upstream/cores/NES/rtl/loopy_NSF.mif") nsfplayrom
+ 	.q(nsf_data)
+ );
+ 
+-// loader_write -> clock when data available
++// Loader writes originate in the NES master-clock domain while external
++// SDRAM runs four times faster.  The original wrapper emitted a fixed pulse
++// without observing ch0_busy.  The DE25 bridge holds each byte until the
++// controller has both accepted and completed it, including writes presented
++// during SDRAM initialization.
++reg loader_write_triggered;
++`ifdef DE25_AGILEX_PLL_RECONFIG
++wire loader_write_mem;
++wire [7:0] loader_write_data_mem;
++wire [24:0] loader_addr_mem;
++wire de25_loader_request_seen;
++wire de25_loader_accept_seen;
++wire de25_loader_complete_seen;
++wire de25_ch0_busy;
++
++always @(posedge clk)
++	loader_write_triggered <= loader_write;
++
++de25_nes_loader_bridge de25_loader_bridge
++(
++	.src_clk(clk),
++	.src_reset(loader_reset),
++	.src_write(loader_write),
++	.src_addr(loader_addr),
++	.src_data(loader_write_data),
++	.src_wait(ioctl_wait),
++	.dst_addr(loader_addr_mem),
++	.dst_data(loader_write_data_mem),
++	.dst_clk(clk85),
++	.dst_busy(de25_ch0_busy),
++	.dst_write(loader_write_mem),
++	.src_request_seen(de25_loader_request_seen),
++	.src_accept_seen(de25_loader_accept_seen),
++	.src_complete_seen(de25_loader_complete_seen)
++);
++`else
+ reg loader_write_mem;
+ reg [7:0] loader_write_data_mem;
+ reg [24:0] loader_addr_mem;
+ 
+-reg loader_write_triggered;
+-
+ always @(posedge clk) begin
+ 	if(loader_write) begin
+ 		loader_write_triggered <= 1'b1;
+@@ -1016,6 +1053,7 @@ always @(posedge clk) begin
+ 		end
+ 	end
+ end
++`endif
+ 
+ wire [24:0] ch2_addr = sleep_savestate ? Savestate_SDRAMAddr :
+                        mapper_has_flashsaves ? {6'b000000, save_addr} : // PRG-ROM
+@@ -1054,7 +1092,11 @@ sdram sdram
+ 	.ch0_din    (  (downloading | loader_busy) ? loader_write_data_mem : ppu_dout  ),
+ 	.ch0_rd     ( ~(downloading | loader_busy)                         & ppu_read  ),
+ 	.ch0_dout   ( ppu_din   ),
+-	.ch0_busy   ( ),
++	.ch0_busy   (
++`ifdef DE25_AGILEX_PLL_RECONFIG
++		de25_ch0_busy
++`endif
++	),
+ 
+ 	.ch1_addr   ( cpu_addr  ),
+ 	.ch1_wr     ( cpu_write ),
+@@ -1191,56 +1233,37 @@ always @(posedge clk) begin
+ 		de25_ppu_active <= 1'b1;
+ end
+ `ifdef DE25_NES_PIPELINE_DIAGNOSTIC
+-// Latched pipeline flags isolate CHR delivery from later pixel generation.
+-// From MSB to LSB: PPU read seen, PPU address activity, PPU data activity,
+-// pixel enable seen, active-video seen, visible PPU color activity. Earlier
+-// builds established that reset, raster timing, PRG loading, and CPU reads
+-// are active.
+-reg [21:0] de25_last_ppu_addr = 22'd0;
+-reg  [7:0] de25_last_ppu_din = 8'd0;
+-reg  [5:0] de25_last_color = 6'd0;
++// Loader-to-execution diagnostic.  From MSB to LSB: loader request observed,
++// SDRAM accepted it, SDRAM completed it, CPU read observed, CPU read data
++// changed, and PPU read observed.  This distinguishes a failed ROM transfer
++// from a later CPU or PPU problem without requiring access to the display.
++reg  [7:0] de25_last_cpu_din = 8'd0;
++reg        de25_cpu_read_seen = 1'b0;
++reg        de25_cpu_data_active = 1'b0;
+ reg        de25_ppu_read_seen = 1'b0;
+-reg        de25_ppu_addr_active = 1'b0;
+-reg        de25_ppu_data_active = 1'b0;
+-reg        de25_ce_pix_seen = 1'b0;
+-reg        de25_vga_de_seen = 1'b0;
+-reg        de25_color_active = 1'b0;
+ always @(posedge clk) begin
+ 	if(reset_nes) begin
+-		de25_last_ppu_addr <= ppu_addr;
+-		de25_last_ppu_din <= ppu_din;
+-		de25_last_color <= color;
++		de25_last_cpu_din <= cpu_din;
++		de25_cpu_read_seen <= 1'b0;
++		de25_cpu_data_active <= 1'b0;
+ 		de25_ppu_read_seen <= 1'b0;
+-		de25_ppu_addr_active <= 1'b0;
+-		de25_ppu_data_active <= 1'b0;
+-		de25_ce_pix_seen <= 1'b0;
+-		de25_vga_de_seen <= 1'b0;
+-		de25_color_active <= 1'b0;
+ 	end else begin
++		if(cpu_read)
++			de25_cpu_read_seen <= 1'b1;
++		if(cpu_read && cpu_din != de25_last_cpu_din)
++			de25_cpu_data_active <= 1'b1;
+ 		if(ppu_read)
+ 			de25_ppu_read_seen <= 1'b1;
+-		if(ppu_read && ppu_addr != de25_last_ppu_addr)
+-			de25_ppu_addr_active <= 1'b1;
+-		if(ppu_din != de25_last_ppu_din)
+-			de25_ppu_data_active <= 1'b1;
+-		if(ce_pix)
+-			de25_ce_pix_seen <= 1'b1;
+-		if(vga_de)
+-			de25_vga_de_seen <= 1'b1;
+-		if(!nes_hblank && !nes_vblank && color != de25_last_color)
+-			de25_color_active <= 1'b1;
+-		de25_last_ppu_addr <= ppu_addr;
+-		de25_last_ppu_din <= ppu_din;
+-		de25_last_color <= color;
++		de25_last_cpu_din <= cpu_din;
+ 	end
+ end
+ assign de25_gpi_diagnostic = {
+-	de25_ppu_read_seen,
+-	de25_ppu_addr_active,
+-	de25_ppu_data_active,
+-	de25_ce_pix_seen,
+-	de25_vga_de_seen,
+-	de25_color_active
++	de25_loader_request_seen,
++	de25_loader_accept_seen,
++	de25_loader_complete_seen,
++	de25_cpu_read_seen,
++	de25_cpu_data_active,
++	de25_ppu_read_seen
+ };
+ `else
+ assign de25_gpi_diagnostic = {

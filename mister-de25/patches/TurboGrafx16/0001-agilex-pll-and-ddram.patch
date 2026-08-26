@@ -1,0 +1,709 @@
+diff --git a/TurboGrafx16.sv b/TurboGrafx16.sv
+index 649d284..cac3616 100644
+--- a/TurboGrafx16.sv
++++ b/TurboGrafx16.sv
+@@ -724,8 +724,16 @@ assign AUDIO_MIX = 0;
+ 
+ ////////////////////////////  MEMORY  //////////////////////////////////
+ 
++`ifdef DE25_AGILEX
++// The DE25 compatibility build uses the HPS LPDDR4 path. This keeps the first
++// port independent of the legacy Cyclone V SDRAM clock primitive while still
++// supporting HuCard and CD RAM through MiSTer's normal DDRAM interface.
++wire use_sdr;
++assign use_sdr = 1'b0;
++`else
+ reg use_sdr = 0;
+ always @(posedge clk_ram) if(~rom_rd) use_sdr <= LITE ? ~status[6] : |sdram_sz[14:0];
++`endif
+ 
+ wire [21:0] rom_rdaddr;
+ wire  [7:0] rom_ddata, rom_sdata;
+@@ -849,7 +857,7 @@ end
+ 
+ ////////////////////////////  INPUT  ///////////////////////////////////
+ 
+-wire [15:0] joy_data;
++logic [15:0] joy_data;
+ always_comb begin
+ 	case (joy_port)
+ 		0: joy_data = (status[27:26] == 2'b01) ? {mouse_data, mouse_data} :
+@@ -889,7 +897,7 @@ always @(posedge clk_sys) begin
+ 	end
+ end
+ 
+-wire [7:0] mouse_data;
++logic [7:0] mouse_data;
+ assign mouse_data[3:0] = ~{ joy_0[7:6] | {ps2_mouse_ext[8], ps2_mouse_ext[9]} , ps2_mouse[0], ps2_mouse[1]};
+ 
+ always_comb begin
+@@ -1095,14 +1103,18 @@ dpram_difclk #(11,8,10,16) backram
+ 	.clock0(clk_sys),
+    .address_a(bram_addr),
+ 	.data_a(bram_data),
++	.enable_a(1'b1),
+ 	.wren_a(bram_wr),
+ 	.q_a(bram_q),
++	.cs_a(1'b1),
+ 
+ 	.clock1(clk_sys),
+ 	.address_b(defbram[3] ? {sd_lba[1:0],sd_buff_addr} : defbram[2:1]),
+ 	.data_b(defbram[3] ? sd_buff_dout : defval[defbram[2:1]]),
++	.enable_b(1'b1),
+ 	.wren_b(defbram[3] ? bk_int & sd_buff_wr & sd_ack : 1'b1),
+-	.q_b(bk_int_dout)
++	.q_b(bk_int_dout),
++	.cs_b(1'b1)
+ );
+ 
+ wire downloading = cart_download;
+diff --git a/rtl/HUC6280/psg.vhd b/rtl/HUC6280/psg.vhd
+index 7fbf995..8176935 100644
+--- a/rtl/HUC6280/psg.vhd
++++ b/rtl/HUC6280/psg.vhd
+@@ -282,7 +282,10 @@ begin
+ 				CH(i).LFO_ADD <= (others => '0');
+ 			end loop;
+ 		else
+-			DATA := CH(1).WF_DATA(conv_integer(CH(1).WF_ADDR)) xor "1000";
++				-- Center the unsigned five-bit waveform around zero for the LFO.
++				-- Older tools extended the four-bit literal implicitly; VHDL's xor
++				-- operands are required to have the same width.
++				DATA := CH(1).WF_DATA(conv_integer(CH(1).WF_ADDR)) xor "10000";
+ 			CH(0).LFO_ADD(11 downto 8) <= DATA(4) & DATA(4) & DATA(4) & DATA(4);
+ 			case CH(1).LFCTL is
+ 			when "01" =>   CH(0).LFO_ADD(7 downto 0) <= DATA(4) & DATA(4) & DATA(4) & DATA;
+@@ -361,4 +364,3 @@ LDATA <= LDATA_FF;
+ RDATA <= RDATA_FF;
+ 
+ end rtl;
+-
+diff --git a/rtl/arcade.sv b/rtl/arcade.sv
+index 6d95a87..caaf712 100644
+--- a/rtl/arcade.sv
++++ b/rtl/arcade.sv
+@@ -26,10 +26,10 @@ module ARCADE_CARD
+ 	input         RD_N,
+ 	input  [20:0] A,
+ 	input   [7:0] DI,
+-	output  [7:0] DO,
++	output logic [7:0] DO,
+ 	output        SEL_N,
+ 	
+-	output        RAM_CS_N,
++	output logic  RAM_CS_N,
+ 	output [20:0] RAM_A
+ );
+ 
+@@ -44,7 +44,7 @@ typedef struct packed
+ } port_t;
+ 
+ port_t port[4];
+-wire [1:0] p;
++logic [1:0] p;
+ 
+ reg        ena;
+ reg [31:0] shift_latch;
+diff --git a/rtl/cheatcodes.sv b/rtl/cheatcodes.sv
+index f0485eb..bcbb4cf 100644
+--- a/rtl/cheatcodes.sv
++++ b/rtl/cheatcodes.sv
+@@ -15,8 +15,8 @@ module CODES(
+ 	input  [ADDR_WIDTH - 1:0] addr_in,
+ 	input  [DATA_WIDTH - 1:0] data_in,
+ 	input  [128:0] code,
+-	output genie_ovr,
+-	output [DATA_WIDTH - 1:0] genie_data
++	output logic genie_ovr,
++	output logic [DATA_WIDTH - 1:0] genie_data
+ );
+ 
+ parameter ADDR_WIDTH   = 16; // Not more than 32
+diff --git a/rtl/dpram.vhd b/rtl/dpram.vhd
+index 66a948e..796e619 100644
+--- a/rtl/dpram.vhd
++++ b/rtl/dpram.vhd
+@@ -37,18 +37,22 @@ ARCHITECTURE SYN OF dpram IS
+ 	signal q1 : std_logic_vector((data_width - 1) downto 0);
+ 
+ BEGIN
+-	q_a<= q0 when cs_a = '1' else (others => disable_value);
+-	q_b<= q1 when cs_b = '1' else (others => disable_value);
++	-- Agilex true dual-port RAM uses a common clock. Explicit forwarding keeps
++	-- the legacy NEW_DATA read-during-write behavior on each local port.
++	q_a<= data_a when cs_a = '1' and enable_a = '1' and wren_a = '1' else
++	      q0 when cs_a = '1' else (others => disable_value);
++	q_b<= data_b when cs_b = '1' and enable_b = '1' and wren_b = '1' else
++	      q1 when cs_b = '1' else (others => disable_value);
+ 
+ 	altsyncram_component : altsyncram
+ 	GENERIC MAP (
+-		address_reg_b => "CLOCK1",
+-		clock_enable_input_a => "NORMAL",
+-		clock_enable_input_b => "NORMAL",
++		address_reg_b => "CLOCK0",
++		clock_enable_input_a => "BYPASS",
++		clock_enable_input_b => "BYPASS",
+ 		clock_enable_output_a => "BYPASS",
+ 		clock_enable_output_b => "BYPASS",
+-		indata_reg_b => "CLOCK1",
+-		intended_device_family => "Cyclone V",
++		indata_reg_b => "CLOCK0",
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",
+ 		numwords_a => 2**addr_width,
+ 		numwords_b => 2**addr_width,
+@@ -58,8 +62,8 @@ BEGIN
+ 		outdata_reg_a => "UNREGISTERED",
+ 		outdata_reg_b => "UNREGISTERED",
+ 		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
+-		read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
++		read_during_write_mode_port_a => "DONT_CARE",
++		read_during_write_mode_port_b => "DONT_CARE",
+ 		init_file => mem_init_file, 
+ 		widthad_a => addr_width,
+ 		widthad_b => addr_width,
+@@ -67,110 +71,16 @@ BEGIN
+ 		width_b => data_width,
+ 		width_byteena_a => 1,
+ 		width_byteena_b => 1,
+-		wrcontrol_wraddress_reg_b => "CLOCK1"
++		wrcontrol_wraddress_reg_b => "CLOCK0"
+ 	)
+ 	PORT MAP (
+ 		address_a => address_a,
+ 		address_b => address_b,
+ 		clock0 => clock,
+-		clock1 => clock,
+-		clocken0 => enable_a,
+-		clocken1 => enable_b,
+-		data_a => data_a,
+-		data_b => data_b,
+-		wren_a => wren_a and cs_a,
+-		wren_b => wren_b and cs_b,
+-		q_a => q0,
+-		q_b => q1
+-	);
+-
+-END SYN;
+-
+-LIBRARY ieee;
+-USE ieee.std_logic_1164.all;
+-
+-LIBRARY altera_mf;
+-USE altera_mf.altera_mf_components.all;
+-
+-entity dpram_difclk is
+-	generic (
+-		addr_width_a  : integer := 8;
+-		data_width_a  : integer := 8;
+-		addr_width_b  : integer := 8;
+-		data_width_b  : integer := 8;
+-		mem_init_file : string := " "
+-	);
+-	PORT
+-	(
+-		clock0		: in  STD_LOGIC;
+-		clock1		: in  STD_LOGIC;
+-		
+-		address_a	: in  STD_LOGIC_VECTOR (addr_width_a-1 DOWNTO 0);
+-		data_a		: in  STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0) := (others => '0');
+-		enable_a		: in  STD_LOGIC := '1';
+-		wren_a		: in  STD_LOGIC := '0';
+-		q_a			: out STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0);
+-		cs_a        : in  std_logic := '1';
+-
+-		address_b	: in  STD_LOGIC_VECTOR (addr_width_b-1 DOWNTO 0) := (others => '0');
+-		data_b		: in  STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0) := (others => '0');
+-		enable_b		: in  STD_LOGIC := '1';
+-		wren_b		: in  STD_LOGIC := '0';
+-		q_b			: out STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0);
+-		cs_b        : in  std_logic := '1'
+-	);
+-end entity;
+-
+-
+-ARCHITECTURE SYN OF dpram_difclk IS
+-
+-	signal q0 : std_logic_vector((data_width_a - 1) downto 0);
+-	signal q1 : std_logic_vector((data_width_b - 1) downto 0);
+-
+-BEGIN
+-	q_a<= q0 when cs_a = '1' else (others => '1');
+-	q_b<= q1 when cs_b = '1' else (others => '1');
+-
+-	altsyncram_component : altsyncram
+-	GENERIC MAP (
+-		address_reg_b => "CLOCK1",
+-		clock_enable_input_a => "NORMAL",
+-		clock_enable_input_b => "NORMAL",
+-		clock_enable_output_a => "BYPASS",
+-		clock_enable_output_b => "BYPASS",
+-		indata_reg_b => "CLOCK1",
+-		intended_device_family => "Cyclone V",
+-		lpm_type => "altsyncram",
+-		numwords_a => 2**addr_width_a,
+-		numwords_b => 2**addr_width_b,
+-		operation_mode => "BIDIR_DUAL_PORT",
+-		outdata_aclr_a => "NONE",
+-		outdata_aclr_b => "NONE",
+-		outdata_reg_a => "UNREGISTERED",
+-		outdata_reg_b => "UNREGISTERED",
+-		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
+-		read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
+-		init_file => mem_init_file, 
+-		widthad_a => addr_width_a,
+-		widthad_b => addr_width_b,
+-		width_a => data_width_a,
+-		width_b => data_width_b,
+-		width_byteena_a => 1,
+-		width_byteena_b => 1,
+-		wrcontrol_wraddress_reg_b => "CLOCK1"
+-	)
+-	PORT MAP (
+-		address_a => address_a,
+-		address_b => address_b,
+-		clock0 => clock0,
+-		clock1 => clock1,
+-		clocken0 => enable_a,
+-		clocken1 => enable_b,
+ 		data_a => data_a,
+ 		data_b => data_b,
+-		wren_a => wren_a and cs_a,
+-		wren_b => wren_b and cs_b,
++		wren_a => wren_a and cs_a and enable_a,
++		wren_b => wren_b and cs_b and enable_b,
+ 		q_a => q0,
+ 		q_b => q1
+ 	);
+@@ -209,21 +119,21 @@ END ENTITY;
+ ARCHITECTURE SYN OF spram IS
+ 	signal q0 : std_logic_vector((data_width - 1) downto 0);
+ BEGIN
+-	q<= q0 when cs = '1' else (others => '1');
++	q<= data when cs = '1' and enable = '1' and wren = '1' else
++	    q0 when cs = '1' else (others => '1');
+ 
+ 	altsyncram_component : altsyncram
+ 	GENERIC MAP (
+ 		clock_enable_input_a => "BYPASS",
+ 		clock_enable_output_a => "BYPASS",
+-		intended_device_family => "Cyclone V",
+-		lpm_hint => "ENABLE_RUNTIME_MOD=YES,INSTANCE_NAME="&mem_name,
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",
+ 		numwords_a => 2**addr_width,
+ 		operation_mode => "SINGLE_PORT",
+ 		outdata_aclr_a => "NONE",
+ 		outdata_reg_a => "UNREGISTERED",
+ 		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
++		read_during_write_mode_port_a => "OLD_DATA",
+ 		init_file => mem_init_file, 
+ 		widthad_a => addr_width,
+ 		width_a => data_width,
+@@ -233,7 +143,7 @@ BEGIN
+ 		address_a => address,
+ 		clock0 => clock,
+ 		data_a => data,
+-		wren_a => wren and cs,
++		wren_a => wren and cs and enable,
+ 		q_a => q0
+ 	);
+ 
+diff --git a/rtl/huc6270.vhd b/rtl/huc6270.vhd
+index f5bd306..8c4d035 100644
+--- a/rtl/huc6270.vhd
++++ b/rtl/huc6270.vhd
+@@ -791,7 +791,7 @@ begin
+ 			SPR_EVAL_FULL <= '0';
+ 			SPR_EVAL_CNT <= (others=>'0');
+ 			SPR_FIND <= '0';
+-			SPR_CACHE <= (others=>((others=>'0'),(others=>'0'),(others=>'0'),'0',"00",'0','0',"00",'0','0','0','0','0'));
++			SPR_CACHE <= (others=>((others=>'0'),(others=>'0'),(others=>'0'),'0',"0000",'0','0',"00",'0','0','0','0','0'));
+ 			SPR_Y <= (others=>'0');
+ 			SPR_X <= (others=>'0');
+ 			SPR_PC <= (others=>'0');
+diff --git a/rtl/mb128.sv b/rtl/mb128.sv
+index 9531b15..e9b4709 100644
+--- a/rtl/mb128.sv
++++ b/rtl/mb128.sv
+@@ -23,7 +23,7 @@ module MB128
+ 	input  [15:0] bk_din,
+ 	output [15:0] bk_dout,
+ 	input         bk_we,
+-	output        bk_written
++	output logic  bk_written
+ );
+ 
+ // constants - STATEs
+@@ -72,17 +72,21 @@ dpram_difclk #(20,1,16,16) back128_l
+ 	//
+ 	.clock0(clk_sys),
+    .address_a(r_MB128_Addr),
+-	.data_a(ram_din),
+-	.wren_a(ram_we),
+-	.q_a(ram_dout),
++		.data_a(ram_din),
++		.enable_a(1'b1),
++		.wren_a(ram_we),
++		.q_a(ram_dout),
++		.cs_a(1'b1),
+ 
+ 	// Port B save/load
+ 	//
+ 	.clock1(bk_clk),
+ 	.address_b(bk_address),
+-	.data_b(bk_din),
+-	.wren_b(bk_we),
+-	.q_b(bk_dout)
++		.data_b(bk_din),
++		.enable_b(1'b1),
++		.wren_b(bk_we),
++		.q_b(bk_dout),
++		.cs_b(1'b1)
+ );
+   
+ 
+diff --git a/rtl/sdram.v b/rtl/sdram.v
+index 26f8f81..1dc556c 100644
+--- a/rtl/sdram.v
++++ b/rtl/sdram.v
+@@ -24,7 +24,7 @@ module sdram
+ (
+ 
+ 	// interface to the MT48LC16M16 chip
+-	inout  reg [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
++	inout      [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
+ 	output reg [12:0] SDRAM_A,    // 13 bit multiplexed address bus
+ 	output            SDRAM_DQML, // byte mask
+ 	output            SDRAM_DQMH, // byte mask
+@@ -78,6 +78,8 @@ reg  [3:0] q;
+ reg [22:0] a;
+ reg  [1:0] bank;
+ reg [15:0] data;
++reg [15:0] sdram_dq_out;
++reg        sdram_dq_oe;
+ reg        wr;
+ reg        b;
+ reg        ram_req=0;
+@@ -156,10 +158,14 @@ localparam CMD_LOAD_MODE       = 3'b000;
+ always @(posedge clk) begin
+ 	reg [15:0] data_reg;
+ 
+-	SDRAM_DQ <= 16'hZZZZ;
++	sdram_dq_oe <= 1'b0;
+ 	casex({ram_req,wr,mode,q})
+ 		{2'b1X, MODE_NORMAL, STATE_START}: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_ACTIVE;
+-		{2'b11, MODE_NORMAL, STATE_CONT }: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE, SDRAM_DQ} <= {CMD_WRITE, data};
++		{2'b11, MODE_NORMAL, STATE_CONT }: begin
++			{SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_WRITE;
++			sdram_dq_out <= data;
++			sdram_dq_oe <= 1'b1;
++		end
+ 		{2'b10, MODE_NORMAL, STATE_CONT }: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_READ;
+ 		{2'b0X, MODE_NORMAL, STATE_START}: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_AUTO_REFRESH;
+ 
+@@ -185,6 +191,14 @@ always @(posedge clk) begin
+ 	if(q == STATE_READY && ~wr && ram_req) dout <= a[0] ? data_reg[15:8] : data_reg[7:0];
+ end
+ 
++assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'hZZZZ;
++
++`ifdef DE25_AGILEX
++// This controller is inactive in the DE25 DDRAM configuration. Retain a
++// portable clock output so its handshake remains available without pulling a
++// Cyclone V DDIO atom into the Agilex compilation.
++assign SDRAM_CLK = clk;
++`else
+ altddio_out
+ #(
+ 	.extend_oe_disable("OFF"),
+@@ -209,5 +223,6 @@ sdramclk_ddr
+ 	.sclr(1'b0),
+ 	.sset(1'b0)
+ );
++`endif
+ 
+ endmodule
+diff --git a/sys/hps_io.sv b/sys/hps_io.sv
+index 1df2e02..0a153fc 100644
+--- a/sys/hps_io.sv
++++ b/sys/hps_io.sv
+@@ -198,6 +198,18 @@ assign buttons = cfg[1:0];
+ //cfg[2] - vga_scaler handled in sys_top
+ //cfg[3] - csync handled in sys_top
+ assign forced_scandoubler = cfg[4];
++
++// These signals are driven by the command decoder above their conditional
++// PS/2 device instances. Keep them in module scope for standards-compliant
++// SystemVerilog name resolution.
++reg  [7:0] kbd_data;
++reg        kbd_we;
++wire [8:0] kbd_data_host;
++reg        kbd_rd;
++reg  [7:0] mouse_data;
++reg        mouse_we;
++wire [8:0] mouse_data_host;
++reg        mouse_rd;
+ //cfg[5] - ypbpr handled in sys_top
+ assign direct_video = cfg[10];
+ 
+@@ -559,11 +571,6 @@ generate
+ 			end
+ 		end
+ 
+-		reg  [7:0] kbd_data;
+-		reg        kbd_we;
+-		wire [8:0] kbd_data_host;
+-		reg        kbd_rd;
+-
+ 		ps2_device keyboard
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -582,11 +589,6 @@ generate
+ 			.rd(kbd_rd)
+ 		);
+ 
+-		reg  [7:0] mouse_data;
+-		reg        mouse_we;
+-		wire [8:0] mouse_data_host;
+-		reg        mouse_rd;
+-
+ 		ps2_device mouse
+ 		(
+ 			.clk_sys(clk_sys),
+diff --git a/sys/hq2x.sv b/sys/hq2x.sv
+index f5fcc71..deef1fc 100644
+--- a/sys/hq2x.sv
++++ b/sys/hq2x.sv
+@@ -306,7 +306,7 @@ module Blend
+ 	input  [23:0] D,
+ 	input  [23:0] F,
+ 	input  [23:0] H,
+-	output [23:0] Result
++	output reg [23:0] Result
+ );
+ 
+ 	localparam BLEND1 = 7'b110_10_00; // (A * 12 + B * 4        ) >> 4
+diff --git a/sys/iir_filter.v b/sys/iir_filter.v
+index b8bcf4f..38900b1 100644
+--- a/sys/iir_filter.v
++++ b/sys/iir_filter.v
+@@ -175,7 +175,7 @@ begin
+ end
+ endfunction
+ 
+-(* ramstyle = "logic" *) reg [39:0] intreg[2];
++(* ramstyle = "logic" *) reg [39:0] intreg[0:1];
+ always @(posedge clk, posedge reset) begin
+ 	if(reset) {intreg[0],intreg[1]} <= 80'd0;
+ 	else if(ce) intreg[ch] <= x_mul(x) - y_mul[60:21] + z;
+diff --git a/sys/video_mixer.sv b/sys/video_mixer.sv
+index e53e1c0..cf04c33 100644
+--- a/sys/video_mixer.sv
++++ b/sys/video_mixer.sv
+@@ -59,9 +59,14 @@ module video_mixer
+ 	output reg       VGA_DE
+ );
+ 
+-localparam DWIDTH = HALF_DEPTH ? 3 : 7;
+-localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
+-localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam DWIDTH = HALF_DEPTH ? 3 : 7;
++localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
++localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam INPUT_DWIDTH = (GAMMA && HALF_DEPTH) ? 7 : DWIDTH;
++
++wire [INPUT_DWIDTH:0] R_in;
++wire [INPUT_DWIDTH:0] G_in;
++wire [INPUT_DWIDTH:0] B_in;
+ 
+ wire frz_hs, frz_vs;
+ wire frz_hbl, frz_vbl;
+@@ -89,14 +94,14 @@ always @(posedge CLK_VIDEO) begin
+ end
+ 
+ generate
+-	if(GAMMA && HALF_DEPTH) begin
+-		wire [7:0] R_in  = frz ? 8'd0 : {R,R};
+-		wire [7:0] G_in  = frz ? 8'd0 : {G,G};
+-		wire [7:0] B_in  = frz ? 8'd0 : {B,B};
+-	end else begin
+-		wire [DWIDTH:0] R_in = frz ? 1'd0 : R;
+-		wire [DWIDTH:0] G_in = frz ? 1'd0 : G;
+-		wire [DWIDTH:0] B_in = frz ? 1'd0 : B;
++	if(GAMMA && HALF_DEPTH) begin
++		assign R_in = frz ? 8'd0 : {R,R};
++		assign G_in = frz ? 8'd0 : {G,G};
++		assign B_in = frz ? 8'd0 : {B,B};
++	end else begin
++		assign R_in = frz ? 1'd0 : R;
++		assign G_in = frz ? 1'd0 : G;
++		assign B_in = frz ? 1'd0 : B;
+ 	end
+ endgenerate
+ 
+diff --git a/rtl/de25_dpram_difclk.sv b/rtl/de25_dpram_difclk.sv
+new file mode 100644
+index 0000000..552a28a
+--- /dev/null
++++ b/rtl/de25_dpram_difclk.sv
+@@ -0,0 +1,155 @@
++// Agilex 5 compatibility implementation for TurboGrafx16's two mixed-width
++// save-memory instances. The native M20K primitive cannot expose one-bit byte
++// enables or mixed port widths, so both mappings use equal-width 16-bit ports.
++module dpram_difclk #(
++    parameter int addr_width_a  = 8,
++    parameter int data_width_a  = 8,
++    parameter int addr_width_b  = 8,
++    parameter int data_width_b  = 8,
++    parameter     mem_init_file = " "
++) (
++    input  wire                    clock0,
++    input  wire                    clock1,
++    input  wire [addr_width_a-1:0] address_a,
++    input  wire [data_width_a-1:0] data_a,
++    input  wire                    enable_a,
++    input  wire                    wren_a,
++    output wire [data_width_a-1:0] q_a,
++    input  wire                    cs_a,
++    input  wire [addr_width_b-1:0] address_b,
++    input  wire [data_width_b-1:0] data_b,
++    input  wire                    enable_b,
++    input  wire                    wren_b,
++    output wire [data_width_b-1:0] q_b,
++    input  wire                    cs_b
++);
++
++localparam bit IS_MB128 =
++    addr_width_a == 20 && data_width_a == 1 &&
++    addr_width_b == 16 && data_width_b == 16;
++localparam bit IS_BACKUP_RAM =
++    addr_width_a == 11 && data_width_a == 8 &&
++    addr_width_b == 10 && data_width_b == 16;
++
++generate
++if (IS_MB128) begin : mb128_mapping
++    wire [15:0] physical_q_a;
++    wire [15:0] physical_q_b;
++    wire [15:0] bit_mask = 16'b1 << address_a[3:0];
++    wire [15:0] physical_data_a = data_a[0] ?
++        (physical_q_a | bit_mask) : (physical_q_a & ~bit_mask);
++
++    altsyncram #(
++        .address_reg_b("CLOCK0"),
++        .clock_enable_input_a("BYPASS"),
++        .clock_enable_input_b("BYPASS"),
++        .clock_enable_output_a("BYPASS"),
++        .clock_enable_output_b("BYPASS"),
++        .indata_reg_b("CLOCK0"),
++        .init_file(mem_init_file),
++        .intended_device_family("Agilex 5"),
++        .lpm_type("altsyncram"),
++        .numwords_a(65536),
++        .numwords_b(65536),
++        .operation_mode("BIDIR_DUAL_PORT"),
++        .outdata_aclr_a("NONE"),
++        .outdata_aclr_b("NONE"),
++        .outdata_reg_a("UNREGISTERED"),
++        .outdata_reg_b("UNREGISTERED"),
++        .power_up_uninitialized("FALSE"),
++        .read_during_write_mode_port_a("DONT_CARE"),
++        .read_during_write_mode_port_b("DONT_CARE"),
++        .widthad_a(16),
++        .widthad_b(16),
++        .width_a(16),
++        .width_b(16),
++        .width_byteena_a(1),
++        .width_byteena_b(1),
++        .wrcontrol_wraddress_reg_b("CLOCK0")
++    ) ram (
++        .address_a(address_a[19:4]),
++        .address_b(address_b),
++        .byteena_a(1'b1),
++        .byteena_b(1'b1),
++        .clock0(clock0),
++        .data_a(physical_data_a),
++        .data_b(data_b),
++        .wren_a(wren_a && cs_a && enable_a),
++        .wren_b(wren_b && cs_b && enable_b),
++        .q_a(physical_q_a),
++        .q_b(physical_q_b)
++    );
++
++    assign q_a = !cs_a ? 1'b1 :
++                 (wren_a && enable_a) ? data_a :
++                 physical_q_a[address_a[3:0]];
++    assign q_b = !cs_b ? 16'hFFFF :
++                 (wren_b && enable_b) ? data_b : physical_q_b;
++end
++else if (IS_BACKUP_RAM) begin : backup_ram_mapping
++    wire [15:0] physical_q_a;
++    wire [15:0] physical_q_b;
++    wire [15:0] physical_data_a = address_a[0] ?
++        {data_a, 8'h00} : {8'h00, data_a};
++    wire [1:0] physical_byteena_a = address_a[0] ? 2'b10 : 2'b01;
++
++    altsyncram #(
++        .address_reg_b("CLOCK0"),
++        .byte_size(8),
++        .clock_enable_input_a("BYPASS"),
++        .clock_enable_input_b("BYPASS"),
++        .clock_enable_output_a("BYPASS"),
++        .clock_enable_output_b("BYPASS"),
++        .indata_reg_b("CLOCK0"),
++        .init_file(mem_init_file),
++        .intended_device_family("Agilex 5"),
++        .lpm_type("altsyncram"),
++        .numwords_a(1024),
++        .numwords_b(1024),
++        .operation_mode("BIDIR_DUAL_PORT"),
++        .outdata_aclr_a("NONE"),
++        .outdata_aclr_b("NONE"),
++        .outdata_reg_a("UNREGISTERED"),
++        .outdata_reg_b("UNREGISTERED"),
++        .power_up_uninitialized("FALSE"),
++        .read_during_write_mode_port_a("DONT_CARE"),
++        .read_during_write_mode_port_b("DONT_CARE"),
++        .widthad_a(10),
++        .widthad_b(10),
++        .width_a(16),
++        .width_b(16),
++        .width_byteena_a(2),
++        .width_byteena_b(2),
++        .wrcontrol_wraddress_reg_b("CLOCK0")
++    ) ram (
++        .address_a(address_a[10:1]),
++        .address_b(address_b),
++        .byteena_a(physical_byteena_a),
++        .byteena_b(2'b11),
++        .clock0(clock0),
++        .data_a(physical_data_a),
++        .data_b(data_b),
++        .wren_a(wren_a && cs_a && enable_a),
++        .wren_b(wren_b && cs_b && enable_b),
++        .q_a(physical_q_a),
++        .q_b(physical_q_b)
++    );
++
++    assign q_a = !cs_a ? 8'hFF :
++                 (wren_a && enable_a) ? data_a :
++                 (address_a[0] ? physical_q_a[15:8] : physical_q_a[7:0]);
++    assign q_b = !cs_b ? 16'hFFFF :
++                 (wren_b && enable_b) ? data_b : physical_q_b;
++end
++else begin : unsupported_mapping
++    assign q_a = {data_width_a{1'bx}};
++    assign q_b = {data_width_b{1'bx}};
++    initial $error("Unsupported TurboGrafx16 mixed-width RAM shape");
++end
++endgenerate
++
++// The two callers connect both legacy clock pins to clk_sys. Agilex 5 M20K
++// true dual-port mode requires that common clock, so clock1 is interface-only.
++wire _unused_clock1 = clock1;
++
++endmodule

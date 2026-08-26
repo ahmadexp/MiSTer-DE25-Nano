@@ -1,0 +1,144 @@
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.3 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_snes
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+set_global_assignment -name VERILOG_CU_MODE MFCU
+# Quartus 25.3.1 crashes in post-route BSYN retiming for this design after
+# routing has completed. The SNES clocks are modest and do not need retiming.
+set_global_assignment -name ALLOW_REGISTER_RETIMING OFF
+set_global_assignment -name ALLOW_RAM_RETIMING OFF
+set_global_assignment -name ALLOW_DSP_RETIMING OFF
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_HDMI_BOB_DEINT=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SDRAM=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SPLIT_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "DE25_AGILEX_PLL_RECONFIG=1"
+set_global_assignment -name VERILOG_MACRO "DE25_VIDEO_SCALER=1"
+
+set_global_assignment -name SEARCH_PATH ../rtl
+set_global_assignment -name SEARCH_PATH ../upstream/cores/SNES
+set_global_assignment -name SEARCH_PATH ../upstream/cores/SNES/sys
+set_global_assignment -name SEARCH_PATH ../upstream/cores/SNES/rtl
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_menu_top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_hps_warm_reset_handshake.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_reset_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_gp_bridge.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_audio.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_sdram_quiesce.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_axil.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_reconfig_axil.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_snes_pll_profiles.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_snes_pll.sv
+set_global_assignment -name VHDL_FILE ../../sys/ascal.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/adv7513_init.sv
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/sys/math.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/sys/hps_io.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/Menu/sys/osd.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/sys/video_freak.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/sys/gamma_corr.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/sys/video_freezer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/sys/hq2x.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/SNES/sys/scandoubler.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/SNES/sys/iir_filter.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/sys/video_mixer.sv
+
+set_global_assignment -name QIP_FILE ../upstream/cores/SNES/rtl/65C816/65C816.qip
+set_global_assignment -name QIP_FILE ../upstream/cores/SNES/rtl/SPC700/SPC700.qip
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/bram.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/mlab.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/CEGen.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/chip/RTC4513.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/chip/SRTC.vhd
+set_global_assignment -name QIP_FILE ../upstream/cores/SNES/rtl/chip/chip.qip
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/SWRAM.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/SMP.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/PPU_PKG.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/PPU.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/CPU.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/DSP_PKG.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/DSP.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SNES/rtl/SNES.vhd
+set_global_assignment -name VERILOG_FILE ../upstream/cores/SNES/rtl/main.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/cheatcodes.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/sdram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/ioport.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/lightgun.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/miracle.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/hps_ext.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/savestates.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/savestates_regs.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/savestates_map.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/savestates_sa1.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/savestate_ui.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/sni.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/rtl/uart.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SNES/SNES.sv
+set_global_assignment -name MIF_FILE ../upstream/cores/SNES/rtl/chip/BSX/bsx121-124.mif
+set_global_assignment -name MIF_FILE ../upstream/cores/SNES/rtl/chip/CX4/drom.mif
+set_global_assignment -name MIF_FILE ../upstream/cores/SNES/rtl/chip/DSP/dsp11b23410_d.mif
+set_global_assignment -name MIF_FILE ../upstream/cores/SNES/rtl/chip/DSP/dsp11b23410_p.mif
+set_global_assignment -name QSYS_FILE ../ip/mister_pll.qsys
+set_global_assignment -name QSYS_FILE ../ip/snes_core_pll_cal.qsys
+set_global_assignment -name IP_FILE ../ip/ip/mister_pll/mister_pll_system_pll.ip
+set_global_assignment -name IP_FILE ../ip/ip/snes_core_pll_cal/snes_core_pll_cal_cal_0.ip
+set_global_assignment -name IP_FILE ../ip/ip/snes_core_pll_cal/snes_core_pll_cal_iopll_0.ip
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/mister_hps.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_ddram_cdc.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_gp_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_gp_out.ip
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/jtag_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/hps_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/peripheral_subsys.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/clk_100.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/ext_hps_f2sdram_master.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/qsys_top_ace5lite_cache_coherency_translator_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/user_rst_clkgate_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/agilex_hps.ip
+set_global_assignment -name QIP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/f2sdram_adapter/f2sdram_adapter.qip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/qsys_top/emif_io96b_hps.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/fpga_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_f2sdram.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/button_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/dipsw_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/led_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/pb_cpu_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/sysid.ip
+
+set_global_assignment -name SDC_FILE DE25_MISTER_MENU.sdc
+source de25_mister_rev_b_pins.tcl
+source de25_mister_hps_partition.tcl
+
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to DRAM_*
+# SNES's DQ data and enable are already cycle-aligned registers in the core.
+# Agilex cannot pack the data register into the same I/O cell as its enable
+# because the optimized data source carries a synchronous-clear semantic.
+# Keep both paths in fabric as a matched pair. Timing signoff still covers the
+# physical SDRAM pins, so this is accepted only when the external I/O reports
+# remain clean.
+set_instance_assignment -name FAST_OUTPUT_REGISTER OFF -to DRAM_DQ[*]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER OFF -to DRAM_DQ[*]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to DRAM_DQ[*]
+
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO11
+set_global_assignment -name HPS_INITIALIZATION "HPS First"
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X4"
+set_global_assignment -name ACTIVE_SERIAL_CLOCK AS_FREQ_125MHZ
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_global_assignment -name POWER_APPLY_THERMAL_MARGIN ADDITIONAL

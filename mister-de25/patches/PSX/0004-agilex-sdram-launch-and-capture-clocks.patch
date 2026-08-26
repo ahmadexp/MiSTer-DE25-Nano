@@ -1,0 +1,79 @@
+diff --git a/PSX.sv b/PSX.sv
+--- a/PSX.sv
++++ b/PSX.sv
+@@ -62,6 +62,8 @@ wire pll_locked;
+ wire clk_1x;
+ wire clk_2x;
+ wire clk_3x;
++wire clk_sdram;
++wire clk_sdram_capture;
+ wire clk_vid;
+ 
+ pll pll
+@@ -72,6 +74,8 @@ pll pll
+ 	.outclk_0(clk_1x),
+ 	.outclk_1(clk_2x),
+ 	.outclk_2(clk_3x),
++	.outclk_3(clk_sdram),
++	.outclk_4(clk_sdram_capture),
+ 	.locked(pll_locked)
+ );
+@@ -1243,6 +1247,8 @@ sdram sdram
+ 	.init(~pll_locked),
+ 	.clk(clk_3x),
+ 	.clk_base(clk_1x),
++	.clk_physical(clk_sdram),
++	.clk_capture(clk_sdram_capture),
+ 
+ 	.refreshForce(sdr_refresh),
+@@ -1315,6 +1321,8 @@ sdram sdram2
+ 	.init(~pll_locked),
+ 	.clk(clk_3x),
+ 	.clk_base(clk_1x),
++	.clk_physical(clk_sdram),
++	.clk_capture(clk_sdram_capture),
+ 
+ 	.refreshForce(1'b0),
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -23,6 +23,8 @@ module sdram
+ 	input              init,        // reset to initialize RAM
+ 	input              clk,         // clock ~100MHz
+ 	input              clk_base,    // clock ~33MHz
++	input              clk_physical,// phase-shifted clock forwarded to SDRAM
++	input              clk_capture, // phase-shifted SDRAM input capture clock
+                       
+ 	input              SDRAM_EN,    // Set all output SDRAM_* signals to Z ASAP if SDRAM2_EN is 0 
+@@ -243,6 +245,11 @@ reg [31:0] saved_data;
+ reg  [3:0] saved_be;
+ reg [15:0] dq_reg;
+ 
++// The Cyclone V core relied on an I/O DDR primitive for its forwarded clock.
++// Capture the return bus with an explicit related phase on Agilex instead of
++// asking a fabric register to meet the half-cycle pin-to-register path.
++always @(posedge clk_capture) dq_reg <= sdram_dq_in;
++
+ reg [1:0] ch;
+ 
+ always @(posedge clk) begin
+@@ -280,8 +287,6 @@ always @(posedge clk) begin
+ 	data_ready_delay2 <= data_ready_delay2>>1;
+ 	data_ready_delay3 <= data_ready_delay3>>1;
+ 
+-	dq_reg <= sdram_dq_in;
+-   
+    cache_wr     <= 0;
+    cache_done_0 <= 0;
+@@ -570,9 +575,9 @@ always @(posedge clk) begin
+ 	end   
+ end
+ 
+-// Agilex 5 no longer supports the Cyclone V altddio_out clear-box primitive.
+-// The original constant high/low DDR pattern is exactly an inverted clock.
+-assign SDRAM_CLK = SDRAM_EN ? ~clk : 1'bz;
++// C3 is a dedicated PLL output with the phase formerly supplied by the
++// Cyclone V altddio_out block.
++assign SDRAM_CLK = SDRAM_EN ? clk_physical : 1'bz;
+ 
+ endmodule

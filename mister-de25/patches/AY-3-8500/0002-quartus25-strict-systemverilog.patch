@@ -1,0 +1,128 @@
+diff --git a/rtl/ay38500NTSC.v b/rtl/ay38500NTSC.v
+--- a/rtl/ay38500NTSC.v
++++ b/rtl/ay38500NTSC.v
+@@ -12,34 +12,34 @@
+ 
+ module ay38500NTSC(
+-	output pinRPout,
+-	output pinLPout,
+-	output pinBallOut,
+-	input pinManualServe,
+-	output pinRPin_DWN,
+-	input pinRPin,
+-	input pinBallAngle,
+-	output pinLPin_DWN,
+-	input pinLPin,
+-	input pinBatSize,
+-	input pinBallSpeed,
+-	output pinSyncOut,
+-	output pinSound,
+-	input clk,
+-	input pinHitIn,
+-	output pinRifle1_DWN,
+-	input pinRifle1,
+-	input pinRifle2,
+-	input pinShotIn,
+-	output pinTennis_DWN,
+-	input pinTennis,
+-	output pinSFout,
+-	input pinSoccer,
+-	input pinSquash,
+-	input pinPractice,
+-	input reset,
+-	output syncH,//MC: split syncs were accessed
+-	output syncV,
+-	input superclock);
++	output wire pinRPout,
++	output wire pinLPout,
++	output wire pinBallOut,
++	input  wire pinManualServe,
++	output wire pinRPin_DWN,
++	input  wire pinRPin,
++	input  wire pinBallAngle,
++	output wire pinLPin_DWN,
++	input  wire pinLPin,
++	input  wire pinBatSize,
++	input  wire pinBallSpeed,
++	output wire pinSyncOut,
++	output wire pinSound,
++	input  wire clk,
++	input  wire pinHitIn,
++	output wire pinRifle1_DWN,
++	input  wire pinRifle1,
++	input  wire pinRifle2,
++	input  wire pinShotIn,
++	output wire pinTennis_DWN,
++	input  wire pinTennis,
++	output wire pinSFout,
++	input  wire pinSoccer,
++	input  wire pinSquash,
++	input  wire pinPractice,
++	input  wire reset,
++	output wire syncH,//MC: split syncs were accessed
++	output wire syncV,
++	input  wire superclock);
+ 
+ 	//wire pinLPin = counter3 > 50;
+ 	//wire pinRPin = counter3 > 70;
+diff --git a/sys/hq2x.sv b/sys/hq2x.sv
+--- a/sys/hq2x.sv
++++ b/sys/hq2x.sv
+@@ -307,6 +307,6 @@ module Blend
+ 	input  [23:0] F,
+ 	input  [23:0] H,
+-	output [23:0] Result
++	output reg [23:0] Result
+ );
+ 
+ 	localparam BLEND1 = 7'b110_10_00; // (A * 12 + B * 4        ) >> 4
+diff --git a/sys/video_mixer.sv b/sys/video_mixer.sv
+--- a/sys/video_mixer.sv
++++ b/sys/video_mixer.sv
+@@ -20,7 +20,8 @@ module video_mixer
+ #(
+ 	parameter LINE_LENGTH  = 768,
+ 	parameter HALF_DEPTH   = 0,
+-	parameter GAMMA        = 0
++	parameter GAMMA        = 0,
++	parameter DWIDTH       = HALF_DEPTH ? 3 : 7
+ )
+ (
+ 	input            CLK_VIDEO, // should be multiple by (ce_pix*4)
+@@ -55,9 +56,9 @@ module video_mixer
+ 	output reg       VGA_DE
+ );
+ 
+-localparam DWIDTH = HALF_DEPTH ? 3 : 7;
+ localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
+ localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam RIN_DWIDTH = GAMMA ? 7 : DWIDTH;
+ 
+ wire frz_hs, frz_vs;
+ wire frz_hbl, frz_vbl;
+@@ -88,15 +89,19 @@ always @(posedge CLK_VIDEO) begin
+ 	frz  <= frz1;
+ end
+ 
++wire [RIN_DWIDTH:0] R_in;
++wire [RIN_DWIDTH:0] G_in;
++wire [RIN_DWIDTH:0] B_in;
++
+ generate
+ 	if(GAMMA && HALF_DEPTH) begin
+-		wire [7:0] R_in  = frz ? 8'd0 : {R,R};
+-		wire [7:0] G_in  = frz ? 8'd0 : {G,G};
+-		wire [7:0] B_in  = frz ? 8'd0 : {B,B};
++		assign R_in = frz ? 8'd0 : {R,R};
++		assign G_in = frz ? 8'd0 : {G,G};
++		assign B_in = frz ? 8'd0 : {B,B};
+ 	end else begin
+-		wire [DWIDTH:0] R_in = frz ? 1'd0 : R;
+-		wire [DWIDTH:0] G_in = frz ? 1'd0 : G;
+-		wire [DWIDTH:0] B_in = frz ? 1'd0 : B;
++		assign R_in = frz ? 1'd0 : R;
++		assign G_in = frz ? 1'd0 : G;
++		assign B_in = frz ? 1'd0 : B;
+ 	end
+ endgenerate
+ 

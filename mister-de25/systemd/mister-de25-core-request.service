@@ -1,0 +1,8 @@
+[Unit]
+Description=Load a cataloged DE25-Nano MiSTer core safely
+Requires=mister-de25-watchdog-keeper.service
+After=mister.service mister-de25-watchdog-keeper.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/mister-de25-process-core-request

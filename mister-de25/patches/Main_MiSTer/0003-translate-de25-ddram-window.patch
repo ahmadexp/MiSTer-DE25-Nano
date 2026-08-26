@@ -1,0 +1,19 @@
+diff --git a/shmem.cpp b/shmem.cpp
+index 84c636b..b8a695b 100644
+--- a/shmem.cpp
++++ b/shmem.cpp
+@@ -15,6 +15,14 @@ static int memfd = -1;
+ 
+ void *shmem_map(uint32_t address, uint32_t size)
+ {
++#ifdef MISTER_DE25
++	// MiSTer cores and Main agree on DE10 DDR offsets, including the control
++	// page below the normal 512 MiB core window. Agilex 5 LPDDR begins at
++	// 0x80000000, so translate the complete 1 GiB logical DDR address space.
++	if (address < 0x40000000)
++		address += 0x80000000;
++#endif
++
+ 	if (memfd < 0)
+ 	{
+ 		memfd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);

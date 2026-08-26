@@ -1,0 +1,28 @@
+diff --git a/lib/devmem_is_allowed.c b/lib/devmem_is_allowed.c
+--- a/lib/devmem_is_allowed.c
++++ b/lib/devmem_is_allowed.c
+@@ -18,10 +18,24 @@
+  * This effectively disable read()/write() on /dev/mem.
+  */
+ int devmem_is_allowed(unsigned long pfn)
+ {
++	phys_addr_t address = PFN_PHYS(pfn);
++
++	/*
++	 * DE25-Nano MiSTer reserves this LPDDR window exclusively for the
++	 * FPGA fabric. ARM64 must retain the window in its linear map so
++	 * userspace receives normal memory attributes instead of Device
++	 * attributes, but Main still needs to map it through /dev/mem to
++	 * populate ROM, RAM, and shared buffers. Permit only this reserved
++	 * aperture. /dev/mem remains root-only and all other System RAM is
++	 * still rejected by CONFIG_STRICT_DEVMEM.
++	 */
++	if (address >= 0xa0000000ULL && address < 0xc0000000ULL)
++		return 1;
++
+ 	if (iomem_is_exclusive(PFN_PHYS(pfn)))
+ 		return 0;
+ 	if (!page_is_ram(pfn))
+ 		return 1;
+ 	return 0;
+ }

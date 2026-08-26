@@ -1,0 +1,129 @@
+diff --git a/boards/MiSTer/Apple-I.sv b/boards/MiSTer/Apple-I.sv
+index 386e28f..e5d6d72 100644
+--- a/boards/MiSTer/Apple-I.sv
++++ b/boards/MiSTer/Apple-I.sv
+@@ -211,17 +211,18 @@ localparam CONF_STR = {
+ 
+ wire forced_scandoubler;
+ wire  [1:0] buttons;
+-wire [31:0] status;
++wire [127:0] status_bus;
++wire  [31:0] status = status_bus[31:0];
+ wire [10:0] ps2_key;
+ 
+ wire        ioctl_download;
+ wire        ioctl_wr;
+-wire [15:0] ioctl_addr;
++wire [26:0] ioctl_addr;
+ wire [7:0] ioctl_data;
+-wire  [7:0] ioctl_index;
++wire [15:0] ioctl_index;
+ reg ioctl_wait=0;
+ 
+-wire [15:0] joystick_0, joystick_1;
++wire [31:0] joystick_0, joystick_1;
+ 
+ hps_io #(.CONF_STR(CONF_STR),.PS2DIV(4000)) hps_io
+ (
+@@ -233,8 +234,8 @@ hps_io #(.CONF_STR(CONF_STR),.PS2DIV(4000)) hps_io
+ 	.forced_scandoubler(forced_scandoubler),
+ 
+ 	.buttons(buttons),
+-	.status(status),
+-	.status_menumask({status[5]}),
++	.status(status_bus),
++	.status_menumask({15'd0, status[5]}),
+ 
+ 	.ioctl_download(ioctl_download),
+ 	.ioctl_wr(ioctl_wr),
+@@ -257,13 +258,14 @@ wire ps2_kbd_data;
+ 
+ ///////////////////////   CLOCKS   ///////////////////////////////
+ 
++wire clk_sys;
+ wire clk6p25, clk25;
+ 
+ assign clk_sys = clk25;
+ 
+ pll pll (
+ 	 .refclk ( CLK_50M   ),
+-	 .rst(0),
++	 .rst(1'b0),
+ 	 .locked 		( locked    ),        // PLL is running stable
+ 	 .outclk_0		( clk6p25	),			
+ 	 .outclk_1		( clk25		)
+@@ -291,7 +293,13 @@ assign VGA_VS=vs;
+ assign VGA_HS=hs;
+ wire [8:0]audiomix;
+ 
+-apple1 apple1 (
++apple1 #(
++	.BASIC_FILENAME("../upstream/cores/Apple-I/roms/basic.hex"),
++	.FONT_ROM_FILENAME("../upstream/cores/Apple-I/roms/vga_font_bitreversed.hex"),
++	.RAM_FILENAME("../upstream/cores/Apple-I/roms/ram.hex"),
++	.VRAM_FILENAME("../upstream/cores/Apple-I/roms/vga_vram.bin"),
++	.WOZMON_ROM_FILENAME("../upstream/cores/Apple-I/roms/wozmon.hex")
++) apple1 (
+ 	.clk25(clk25),
+ 	.rst_n(~(RESET| status[0] |  buttons[1])),
+ 	.uart_rx(),
+diff --git a/boards/MiSTer/sys/hps_io.sv b/boards/MiSTer/sys/hps_io.sv
+index 92cdf77..4bd0779 100644
+--- a/boards/MiSTer/sys/hps_io.sv
++++ b/boards/MiSTer/sys/hps_io.sv
+@@ -254,6 +254,17 @@ reg [31:0] ps2_key_raw = 0;
+ wire       pressed  = (ps2_key_raw[15:8] != 8'hf0);
+ wire       extended = (~pressed ? (ps2_key_raw[23:16] == 8'he0) : (ps2_key_raw[15:8] == 8'he0));
+ 
++// The command engine is outside the optional PS/2 generate block, so these
++// staging signals must be declared in module scope with current Quartus Pro.
++reg  [7:0] kbd_data;
++reg        kbd_we;
++wire [8:0] kbd_data_host;
++reg        kbd_rd;
++reg  [7:0] mouse_data;
++reg        mouse_we;
++wire [8:0] mouse_data_host;
++reg        mouse_rd;
++
+ reg [MAX_W:0] byte_cnt;
+ reg   [3:0] sdn_ack;
+ wire [15:0] disk = 16'd1 << io_din[11:8];
+@@ -561,11 +572,6 @@ generate
+ 			end
+ 		end
+ 
+-		reg  [7:0] kbd_data;
+-		reg        kbd_we;
+-		wire [8:0] kbd_data_host;
+-		reg        kbd_rd;
+-
+ 		ps2_device keyboard
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -584,11 +590,6 @@ generate
+ 			.rd(kbd_rd)
+ 		);
+ 
+-		reg  [7:0] mouse_data;
+-		reg        mouse_we;
+-		wire [8:0] mouse_data_host;
+-		reg        mouse_rd;
+-
+ 		ps2_device mouse
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -1031,9 +1032,12 @@ module confstr_rom #(parameter CONF_STR, STRLEN)
+ 	output reg [7:0] conf_byte
+ );
+ 
+-reg [7:0] rom[STRLEN];
++localparam ADDR_WIDTH = $clog2(STRLEN+1);
++localparam ROM_DEPTH = 1 << ADDR_WIDTH;
++reg [7:0] rom[ROM_DEPTH];
+ 
+ initial begin
++	for(int i = 0; i < ROM_DEPTH; i++) rom[i] = 0;
+ 	if( CONF_STR=="" )
+ 		$readmemh("cfgstr.hex",rom);
+ 	else

@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF' >&2
+Usage: mister-de25-watchdog-run COMMAND [ARG...]
+
+Run one risky FPGA-manager transaction while the HPS hardware watchdog is
+armed. A resident keeper pets the non-stoppable DesignWare watchdog between
+transactions. It pauses before the command and resumes only after success, so
+a failed or hung FPGA load resets the HPS back into its boot Menu.
+EOF
+}
+
+keeper_mode() {
+    if [[ $# -ne 3 ]]; then
+        echo "Invalid DE25-Nano watchdog keeper invocation" >&2
+        exit 2
+    fi
+
+    local watchdog=$1
+    local timeout=$2
+    local state_dir=$3
+    local paused=0
+
+    command -v wdctl >/dev/null 2>&1 || {
+        echo "wdctl is required for the DE25-Nano hardware watchdog" >&2
+        exit 1
+    }
+
+    mkdir -p "$state_dir"
+    rm -f "$state_dir/ready" "$state_dir/paused" "$state_dir/running"
+
+    # dw_wdt cannot stop once started. Set the requested timeout first, then
+    # immediately take permanent ownership of the device and keep it alive.
+    wdctl --settimeout "$timeout" "$watchdog" >/dev/null
+    exec 9>"$watchdog"
+    printf '\0' >&9
+
+    printf '%s\n' "$$" >"$state_dir/pid.new"
+    mv -f "$state_dir/pid.new" "$state_dir/pid"
+    printf '%s\n' "$watchdog" >"$state_dir/device"
+    printf '%s\n' "$timeout" >"$state_dir/timeout"
+    : >"$state_dir/running"
+    : >"$state_dir/ready"
+
+    pause_keeper() {
+        paused=1
+        rm -f "$state_dir/running"
+        : >"$state_dir/paused"
+    }
+    resume_keeper() {
+        paused=0
+        printf '\0' >&9
+        rm -f "$state_dir/paused"
+        : >"$state_dir/running"
+    }
+    cleanup_keeper() {
+        rm -f "$state_dir/pid" "$state_dir/ready" \
+            "$state_dir/paused" "$state_dir/running"
+    }
+
+    trap pause_keeper USR1
+    trap resume_keeper USR2
+    trap '' HUP INT QUIT TERM
+    trap cleanup_keeper EXIT
+
+    while :; do
+        if ((paused == 0)); then
+            printf '\0' >&9
+        fi
+        sleep 1
+    done
+}
+
+if [[ ${1:-} == --keeper ]]; then
+    shift
+    keeper_mode "$@"
+    exit
+fi
+
+if [[ $# -lt 1 ]]; then
+    usage
+    exit 2
+fi
+
+watchdog=${MISTER_DE25_WATCHDOG_DEVICE:-}
+timeout=${MISTER_DE25_WATCHDOG_TIMEOUT:-90}
+allow_regular=${MISTER_DE25_WATCHDOG_ALLOW_REGULAR:-0}
+failure_action=${MISTER_DE25_WATCHDOG_FAILURE_ACTION:-wait}
+state_dir=${MISTER_DE25_WATCHDOG_STATE_DIR:-/run/mister-de25-watchdog}
+
+if [[ ! $timeout =~ ^[1-9][0-9]*$ ]] || ((timeout < 10 || timeout > 300)); then
+    echo "Invalid DE25-Nano watchdog timeout: $timeout" >&2
+    exit 1
+fi
+
+if [[ -z $watchdog ]]; then
+    for candidate in /dev/watchdog0 /dev/watchdog; do
+        if [[ -c $candidate ]]; then
+            watchdog=$candidate
+            break
+        fi
+    done
+fi
+if [[ -z $watchdog || (! -c $watchdog && $allow_regular != 1) ]]; then
+    echo "DE25-Nano HPS watchdog is unavailable; refusing an unguarded FPGA load" >&2
+    exit 1
+fi
+if [[ $failure_action != wait && $failure_action != return ]]; then
+    echo "Invalid DE25-Nano watchdog failure action: $failure_action" >&2
+    exit 1
+fi
+if [[ $failure_action == return && $allow_regular != 1 ]]; then
+    echo "Returning after a watchdog failure is allowed only by the test harness" >&2
+    exit 1
+fi
+
+# Preserve a simple magic-close path for the regular-file test harness. Real
+# DE25 hardware always uses the resident keeper because dw_wdt has no stop op.
+if [[ $allow_regular == 1 ]]; then
+    resolved_watchdog=$(readlink -f "$watchdog" 2>/dev/null || printf '%s' "$watchdog")
+    watchdog_name=${resolved_watchdog##*/}
+    timeout_path=${MISTER_DE25_WATCHDOG_TIMEOUT_PATH:-/sys/class/watchdog/$watchdog_name/timeout}
+    nowayout_path=${MISTER_DE25_WATCHDOG_NOWAYOUT_PATH:-/sys/class/watchdog/$watchdog_name/nowayout}
+    if [[ ! -r $nowayout_path || $(<"$nowayout_path") != 0 ]]; then
+        echo "DE25-Nano watchdog cannot be cleanly disarmed; refusing FPGA load" >&2
+        exit 1
+    fi
+
+    exec 9>"$watchdog"
+    if [[ -w $timeout_path ]]; then
+        printf '%s\n' "$timeout" >"$timeout_path"
+    fi
+    printf '\0' >&9
+    if "$@"; then
+        printf 'V' >&9
+        exec 9>&-
+        exit 0
+    else
+        status=$?
+    fi
+    if [[ $failure_action == return ]]; then
+        exec 9>&-
+        exit "$status"
+    fi
+    while :; do sleep "$((timeout + 10))"; done
+fi
+
+mkdir -p "$state_dir"
+transaction_lock=$state_dir/transaction.lock
+if ! mkdir "$transaction_lock" 2>/dev/null; then
+    echo "Another DE25-Nano FPGA transaction already owns the watchdog" >&2
+    exit 1
+fi
+release_transaction_lock() {
+    rmdir "$transaction_lock" 2>/dev/null || true
+}
+trap release_transaction_lock EXIT
+
+keeper_pid=""
+if [[ -s $state_dir/pid ]]; then
+    keeper_pid=$(<"$state_dir/pid")
+fi
+if [[ ! $keeper_pid =~ ^[1-9][0-9]*$ ]] || ! kill -0 "$keeper_pid" 2>/dev/null; then
+    echo "DE25-Nano watchdog keeper service is not running; refusing FPGA load" >&2
+    exit 1
+fi
+
+if [[ ! $keeper_pid =~ ^[1-9][0-9]*$ ]] || \
+   ! kill -0 "$keeper_pid" 2>/dev/null || [[ ! -e $state_dir/ready ]]; then
+    echo "DE25-Nano watchdog keeper failed to start" >&2
+    tail -n 20 "$state_dir/keeper.log" >&2 2>/dev/null || true
+    exit 1
+fi
+if [[ $(<"$state_dir/device") != "$watchdog" ]]; then
+    echo "DE25-Nano watchdog keeper owns a different device" >&2
+    exit 1
+fi
+
+rm -f "$state_dir/paused"
+kill -USR1 "$keeper_pid"
+for _ in {1..100}; do
+    [[ -e $state_dir/paused ]] && break
+    sleep 0.05
+done
+if [[ ! -e $state_dir/paused ]] || ! kill -0 "$keeper_pid" 2>/dev/null; then
+    echo "DE25-Nano watchdog keeper did not pause" >&2
+    exit 1
+fi
+
+if "$@"; then
+    rm -f "$state_dir/running"
+    kill -USR2 "$keeper_pid"
+    for _ in {1..100}; do
+        [[ -e $state_dir/running ]] && break
+        sleep 0.05
+    done
+    if [[ ! -e $state_dir/running ]] || ! kill -0 "$keeper_pid" 2>/dev/null; then
+        echo "DE25-Nano watchdog keeper did not resume" >&2
+        exit 1
+    fi
+    exit 0
+else
+    status=$?
+fi
+
+echo "DE25-Nano FPGA transaction failed; hardware watchdog remains unserviced" >&2
+trap '' HUP INT QUIT TERM
+trap - EXIT
+if [[ $failure_action == return ]]; then
+    release_transaction_lock
+    exit "$status"
+fi
+while :; do
+    sleep "$((timeout + 10))"
+done

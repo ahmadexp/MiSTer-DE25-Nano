@@ -1,0 +1,100 @@
+diff --git a/Chip8.sv b/Chip8.sv
+--- a/Chip8.sv
++++ b/Chip8.sv
+@@ -267,9 +267,9 @@ assign {UART_RTS, UART_TXD, UART_DTR} = 0;
+ 
+ 
+ wire clk_sys; // 50MHz
+-reg clk_cpu_fast, clk_cpu_slow; // 12.5KHz or 5KHz
++reg clk_cpu_fast = 1'b0, clk_cpu_slow = 1'b0; // 12.5KHz or 5KHz
+ wire clk_video; // 13.5MHz
+-reg clk_12k; // 12 KHz
++reg clk_12k = 1'b0; // 12 KHz
+ wire clk_1m; // 1MHz, for dividing into the required smaller amounts
+ wire locked;
+ wire cpu_clk;
+@@ -283,7 +283,7 @@ pll pll
+ 	.locked(locked)
+ );
+ 
+-reg [6:0] clkdiv_12_5_count;
++reg [6:0] clkdiv_12_5_count = 7'd0;
+ always @(posedge clk_1m) begin
+ 	clkdiv_12_5_count <= clkdiv_12_5_count + 7'd1;
+ 	if (clkdiv_12_5_count == 79) begin
+@@ -292,7 +292,7 @@ always @(posedge clk_1m) begin
+ 	end
+ end
+ 
+-reg [6:0] clkdiv_12_count;
++reg [6:0] clkdiv_12_count = 7'd0;
+ always @(posedge clk_1m) begin
+ 	clkdiv_12_count <= clkdiv_12_count + 7'd1;
+ 	if (clkdiv_12_count == 82) begin // should be 82 + 1/3 but yolo
+@@ -301,7 +301,7 @@ always @(posedge clk_1m) begin
+ 	end
+ end
+ 
+-reg [7:0] clkdiv_5_count;
++reg [7:0] clkdiv_5_count = 8'd0;
+ always @(posedge clk_1m) begin
+ 	clkdiv_5_count <= clkdiv_5_count + 8'd1;
+ 	if (clkdiv_5_count == 199) begin
+diff --git a/rtl/chip8.v b/rtl/chip8.v
+--- a/rtl/chip8.v
++++ b/rtl/chip8.v
+@@ -117,29 +117,31 @@ ps2in Ps2Decoder(
+ 	.data     (keyboard_data)
+ );
+ 
+-always @(posedge keyboard_ready)
+-	if (keyboard_data == 8'hF0) begin
+-		keyboard_down_flag <= 0;
+-	end else begin
+-		case (keyboard_data)
+-			8'h16: keyboard_matrix[4'h1] = keyboard_down_flag;
+-			8'h1E: keyboard_matrix[4'h2] = keyboard_down_flag;
+-			8'h26: keyboard_matrix[4'h3] = keyboard_down_flag;
+-			8'h25: keyboard_matrix[4'hC] = keyboard_down_flag;
+-			8'h15: keyboard_matrix[4'h4] = keyboard_down_flag;
+-			8'h1D: keyboard_matrix[4'h5] = keyboard_down_flag;
+-			8'h24: keyboard_matrix[4'h6] = keyboard_down_flag;
+-			8'h2D: keyboard_matrix[4'hD] = keyboard_down_flag;
+-			8'h1C: keyboard_matrix[4'h7] = keyboard_down_flag;
+-			8'h1B: keyboard_matrix[4'h8] = keyboard_down_flag;
+-			8'h23: keyboard_matrix[4'h9] = keyboard_down_flag;
+-			8'h2B: keyboard_matrix[4'hE] = keyboard_down_flag;
+-			8'h1A: keyboard_matrix[4'hA] = keyboard_down_flag;
+-			8'h22: keyboard_matrix[4'h0] = keyboard_down_flag;
+-			8'h21: keyboard_matrix[4'hB] = keyboard_down_flag;
+-			8'h2A: keyboard_matrix[4'hF] = keyboard_down_flag;
+-		endcase
+-		keyboard_down_flag <= 1;
++always @(negedge ps2_clk)
++	if (keyboard_ready) begin
++		if (keyboard_data == 8'hF0) begin
++			keyboard_down_flag <= 0;
++		end else begin
++			case (keyboard_data)
++				8'h16: keyboard_matrix[4'h1] <= keyboard_down_flag;
++				8'h1E: keyboard_matrix[4'h2] <= keyboard_down_flag;
++				8'h26: keyboard_matrix[4'h3] <= keyboard_down_flag;
++				8'h25: keyboard_matrix[4'hC] <= keyboard_down_flag;
++				8'h15: keyboard_matrix[4'h4] <= keyboard_down_flag;
++				8'h1D: keyboard_matrix[4'h5] <= keyboard_down_flag;
++				8'h24: keyboard_matrix[4'h6] <= keyboard_down_flag;
++				8'h2D: keyboard_matrix[4'hD] <= keyboard_down_flag;
++				8'h1C: keyboard_matrix[4'h7] <= keyboard_down_flag;
++				8'h1B: keyboard_matrix[4'h8] <= keyboard_down_flag;
++				8'h23: keyboard_matrix[4'h9] <= keyboard_down_flag;
++				8'h2B: keyboard_matrix[4'hE] <= keyboard_down_flag;
++				8'h1A: keyboard_matrix[4'hA] <= keyboard_down_flag;
++				8'h22: keyboard_matrix[4'h0] <= keyboard_down_flag;
++				8'h21: keyboard_matrix[4'hB] <= keyboard_down_flag;
++				8'h2A: keyboard_matrix[4'hF] <= keyboard_down_flag;
++			endcase
++			keyboard_down_flag <= 1;
++		end
+ 	end
+ 
+ // CPU memory

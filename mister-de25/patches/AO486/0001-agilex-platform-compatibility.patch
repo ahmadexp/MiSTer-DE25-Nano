@@ -1,0 +1,322 @@
+diff --git a/ao486.sv b/ao486.sv
+index 05b7546..e090e0c 100644
+--- a/ao486.sv
++++ b/ao486.sv
+@@ -21,13 +21,18 @@
+ 
+ module emu
+ (
++	`ifdef DE25_AGILEX_PLL
++	input wire DE25_CLK_VGA,
++	`endif
+ 	`include "sys/emu_ports.vh"
+ );
+ 
+ //`define DEBUG
+ 
+ assign ADC_BUS  = 'Z;
++`ifndef DE25_CORE_HAS_SPLIT_SDRAM_DQ
+ assign {SDRAM_A, SDRAM_BA, SDRAM_DQ, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
++`endif
+ assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
+ 
+ assign LED_DISK[1] = 0;
+@@ -233,7 +238,17 @@ hps_ext hps_ext
+ /////////////////////////////  PLL  ////////////////////////////////////
+ 
+ wire clk_sys, clk_uart1, clk_uart2, clk_mpu, clk_vga;
++wire pll_locked;
++wire pll_busy;
++wire pll_error;
+ reg [27:0] cur_rate;
++reg reset = 1;
++`ifdef DE25_AGILEX_PLL
++reg de25_init_reset_n = 0;
++`else
++reg init_reset_n = 0;
++reg old_rst = 0;
++`endif
+ 
+ `ifdef DEBUG
+ 
+@@ -253,7 +268,7 @@ always @(posedge clk_sys) cur_rate <= 30000000;
+ `else
+ 
+ 
+-wire pll_locked;
++`ifndef DE25_AGILEX_PLL
+ pll pll
+ (
+ 	.refclk(CLK_50M),
+@@ -289,6 +304,7 @@ pll_cfg pll_cfg
+ 	.reconfig_to_pll(reconfig_to_pll),
+ 	.reconfig_from_pll(reconfig_from_pll)
+ );
++`endif
+ 
+ reg [2:0] clk_req;
+ reg l1, l2;
+@@ -337,9 +353,30 @@ always @(posedge CLK_50M) begin
+ 	if(sp2 == sp1) uspeed <= sp2;
+ end
+ 
++`ifdef DE25_AGILEX_PLL
++de25_ao486_pll pll
++(
++	.refclk(CLK_50M),
++	.clk_audio(CLK_AUDIO),
++	.clk_vga_platform(DE25_CLK_VGA),
++	.reset(RESET),
++	.speed(speed),
++	.uart_slow(uspeed),
++	.clk_sys(clk_sys),
++	.clk_uart1(clk_uart1),
++	.clk_uart2(clk_uart2),
++	.clk_mpu(clk_mpu),
++	.clk_vga(clk_vga),
++	.locked(pll_locked),
++	.busy(pll_busy),
++	.error(pll_error)
++);
++`endif
++
+ (* romstyle = "logic" *) wire [27:0] clk_rate[8]  = '{90000000, 15000000, 30000000, 56250000, 100000000, 100000000, 100000000, 100000000 };
+ (* romstyle = "logic" *) wire [17:0] speed_div[8] = '{  'h0505,   'h1e1e,   'h0f0f,   'h0808,   'h20504,   'h20504,   'h20504,   'h20504 };
+ 
++`ifndef DE25_AGILEX_PLL
+ always @(posedge CLK_50M) begin
+ 	reg [2:0] old_speed = 0;
+ 	reg [2:0] state = 0;
+@@ -383,6 +420,7 @@ always @(posedge CLK_50M) begin
+ 		end
+ 	end
+ end
++`endif
+ 
+ always @(posedge clk_sys) cur_rate <= clk_rate[clk_req];
+ 
+@@ -411,7 +449,9 @@ assign UART_TXD  = ~hps_mpu ? uart1_tx : (mpu_tx & ~mt32_use);
+ 
+ wire user_io_mode = status[10];
+ 
++`ifndef DE25_PLL_DIAGNOSTIC
+ assign USER_OUT = user_io_mode ? {1'b1, 1'b1, uart2_dtr, 1'b1, uart2_rts, uart2_tx, 1'b1} : mt32_out;
++`endif
+ 
+ //
+ // Pin | USB Name |   |Signal
+@@ -443,6 +483,7 @@ assign CE_PIXEL = vga_ce;
+ wire [7:0] r,g,b;
+ wire       HSync,VSync;
+ wire       ce_pix;
++wire [4:0] vga_debug;
+ 
+ video_cleaner video_cleaner
+ (
+@@ -468,6 +509,54 @@ video_cleaner video_cleaner
+ wire hs,vs,de1;
+ wire [7:0] R,G,B;
+ 
++`ifdef DE25_PLL_DIAGNOSTIC
++reg de25_hsync_seen = 0;
++reg de25_raw_hsync_seen = 0;
++reg de25_vga_ce_seen = 0;
++reg de25_vsync_seen = 0;
++reg de25_old_hs = 0;
++reg de25_old_raw_hs = 0;
++reg de25_old_vs = 0;
++reg de25_vga_clock_seen = 0;
++reg de25_cpu_clock_seen = 0;
++reg de25_ddr_request_seen = 0;
++reg de25_ddr_write_seen = 0;
++always @(posedge clk_sys) begin
++	de25_cpu_clock_seen <= 1;
++	if(reset) begin
++		de25_ddr_request_seen <= 0;
++		de25_ddr_write_seen <= 0;
++	end
++	else begin
++		if(DDRAM_RD || DDRAM_WE) de25_ddr_request_seen <= 1;
++		if(DDRAM_WE) de25_ddr_write_seen <= 1;
++	end
++end
++always @(posedge clk_vga) begin
++	de25_vga_clock_seen <= 1;
++	de25_old_hs <= hs;
++	de25_old_raw_hs <= HSync;
++	de25_old_vs <= vs;
++	if(reset) begin
++		de25_hsync_seen <= 0;
++		de25_raw_hsync_seen <= 0;
++		de25_vga_ce_seen <= 0;
++		de25_vsync_seen <= 0;
++	end
++	else begin
++		if(de25_old_hs != hs) de25_hsync_seen <= 1;
++		if(de25_old_raw_hs != HSync) de25_raw_hsync_seen <= 1;
++		if(vga_ce) de25_vga_ce_seen <= 1;
++		if(de25_old_vs != vs) de25_vsync_seen <= 1;
++	end
++end
++// GPI diagnostic bits 26:21 become the low six bits of the most recent BIOS
++// POST byte. The previous build already proved CPU writes and all VGA setup
++// stages except attribute PAS, so the POST code now identifies the exact stall.
++wire [7:0] de25_post_code = system.de25_post_code;
++assign USER_OUT = {1'b1, de25_post_code[5:0]};
++`endif
++
+ gamma_fast gamma
+ (
+ 	.clk_vid(CLK_VIDEO),
+@@ -573,6 +662,10 @@ assign VIDEO_ARY = fb_en ? fb_ary : ary;
+ 
+ assign DDRAM_ADDR[28:25] = 4'h3;
+ 
++logic  [7:0] ja_1x, ja_1y, ja_2x, ja_2y;
++logic [15:0] dig_mask;
++logic  [1:0] joystick_dis;
++
+ system system
+ (
+ 	.clk_sys              (clk_sys),
+@@ -598,8 +691,15 @@ system system
+ 	.video_r              (r),
+ 	.video_g              (g),
+ 	.video_b              (b),
+-
+-	.clock_rate_vga       (90000000),
++	.video_debug          (vga_debug),
++
++	.clock_rate_vga       (
++	`ifdef DE25_AGILEX_PLL
++		100000000
++	`else
++		90000000
++	`endif
++	),
+ 	.video_pal_a          (vga_pal_a),
+ 	.video_pal_d          (vga_pal_d),
+ 	.video_pal_we         (vga_pal_we),
+@@ -703,7 +803,13 @@ system system
+ 	.DDRAM_WE             (DDRAM_WE),
+ 
+ 	.pll_locked           (pll_locked),
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	.SDRAM_DQ_IN          (de25_sdram_dq_in),
++	.SDRAM_DQ_OUT         (de25_sdram_dq_out),
++	.SDRAM_DQ_OE          (de25_sdram_dq_oe),
++`else
+ 	.SDRAM_DQ             (SDRAM_DQ),
++`endif
+ 	.SDRAM_A              (SDRAM_A),
+ 	.SDRAM_DQML           (SDRAM_DQML),
+ 	.SDRAM_DQMH           (SDRAM_DQMH),
+@@ -719,15 +825,19 @@ system system
+ wire [7:0] syscfg;
+ wire       ps2_reset_n;
+ 
+-reg reset;
+ always @(posedge clk_sys) begin
+-	reg init_reset_n = 0;
+-	reg old_rst = 0;
+-
++	`ifdef DE25_AGILEX_PLL
++	// The synchronized DE25 shell reset is the authoritative power-up hold.
++	// A hot-loaded persona can begin after the legacy status reset pulse has
++	// already happened, so release startup from the shell reset level. status[0]
++	// remains level-sensitive for normal R0 menu resets.
++	reset <= buttons[1] | status[0] | RESET | ~de25_init_reset_n;
++	if(!RESET) de25_init_reset_n <= 1;
++	`else
+ 	reset <= buttons[1] | status[0] | RESET | ~init_reset_n;
+-
+ 	old_rst <= status[0];
+ 	if(old_rst & ~status[0]) init_reset_n <= 1;
++	`endif
+ end
+ 
+ reg dbg_menu = 0;
+@@ -752,10 +862,6 @@ always @(posedge clk_sys) begin
+ end
+ 
+ 
+-wire  [7:0] ja_1x,ja_1y,ja_2x,ja_2y;
+-wire [15:0] dig_mask;
+-wire  [1:0] joystick_dis;
+-
+ wire [7:0] pedal_combo;
+ always_comb begin
+ 	ja_1x = joystick_l_analog_0[7:0];
+diff --git a/rtl/system.v b/rtl/system.v
+index d85e8f8..b943237 100644
+--- a/rtl/system.v
++++ b/rtl/system.v
+@@ -103,6 +103,7 @@ module system
+ 	output [7:0]  video_r,
+ 	output [7:0]  video_g,
+ 	output [7:0]  video_b,
++	output [4:0]  video_debug,
+ 	input         video_f60,
+ 	output [7:0]  video_pal_a,
+ 	output [17:0] video_pal_d,
+@@ -133,7 +134,13 @@ module system
+ 	output        SDRAM_CKE,
+ 	output [12:0] SDRAM_A,
+ 	output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input  [15:0] SDRAM_DQ_IN,
++	output [15:0] SDRAM_DQ_OUT,
++	output        SDRAM_DQ_OE,
++`else
+ 	inout  [15:0] SDRAM_DQ,
++`endif
+ 	output        SDRAM_DQML,
+ 	output        SDRAM_DQMH,
+ 	output        SDRAM_nCS,
+@@ -402,6 +409,18 @@ always @(posedge clk_sys) begin
+ 	sysctl_cs     <= ({iobus_address[15:0]      } == 16'h8888);
+ end
+ 
++`ifdef DE25_PLL_DIAGNOSTIC
++// Keep the most recent BIOS POST byte observable through the DE25 HPS
++// diagnostic path. Port 80h is also decoded by the DMA page block, but BIOS
++// POST writes still appear unmodified on the shared I/O bus.
++reg [7:0] de25_post_code = 8'h00;
++always @(posedge clk_sys) begin
++	if(reset) de25_post_code <= 8'h00;
++	else if(iobus_write && iobus_address == 16'h0080)
++		de25_post_code <= iobus_writedata[7:0];
++end
++`endif
++
+ reg [7:0] ctlport = 0;
+ always @(posedge clk_sys) begin
+ 	reg in_reset = 1;
+@@ -782,7 +801,13 @@ gus gus
+ 	.irq               (gus_irq),
+ 
+ 	.pll_locked        (pll_locked),
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	.SDRAM_DQ_IN       (SDRAM_DQ_IN),
++	.SDRAM_DQ_OUT      (SDRAM_DQ_OUT),
++	.SDRAM_DQ_OE       (SDRAM_DQ_OE),
++`else
+ 	.SDRAM_DQ          (SDRAM_DQ),
++`endif
+ 	.SDRAM_A           (SDRAM_A),
+ 	.SDRAM_DQML        (SDRAM_DQML),
+ 	.SDRAM_DQMH        (SDRAM_DQMH),
+@@ -898,9 +923,10 @@ vga vga
+ 	.vga_blank_n       (video_blank_n),
+ 	.vga_horiz_sync    (video_hsync),
+ 	.vga_vert_sync     (video_vsync),
+-	.vga_r             (video_r),
+-	.vga_g             (video_g),
+-	.vga_b             (video_b),
++	.vga_r             (video_r),
++	.vga_g             (video_g),
++	.vga_b             (video_b),
++	.debug             (video_debug),
+ 	.vga_f60           (video_f60),
+ 	.vga_memmode       (vga_memmode),
+ 	.vga_pal_a         (video_pal_a),

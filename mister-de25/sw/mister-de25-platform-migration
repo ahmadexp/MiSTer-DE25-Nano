@@ -1,0 +1,310 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF' >&2
+Usage:
+  mister-de25-platform-migration prepare TARGET_MENU.rbf
+  mister-de25-platform-migration flashed --confirm FLASH-VERIFIED
+  mister-de25-platform-migration finalize-boot
+  mister-de25-platform-migration abort
+  mister-de25-platform-migration restore-files --confirm QSPI-ROLLED-BACK
+  mister-de25-platform-migration status
+
+Safely coordinates a DE25-Nano HPS-first platform migration across QSPI and
+the SD card. QSPI programming is performed separately with program-qspi.sh.
+FPGA loads remain interlocked from prepare until a verified flash is followed
+by a real reboot into the new HPS-first image.
+EOF
+}
+
+fat_root=${MISTER_DE25_FAT_ROOT:-/media/fat}
+sys_root=${MISTER_DE25_SYS_ROOT:-/}
+state_root=${MISTER_DE25_MIGRATION_ROOT:-${sys_root%/}/var/lib/mister-de25/platform-migration}
+pending=$state_root/pending
+platform_hash_file=${MISTER_DE25_HPS_IO_HASH:-${sys_root%/}/etc/mister-de25/hps-io-hash}
+boot_id_file=${MISTER_DE25_BOOT_ID_FILE:-/proc/sys/kernel/random/boot_id}
+systemctl_command=${MISTER_DE25_SYSTEMCTL:-systemctl}
+
+read_hash() {
+    local hash_file=$1 hash
+    if [[ ! -s $hash_file ]]; then
+        echo "HPS I/O compatibility metadata is missing: $hash_file" >&2
+        exit 1
+    fi
+    hash=$(tr -d '[:space:]' <"$hash_file" | tr '[:lower:]' '[:upper:]')
+    if [[ ! $hash =~ ^[0-9A-F]{64}$ ]]; then
+        echo "Invalid HPS I/O hash in $hash_file" >&2
+        exit 1
+    fi
+    printf '%s' "$hash"
+}
+
+hash_file() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | awk '{print $1}'
+    else
+        echo "No SHA-256 utility is installed" >&2
+        exit 1
+    fi
+}
+
+read_digest() {
+    local digest_file=$1 digest
+    if [[ ! -s $digest_file ]]; then
+        echo "RBF SHA-256 metadata is missing: $digest_file" >&2
+        exit 1
+    fi
+    digest=$(tr -d '[:space:]' <"$digest_file" | tr '[:upper:]' '[:lower:]')
+    if [[ ! $digest =~ ^[0-9a-f]{64}$ ]]; then
+        echo "Invalid RBF SHA-256 in $digest_file" >&2
+        exit 1
+    fi
+    printf '%s' "$digest"
+}
+
+verify_digest() {
+    local rbf=$1 expected actual
+    expected=$(read_digest "$rbf.sha256")
+    actual=$(hash_file "$rbf")
+    if [[ $actual != "$expected" ]]; then
+        echo "RBF SHA-256 metadata does not match: $rbf" >&2
+        exit 1
+    fi
+}
+
+read_field() {
+    local name=$1 value
+    value=$(sed -n "s/^${name}=//p" "$pending" 2>/dev/null | head -1)
+    if [[ -z $value ]]; then
+        echo "Migration state is missing $name" >&2
+        exit 1
+    fi
+    printf '%s' "$value"
+}
+
+write_pending() {
+    local state=$1 source_boot_id=$2 source_hash=$3 target_hash=$4
+    local temporary=$state_root/.pending.$$
+    umask 077
+    cat >"$temporary" <<EOF
+state=$state
+source_boot_id=$source_boot_id
+source_hash=$source_hash
+target_hash=$target_hash
+EOF
+    mv -f "$temporary" "$pending"
+    sync "$pending" 2>/dev/null || sync
+}
+
+stop_mister() {
+    # Keep the preload unit active. Its resident process owns and pets the
+    # non-stoppable DesignWare watchdog after the first FPGA transaction.
+    # Stopping that unit would kill the keeper and force an HPS reset while a
+    # QSPI migration is waiting for external JTAG verification. The pending
+    # migration file already interlocks every subsequent FPGA load, so only
+    # Main needs to stop here.
+    "$systemctl_command" stop mister.service
+}
+
+start_mister() {
+    "$systemctl_command" start mister-de25-preload.service
+    "$systemctl_command" start mister.service
+}
+
+require_root_for_live_system() {
+    if [[ $sys_root == / && $(id -u) -ne 0 ]]; then
+        echo "Root privileges are required for a live platform migration" >&2
+        exit 1
+    fi
+}
+
+command=${1:-}
+case $command in
+    prepare)
+        [[ $# -eq 2 ]] || { usage; exit 2; }
+        require_root_for_live_system
+        runtime=$2
+        runtime_sidecar=$runtime.hps-io-hash
+        runtime_digest=$runtime.sha256
+        [[ -s $runtime ]] || { echo "Target Menu RBF is missing: $runtime" >&2; exit 1; }
+        verify_digest "$runtime"
+        target_hash=$(read_hash "$runtime_sidecar")
+        source_hash=$(read_hash "$platform_hash_file")
+        source_boot_id=$(tr -d '[:space:]' <"$boot_id_file")
+        [[ -n $source_boot_id ]] || { echo "Could not read the current boot ID" >&2; exit 1; }
+        [[ ! -e $pending ]] || { echo "A platform migration is already pending" >&2; exit 1; }
+        [[ $target_hash != "$source_hash" ]] || {
+            echo "Target platform is already installed: $target_hash" >&2
+            exit 1
+        }
+
+        install -d -m 0700 "$state_root/staged" "$state_root/backup"
+        install -m 0644 "$runtime" "$state_root/staged/menu.rbf"
+        install -m 0644 "$runtime_sidecar" "$state_root/staged/menu.rbf.hps-io-hash"
+        install -m 0644 "$runtime_digest" "$state_root/staged/menu.rbf.sha256"
+        install -m 0644 "$platform_hash_file" "$state_root/backup/hps-io-hash"
+        if [[ -e $fat_root/menu.rbf ]]; then
+            install -m 0644 "$fat_root/menu.rbf" "$state_root/backup/menu.rbf"
+        else
+            rm -f "$state_root/backup/menu.rbf"
+        fi
+        if [[ -e $fat_root/menu.rbf.hps-io-hash ]]; then
+            install -m 0644 "$fat_root/menu.rbf.hps-io-hash" \
+                "$state_root/backup/menu.rbf.hps-io-hash"
+        else
+            rm -f "$state_root/backup/menu.rbf.hps-io-hash"
+        fi
+        if [[ -e $fat_root/menu.rbf.sha256 ]]; then
+            install -m 0644 "$fat_root/menu.rbf.sha256" \
+                "$state_root/backup/menu.rbf.sha256"
+        elif [[ -s $fat_root/menu.rbf ]]; then
+            hash_file "$fat_root/menu.rbf" >"$state_root/backup/menu.rbf.sha256"
+        else
+            rm -f "$state_root/backup/menu.rbf.sha256"
+        fi
+
+        # Publish the interlock before stopping services. Any concurrent or
+        # post-crash FPGA load will fail closed once this file exists.
+        write_pending prepared "$source_boot_id" "$source_hash" "$target_hash"
+        stop_mister
+        echo "Platform migration prepared and MiSTer FPGA loads are interlocked."
+        echo "Source HPS I/O hash: $source_hash"
+        echo "Target HPS I/O hash: $target_hash"
+        echo "Program and verify the matched JIC, then run:"
+        echo "  mister-de25-platform-migration flashed --confirm FLASH-VERIFIED"
+        ;;
+    flashed)
+        [[ $# -eq 3 && $2 == --confirm && $3 == FLASH-VERIFIED ]] || {
+            usage
+            exit 2
+        }
+        require_root_for_live_system
+        [[ -s $pending ]] || { echo "No platform migration is pending" >&2; exit 1; }
+        [[ $(read_field state) == prepared ]] || {
+            echo "Migration is not in the prepared state" >&2
+            exit 1
+        }
+        source_boot_id=$(read_field source_boot_id)
+        source_hash=$(read_field source_hash)
+        target_hash=$(read_field target_hash)
+        staged_hash=$(read_hash "$state_root/staged/menu.rbf.hps-io-hash")
+        verify_digest "$state_root/staged/menu.rbf"
+        [[ $staged_hash == "$target_hash" ]] || {
+            echo "Staged Menu no longer matches the migration target" >&2
+            exit 1
+        }
+
+        install -d -m 0755 "$fat_root" "$(dirname "$platform_hash_file")"
+        install -m 0644 "$state_root/staged/menu.rbf.hps-io-hash" \
+            "$fat_root/.menu.rbf.hps-io-hash.migration"
+        install -m 0644 "$state_root/staged/menu.rbf.sha256" \
+            "$fat_root/.menu.rbf.sha256.migration"
+        install -m 0644 "$state_root/staged/menu.rbf" \
+            "$fat_root/.menu.rbf.migration"
+        printf '%s\n' "$target_hash" >"$platform_hash_file.migration"
+        mv -f "$fat_root/.menu.rbf.hps-io-hash.migration" \
+            "$fat_root/menu.rbf.hps-io-hash"
+        mv -f "$fat_root/.menu.rbf.sha256.migration" \
+            "$fat_root/menu.rbf.sha256"
+        mv -f "$fat_root/.menu.rbf.migration" "$fat_root/menu.rbf"
+        mv -f "$platform_hash_file.migration" "$platform_hash_file"
+        write_pending flashed "$source_boot_id" "$source_hash" "$target_hash"
+        sync
+        echo "Verified QSPI flash recorded and matched SD runtime installed."
+        echo "MiSTer remains interlocked until a reboot changes the boot ID."
+        echo "Reboot the board now. The preload service will finalize automatically."
+        ;;
+    finalize-boot)
+        [[ $# -eq 1 ]] || { usage; exit 2; }
+        [[ -e $pending ]] || exit 0
+        require_root_for_live_system
+        state=$(read_field state)
+        [[ $state == flashed ]] || {
+            echo "Platform migration is $state; refusing FPGA load" >&2
+            exit 1
+        }
+        source_boot_id=$(read_field source_boot_id)
+        target_hash=$(read_field target_hash)
+        current_boot_id=$(tr -d '[:space:]' <"$boot_id_file")
+        [[ -n $current_boot_id && $current_boot_id != "$source_boot_id" ]] || {
+            echo "Platform migration requires a reboot before any FPGA load" >&2
+            exit 1
+        }
+        [[ $(read_hash "$platform_hash_file") == "$target_hash" ]] || {
+            echo "Installed platform hash does not match the migration target" >&2
+            exit 1
+        }
+        [[ $(read_hash "$fat_root/menu.rbf.hps-io-hash") == "$target_hash" ]] || {
+            echo "Installed Menu does not match the migration target" >&2
+            exit 1
+        }
+        verify_digest "$fat_root/menu.rbf"
+        rm -f "$pending"
+        sync "$state_root" 2>/dev/null || sync
+        echo "Platform migration finalized after reboot: $target_hash"
+        ;;
+    abort)
+        [[ $# -eq 1 ]] || { usage; exit 2; }
+        require_root_for_live_system
+        [[ -s $pending ]] || { echo "No platform migration is pending" >&2; exit 1; }
+        [[ $(read_field state) == prepared ]] || {
+            echo "Cannot abort after QSPI was recorded as flashed" >&2
+            echo "Restore the source JIC first, then use restore-files." >&2
+            exit 1
+        }
+        rm -f "$pending"
+        sync "$state_root" 2>/dev/null || sync
+        start_mister
+        echo "Prepared migration aborted; original MiSTer services restarted."
+        ;;
+    restore-files)
+        [[ $# -eq 3 && $2 == --confirm && $3 == QSPI-ROLLED-BACK ]] || {
+            usage
+            exit 2
+        }
+        require_root_for_live_system
+        [[ -s $pending ]] || { echo "No platform migration is pending" >&2; exit 1; }
+        source_hash=$(read_field source_hash)
+        [[ $(read_hash "$state_root/backup/hps-io-hash") == "$source_hash" ]] || {
+            echo "Backup platform hash is invalid" >&2
+            exit 1
+        }
+        stop_mister
+        if [[ -e $state_root/backup/menu.rbf ]]; then
+            install -m 0644 "$state_root/backup/menu.rbf" "$fat_root/menu.rbf"
+        else
+            rm -f "$fat_root/menu.rbf"
+        fi
+        if [[ -e $state_root/backup/menu.rbf.hps-io-hash ]]; then
+            install -m 0644 "$state_root/backup/menu.rbf.hps-io-hash" \
+                "$fat_root/menu.rbf.hps-io-hash"
+        else
+            rm -f "$fat_root/menu.rbf.hps-io-hash"
+        fi
+        if [[ -e $state_root/backup/menu.rbf.sha256 ]]; then
+            install -m 0644 "$state_root/backup/menu.rbf.sha256" \
+                "$fat_root/menu.rbf.sha256"
+        else
+            rm -f "$fat_root/menu.rbf.sha256"
+        fi
+        install -m 0644 "$state_root/backup/hps-io-hash" "$platform_hash_file"
+        rm -f "$pending"
+        sync
+        echo "Source SD files restored after confirmed QSPI rollback. Reboot now."
+        ;;
+    status)
+        [[ $# -eq 1 ]] || { usage; exit 2; }
+        if [[ ! -e $pending ]]; then
+            echo "No platform migration is pending."
+            exit 0
+        fi
+        cat "$pending"
+        ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac

@@ -1,0 +1,95 @@
+diff --git a/Chip8.sv b/Chip8.sv
+--- a/Chip8.sv
++++ b/Chip8.sv
+@@ -267,9 +267,9 @@ assign {UART_RTS, UART_TXD, UART_DTR} = 0;
+ 
+ 
+ wire clk_sys; // 50MHz
+-wire clk_cpu_fast, clk_cpu_slow; // 12.5KHz or 5KHz
++reg clk_cpu_fast, clk_cpu_slow; // 12.5KHz or 5KHz
+ wire clk_video; // 13.5MHz
+-wire clk_12k; // 12 KHz
++reg clk_12k; // 12 KHz
+ wire clk_1m; // 1MHz, for dividing into the required smaller amounts
+ wire locked;
+ wire cpu_clk;
+diff --git a/rtl/blitter.v b/rtl/blitter.v
+--- a/rtl/blitter.v
++++ b/rtl/blitter.v
+@@ -60,7 +60,7 @@ task init_clear;
+ 		buf_in <= 0;
+ 		buf_enable <= 1;
+ 		buf_write <= 1;
+-	end;
++	end
+ endtask
+ 
+ task run_clear;
+@@ -72,7 +72,7 @@ task run_clear;
+ 		end else begin
+ 			buf_addr <= buf_addr + 1'd1;
+ 		end;
+-	end;
++	end
+ endtask
+ 
+ //
+@@ -102,7 +102,7 @@ task init_scroll;
+ 		buf_write <= 0;
+ 		subState <= `SCROLL_STATE_WAIT_READ;
+ 		buf_addr <= scrollLeft ? bufSize : 9'd0;
+-	end;
++	end
+ endtask
+ 
+ task run_scroll;
+@@ -136,7 +136,7 @@ task run_scroll;
+ 				subState <= `SCROLL_STATE_WAIT_READ;
+ 			end
+ 		endcase
+-	end;
++	end
+ endtask
+ 
+ //
+@@ -160,7 +160,7 @@ task init_scroll_down;
+ 		scrollDownDest <= bufSize;
+ 		scrollDownSrc <= scrollSrc;
+ 		buf_addr <= scrollSrc;
+-	end;
++	end
+ endtask
+ 
+ task run_scroll_down;
+@@ -201,7 +201,7 @@ task run_scroll_down;
+ 				end;
+ 			end
+ 		endcase
+-	end;
++	end
+ endtask
+ 
+ 
+@@ -280,11 +280,11 @@ task init_sprite;
+ 		collision <= 0;
+ 		
+ 		spriteLineCount <= spriteHeightLessOne - excessLines;
+-	end;
++	end
+ endtask
+ 
+ task run_sprite;
+-	begin;
++	begin
+ 		case(subState)
+ 			`SPRITE_STATE_WAIT1: begin
+ 				subState <= operation == `BLIT_OP_SPRITE_16 ? `SPRITE_STATE_R2 : `SPRITE_STATE_RW1;
+@@ -331,7 +331,7 @@ task run_sprite;
+ 				end;
+ 			end
+ 		endcase;
+-	end;
++	end
+ endtask
+ 
+ 

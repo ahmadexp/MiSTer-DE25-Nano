@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano port
+Date: Fri, 14 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Enable DE25 native screenshots
+
+The common Agilex scaler keeps its frame buffers in MiSTer's logical
+0x30000000 window so they remain disjoint from core DDRAM at 0x20000000.
+Point Main's screenshot reader at that window on DE25 and publish the path of
+each fully written image for unattended SSH retrieval.
+---
+ scaler.cpp | 7 +++++++
+ scaler.h   | 7 +++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/scaler.cpp b/scaler.cpp
+--- a/scaler.cpp
++++ b/scaler.cpp
+@@ -25,5 +25,6 @@
+ #include "file_io.h"
+ #include "menu.h"
++#include "user_io.h"
+ 
+ #ifdef PROFILING
+ #include "profiling.h"
+@@ -651,6 +652,12 @@ void screenshot_cb(void)
+             case SCREENSHOT_SUCCESS:
+                 if (result_data->filename)
+                 {
++#ifdef MISTER_DE25
++                    // Publish the completed relative FAT path for unattended
++                    // SSH capture. Write it only after Imlib has closed the
++                    // image so a reader can immediately retrieve the file.
++                    MakeFile("/tmp/DE25_SCREENSHOT", result_data->filename);
++#endif
+                     char msg[1024];
+                     snprintf(msg, sizeof(msg), "Screen saved to\n%s",
+                             result_data->filename + strlen(SCREENSHOT_DIR "/"));
+diff --git a/scaler.h b/scaler.h
+--- a/scaler.h
++++ b/scaler.h
+@@ -28,7 +28,14 @@ typedef struct {
+    int map_off;
+ } mister_scaler;
+ 
++#ifdef MISTER_DE25
++// Keep the DE25 video buffers disjoint from the standard core DDRAM window.
++// shmem_map() translates this logical address to 0xb0000000 in LPDDR4, which
++// matches the RAMBASE used by the common Agilex video scaler.
++#define MISTER_SCALER_BASEADDR     0x30000000
++#else
+ #define MISTER_SCALER_BASEADDR     0x20000000
++#endif
+ #define MISTER_SCALER_BUFFERSIZE   2048*3*1024
+ 
+ mister_scaler *mister_scaler_init();
+-- 
+2.43.0

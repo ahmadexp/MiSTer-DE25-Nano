@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fat_root=${MISTER_DE25_FAT_ROOT:-/media/fat}
+control_root=${MISTER_DE25_HEADLESS_ROOT:-$fat_root/.mister-de25/headless-migration}
+candidate=${MISTER_DE25_MIGRATION_MENU:-$control_root/menu.rbf}
+request=$control_root/request
+prepared_marker=$control_root/prepared
+verified_marker=$control_root/qspi-verified
+cancel_marker=$control_root/cancel
+status_file=$control_root/status
+migration_helper=${MISTER_DE25_MIGRATION_HELPER:-/usr/libexec/mister-de25-platform-migration}
+systemctl_command=${MISTER_DE25_SYSTEMCTL:-systemctl}
+wait_seconds=${MISTER_DE25_MIGRATION_WAIT_SECONDS:-1800}
+
+read_hash() {
+    local value
+    value=$(tr -d '[:space:]' <"$1" | tr '[:lower:]' '[:upper:]')
+    [[ $value =~ ^[0-9A-F]{64}$ ]] || {
+        echo "Invalid HPS I/O hash in $1" >&2
+        return 1
+    }
+    printf '%s' "$value"
+}
+
+write_status() {
+    local state=$1 detail=${2:-}
+    {
+        printf 'state=%s\n' "$state"
+        [[ -z $detail ]] || printf 'detail=%s\n' "$detail"
+        date -u '+updated=%Y-%m-%dT%H:%M:%SZ'
+    } >"$status_file.new"
+    mv -f "$status_file.new" "$status_file"
+    sync "$status_file" 2>/dev/null || sync
+}
+
+prepared=0
+completed=0
+# shellcheck disable=SC2329 # Invoked by the signal and exit trap below.
+cleanup() {
+    local result=$?
+    trap - EXIT HUP INT TERM
+    if ((result != 0 && completed == 0)); then
+        rm -f "$request" "$prepared_marker" "$verified_marker" "$cancel_marker"
+        if ((prepared == 1)); then
+            "$migration_helper" abort >/dev/null 2>&1 || true
+        fi
+        write_status failed "controller-exit-$result" || true
+    fi
+    exit "$result"
+}
+trap cleanup EXIT HUP INT TERM
+
+if [[ ${MISTER_DE25_ALLOW_NON_ROOT:-0} != 1 && $(id -u) -ne 0 ]]; then
+    echo "Headless migration must run as root" >&2
+    exit 1
+fi
+[[ $wait_seconds =~ ^[1-9][0-9]*$ ]] || { echo "Invalid migration wait time" >&2; exit 1; }
+[[ -x $migration_helper ]] || { echo "Migration helper is missing" >&2; exit 1; }
+for required in "$request" "$candidate" "$candidate.hps-io-hash" "$candidate.sha256"; do
+    [[ -s $required ]] || { echo "Migration input is missing: $required" >&2; exit 1; }
+done
+
+requested_hash=$(read_hash "$request")
+candidate_hash=$(read_hash "$candidate.hps-io-hash")
+[[ $requested_hash == "$candidate_hash" ]] || {
+    echo "Migration request does not match the candidate Menu" >&2
+    exit 1
+}
+
+rm -f "$prepared_marker" "$verified_marker" "$cancel_marker"
+write_status preparing "$candidate_hash"
+"$migration_helper" prepare "$candidate"
+prepared=1
+printf '%s\n' "$candidate_hash" >"$prepared_marker"
+write_status waiting-for-qspi "$candidate_hash"
+
+for ((elapsed = 0; elapsed < wait_seconds; elapsed++)); do
+    if [[ -e $cancel_marker ]]; then
+        echo "Headless migration cancelled before QSPI verification" >&2
+        exit 1
+    fi
+    if [[ -s $verified_marker ]]; then
+        verified_hash=$(read_hash "$verified_marker")
+        [[ $verified_hash == "$candidate_hash" ]] || {
+            echo "QSPI verification marker has the wrong HPS I/O hash" >&2
+            exit 1
+        }
+        "$migration_helper" flashed --confirm FLASH-VERIFIED
+        prepared=0
+        completed=1
+        rm -f "$request" "$prepared_marker" "$verified_marker" "$cancel_marker"
+        write_status rebooting "$candidate_hash"
+        sync
+        "$systemctl_command" reboot
+        exit 0
+    fi
+    sleep 1
+done
+
+echo "Timed out waiting for QSPI verification" >&2
+exit 1

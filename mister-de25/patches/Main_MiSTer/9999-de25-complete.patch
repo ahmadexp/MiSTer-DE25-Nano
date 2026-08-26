@@ -1,0 +1,1687 @@
+diff --git a/DiskImage.cpp b/DiskImage.cpp
+index eb12841..049a0c7 100644
+--- a/DiskImage.cpp
++++ b/DiskImage.cpp
+@@ -2821,7 +2821,7 @@ bool unpack_td0(unsigned char *data, long &size)
+ 			td0_src = end_packed_data;
+ 		}
+ 	}
+-	size = unsigned(td0_dst) - unsigned(data);
++	size = td0_dst - data;
+ 	delete[] snbuf;
+ 	return true;
+ }
+diff --git a/Makefile b/Makefile
+index 9634284..b0a633a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,12 +3,30 @@ SHELL = /bin/bash -o pipefail
+ 
+ MAKEFLAGS += "-j $(shell nproc)"
+ 
++# The production MiSTer target remains ARMv7. ARCH=aarch64 builds natively on
++# the DE25-Nano HPS and uses distribution libraries instead of bundled ARMv7
++# shared objects.
++ARCH ?= armv7
++
++ifeq ($(ARCH),aarch64)
++BASE    =
++CC      = gcc
++LD      = ld
++STRIP   = strip
++LIBCO   = lib/libco/ucontext.c
++IMLIB2_LIB = $(shell pkg-config --libs imlib2) -lfreetype -lbz2 -lpng16 -lz
++BLUETOOTH_LIB = -lbluetooth
++DFLAGS_ARCH = -DMISTER_DE25
++else
+ # using gcc version 10.2.1
+ BASE    = arm-none-linux-gnueabihf
+-
+ CC      = $(BASE)-gcc
+ LD      = $(BASE)-ld
+ STRIP   = $(BASE)-strip
++LIBCO   = lib/libco/arm.c
++IMLIB2_LIB = -Llib/imlib2 -lfreetype -lbz2 -lpng16 -lz -lImlib2
++BLUETOOTH_LIB = -Llib/bluetooth -lbluetooth
++endif
+ 
+ ifeq ($(V),1)
+ 	Q :=
+@@ -36,7 +54,7 @@ C_SRC =   $(wildcard *.c) \
+ 					$(wildcard ./lib/zstd/lib/common/*.c) \
+ 					$(wildcard ./lib/zstd/lib/decompress/*.c) \
+           $(wildcard ./lib/libchdr/*.c) \
+-          lib/libco/arm.c
++          $(LIBCO)
+ 
+ CPP_SRC = $(wildcard *.cpp) \
+           $(wildcard ./lib/serial_server/library/*.cpp) \
+@@ -44,14 +62,12 @@ CPP_SRC = $(wildcard *.cpp) \
+ 
+ IMG =     $(wildcard *.png)
+ 
+-IMLIB2_LIB  = -Llib/imlib2 -lfreetype -lbz2 -lpng16 -lz -lImlib2
+-
+ OBJ	= $(C_SRC:%.c=$(BUILDDIR)/%.c.o) $(CPP_SRC:%.cpp=$(BUILDDIR)/%.cpp.o) $(IMG:%.png=$(BUILDDIR)/%.png.o)
+ DEP	= $(C_SRC:%.c=$(BUILDDIR)/%.c.d) $(CPP_SRC:%.cpp=$(BUILDDIR)/%.cpp.d)
+ 
+-DFLAGS	= $(INCLUDE) -D_7ZIP_ST -DPACKAGE_VERSION=\"1.3.3\" -DHAVE_LROUND -DHAVE_STDINT_H -DHAVE_STDLIB_H -DHAVE_SYS_PARAM_H -DENABLE_64_BIT_WORDS=0 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -DVDATE=\"`date +"%y%m%d"`\"
++DFLAGS	= $(INCLUDE) $(DFLAGS_ARCH) -D_7ZIP_ST -DPACKAGE_VERSION=\"1.3.3\" -DHAVE_LROUND -DHAVE_STDINT_H -DHAVE_STDLIB_H -DHAVE_SYS_PARAM_H -DENABLE_64_BIT_WORDS=0 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -DVDATE=\"`date +"%y%m%d"`\"
+ CFLAGS	= $(DFLAGS) -Wall -Wextra -Wno-strict-aliasing -Wno-stringop-overflow -Wno-stringop-truncation -Wno-format-truncation -Wno-psabi -Wno-restrict -c
+-LFLAGS	= -lc -lstdc++ -lm -lrt $(IMLIB2_LIB) -Llib/bluetooth -lbluetooth -lpthread
++LFLAGS	= -lc -lstdc++ -lm -lrt $(IMLIB2_LIB) $(BLUETOOTH_LIB) -lpthread
+ 
+ OUTPUT_FILTER = sed -e 's/\(.[a-zA-Z]\+\):\([0-9]\+\):\([0-9]\+\):/\1(\2,\ \3):/g'
+ 
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+index b64cfe5..1813d9e 100644
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -8,6 +8,8 @@
+ #include <termios.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <sys/mount.h>
++#include <sys/wait.h>
+ 
+ #include "fpga_io.h"
+ #include "file_io.h"
+@@ -23,11 +25,18 @@
+ #include "fpga_reset_manager.h"
+ #include "fpga_nic301.h"
+ 
++#ifdef MISTER_DE25
++#define FPGA_REG_BASE 0x20000000
++#define FPGA_REG_SIZE 0x00400000
++#define DE25_GP_OUT   0x20020000
++#define DE25_GP_IN    0x20020010
++#else
+ #define FPGA_REG_BASE 0xFF000000
+ #define FPGA_REG_SIZE 0x01000000
++#endif
+ 
+-#define MAP_ADDR(x) (volatile uint32_t*)(&map_base[(((uint32_t)(x)) & 0xFFFFFF)>>2])
+-#define IS_REG(x) (((((uint32_t)(x))-1)>=(FPGA_REG_BASE - 1)) && ((((uint32_t)(x))-1)<(FPGA_REG_BASE + FPGA_REG_SIZE - 1)))
++#define MAP_ADDR(x) (volatile uint32_t*)(&map_base[(((uintptr_t)(x)) & 0xFFFFFF)>>2])
++#define IS_REG(x) (((((uintptr_t)(x))-1)>=(FPGA_REG_BASE - 1)) && ((((uintptr_t)(x))-1)<(FPGA_REG_BASE + FPGA_REG_SIZE - 1)))
+ 
+ #define fatal(x) munmap((void*)map_base, FPGA_REG_SIZE); close(fd); exit(x)
+ 
+@@ -38,13 +47,246 @@ static struct nic301_registers       *nic301_regs  = (nic301_registers *)SOCFPGA
+ 
+ static uint32_t *map_base;
+ 
++#ifdef MISTER_DE25
++// The Agilex 5 lightweight bridge can report a failed posted transaction as
++// an asynchronous ARM SError.  A volatile access alone does not wait for the
++// interconnect response, which lets sustained file transfers overrun the PIO
++// path even though occasional OSD accesses appear reliable.  Complete each
++// device transaction before issuing the next one.
++static inline void de25_writel(uint32_t value, uintptr_t address)
++{
++	*MAP_ADDR(address) = value;
++	__asm__ volatile("dsb sy" ::: "memory");
++}
++
++static inline uint32_t de25_readl(uintptr_t address)
++{
++	__asm__ volatile("dsb sy" ::: "memory");
++	uint32_t value = *MAP_ADDR(address);
++	__asm__ volatile("dsb sy" ::: "memory");
++	return value;
++}
++
++#define writel(val, reg) de25_writel((uint32_t)(val), (uintptr_t)(reg))
++#define readl(reg) de25_readl((uintptr_t)(reg))
++#else
+ #define writel(val, reg) *MAP_ADDR(reg) = val
+ #define readl(reg) *MAP_ADDR(reg)
++#endif
+ 
+ #define clrsetbits_le32(addr, clear, set) writel((readl(addr) & ~(clear)) | (set), addr)
+ #define setbits_le32(addr, set)           writel( readl(addr) | (set), addr)
+ #define clrbits_le32(addr, clear)         writel( readl(addr) & ~(clear), addr)
+ 
++#ifdef MISTER_DE25
++static int write_all(int out, const void *data, size_t size)
++{
++	const uint8_t *src = (const uint8_t *)data;
++	while (size) {
++		ssize_t written = write(out, src, size);
++		if (written < 0 && errno == EINTR) continue;
++		if (written <= 0) return -1;
++		src += written;
++		size -= written;
++	}
++	return 0;
++}
++
++static int de25_modprobe(const char *module)
++{
++	pid_t child = fork();
++	if (child < 0) return -1;
++	if (!child) {
++		execl("/sbin/modprobe", "modprobe", module, (char *)NULL);
++		execl("/usr/sbin/modprobe", "modprobe", module, (char *)NULL);
++		_exit(127);
++	}
++
++	int status = 0;
++	while (waitpid(child, &status, 0) < 0) {
++		if (errno != EINTR) return -1;
++	}
++	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
++		errno = ENODEV;
++		return -1;
++	}
++	return 0;
++}
++
++static int de25_load_region_driver()
++{
++	// region0 depends on the Agilex secure-service FPGA manager. Load both
++	// modules explicitly instead of racing udev coldplug during early boot.
++	if (de25_modprobe("stratix10_soc") < 0 ||
++	    de25_modprobe("of-fpga-region") < 0) return -1;
++
++	for (unsigned int retry = 0; retry < 100; ++retry) {
++		if (access("/sys/class/fpga_region/region0", F_OK) == 0) return 0;
++		usleep(10000);
++	}
++
++	errno = ENODEV;
++	return -1;
++}
++
++static int de25_set_bridges(bool enable)
++{
++	pid_t child = fork();
++	if (child < 0) return -1;
++	if (!child) {
++		execl("/usr/libexec/mister-de25-bridge", "mister-de25-bridge",
++		      enable ? "enable" : "disable", (char *)NULL);
++		_exit(127);
++	}
++
++	int status = 0;
++	while (waitpid(child, &status, 0) < 0) {
++		if (errno != EINTR) return -1;
++	}
++	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
++		errno = EIO;
++		return -1;
++	}
++	return 0;
++}
++
++static int de25_check_rbf_compatibility(const char *rbf_path)
++{
++	pid_t child = fork();
++	if (child < 0) return -1;
++	if (!child) {
++		execl("/usr/libexec/mister-de25-check-rbf", "mister-de25-check-rbf",
++		      rbf_path, (char *)NULL);
++		_exit(127);
++	}
++
++	int status = 0;
++	while (waitpid(child, &status, 0) < 0) {
++		if (errno != EINTR) return -1;
++	}
++	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
++		errno = EPERM;
++		return -1;
++	}
++	return 0;
++}
++
++static int de25_load_rbf_path(const char *rbf_path)
++{
++	pid_t child = fork();
++	if (child < 0) return -1;
++	if (!child) {
++		execl("/usr/libexec/mister-de25-load", "mister-de25-load",
++		      rbf_path, (char *)NULL);
++		_exit(127);
++	}
++
++	int status = 0;
++	while (waitpid(child, &status, 0) < 0) {
++		if (errno != EINTR) return -1;
++	}
++	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
++		errno = EIO;
++		return -1;
++	}
++	return 0;
++}
++
++static int copy_file_to_path(const char *source_path, const char *target_path)
++{
++	int in = open(source_path, O_RDONLY | O_CLOEXEC);
++	if (in < 0) return -1;
++
++	int out = open(target_path, O_WRONLY | O_CLOEXEC);
++	if (out < 0) {
++		close(in);
++		return -1;
++	}
++
++	int result = 0;
++	uint8_t buffer[4096];
++	while (true) {
++		ssize_t count = read(in, buffer, sizeof(buffer));
++		if (count < 0 && errno == EINTR) continue;
++		if (count < 0 || (count > 0 && write_all(out, buffer, count) < 0)) {
++			result = -1;
++			break;
++		}
++		if (!count) break;
++	}
++
++	if (close(out) < 0) result = -1;
++	if (close(in) < 0) result = -1;
++	return result;
++}
++
++static int de25_apply_fpga_overlay()
++{
++	static const char overlay_source[] = "/usr/lib/mister-de25/fpga-load.dtbo";
++	static const char configfs_root[] = "/sys/kernel/config";
++	static const char overlay_root[] = "/sys/kernel/config/device-tree/overlays";
++	static const char overlay_dir[] = "/sys/kernel/config/device-tree/overlays/mister-de25";
++	static const char overlay_dtbo[] = "/sys/kernel/config/device-tree/overlays/mister-de25/dtbo";
++
++	if (de25_load_region_driver() < 0) return -1;
++	if (mkdir(configfs_root, 0755) < 0 && errno != EEXIST) return -1;
++	if (access(overlay_root, F_OK) < 0) {
++		if (mount("configfs", configfs_root, "configfs", 0, NULL) < 0 && errno != EBUSY)
++			return -1;
++	}
++
++	if (rmdir(overlay_dir) < 0 && errno != ENOENT) return -1;
++	if (mkdir(overlay_dir, 0755) < 0) return -1;
++
++	if (copy_file_to_path(overlay_source, overlay_dtbo) < 0) {
++		int saved_errno = errno;
++		rmdir(overlay_dir);
++		errno = saved_errno;
++		return -1;
++	}
++
++	return 0;
++}
++
++static int de25_fpga_load(const void *rbf_data, size_t rbf_size)
++{
++	static const char firmware_path[] = "/lib/firmware/mister-de25-core.rbf";
++
++	int out = open(firmware_path, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
++	if (out < 0) {
++		printf("FPGA: unable to create %s: %s\n", firmware_path, strerror(errno));
++		return -1;
++	}
++
++	int result = write_all(out, rbf_data, rbf_size);
++	if (fsync(out) < 0) result = -1;
++	if (close(out) < 0) result = -1;
++	if (result < 0) {
++		printf("FPGA: unable to write firmware: %s\n", strerror(errno));
++		return -1;
++	}
++
++	if (de25_apply_fpga_overlay() < 0) {
++		printf("FPGA: unable to apply the DE25 FPGA-region overlay: %s\n", strerror(errno));
++		return -1;
++	}
++
++	for (unsigned int retry = 0; retry < 500; ++retry) {
++		char state[32] = {};
++		int in = open("/sys/class/fpga_manager/fpga0/state", O_RDONLY | O_CLOEXEC);
++		if (in >= 0) {
++			ssize_t count = read(in, state, sizeof(state) - 1);
++			close(in);
++			if (count > 0 && !strncmp(state, "operating", 9)) return 0;
++		}
++		usleep(10000);
++	}
++
++	printf("FPGA: timed out waiting for Linux FPGA Manager\n");
++	return -ETIMEDOUT;
++}
++#endif
++
+ /* Timeout count */
+ #define FPGA_TIMEOUT_CNT		0x1000000
+ 
+@@ -231,6 +473,12 @@ static int fpgamgr_program_init(void)
+ /* Write the RBF data to FPGA Manager */
+ static void fpgamgr_program_write(const void *rbf_data, size_t rbf_size)
+ {
++#ifdef __aarch64__
++	volatile uint32_t *dst = MAP_ADDR(SOCFPGA_FPGAMGRDATA_ADDRESS);
++	const uint32_t *src = (const uint32_t *)rbf_data;
++	for (size_t words = DIV_ROUND_UP(rbf_size, 4); words; --words)
++		*dst = *src++;
++#else
+ 	uint32_t src = (uint32_t)rbf_data;
+ 	uint32_t dst = (uint32_t)MAP_ADDR(SOCFPGA_FPGAMGRDATA_ADDRESS);
+ 
+@@ -256,6 +504,7 @@ static void fpgamgr_program_write(const void *rbf_data, size_t rbf_size)
+ 		"4: nop\n"
+ 		: "+r"(src), "+r"(dst), "+r"(loops32), "+r"(loops4) :
+ 		: "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "cc");
++#endif
+ }
+ 
+ /* Ensure the FPGA entering config done */
+@@ -346,9 +595,12 @@ static int fpgamgr_program_poll_usermode(void)
+ */
+ static int socfpga_load(const void *rbf_data, size_t rbf_size)
+ {
++#ifdef MISTER_DE25
++	return de25_fpga_load(rbf_data, rbf_size);
++#else
+ 	unsigned long status;
+ 
+-	if ((uint32_t)rbf_data & 0x3) {
++	if ((uintptr_t)rbf_data & 0x3) {
+ 		printf("FPGA: Unaligned data, realign to 32bit boundary.\n");
+ 		return -EINVAL;
+ 	}
+@@ -373,10 +625,18 @@ static int socfpga_load(const void *rbf_data, size_t rbf_size)
+ 
+ 	/* Ensure the FPGA entering user mode */
+ 	return fpgamgr_program_poll_usermode();
++#endif
+ }
+ 
+-static void do_bridge(uint32_t enable)
++static int do_bridge(uint32_t enable)
+ {
++#ifdef MISTER_DE25
++	if (de25_set_bridges(enable != 0) < 0) {
++		printf("FPGA: unable to %s the DE25 HPS/FPGA bridges: %s\n",
++		       enable ? "enable" : "disable", strerror(errno));
++		return -1;
++	}
++#else
+ 	if (enable)
+ 	{
+ 		writel(0x00003FFF, (void*)(SOCFPGA_SDR_ADDRESS + 0x5080));
+@@ -390,6 +650,8 @@ static void do_bridge(uint32_t enable)
+ 		writel(7, &reset_regs->brg_mod_reset);
+ 		writel(1, &nic301_regs->remap);
+ 	}
++#endif
++	return 0;
+ }
+ 
+ static int make_env(const char *name, const char *cfg)
+@@ -428,6 +690,19 @@ int fpga_load_rbf(const char *name, const char *cfg, const char *xml)
+ 	OsdDisable();
+ 	static char path[1024];
+ 	int ret = 0;
++	if(name[0] == '/') strcpy(path, name);
++	else sprintf(path, "%s/%s", !strcasecmp(name, "menu.rbf") ? getStorageDir(0) : getRootDir(), name);
++
++#ifdef MISTER_DE25
++	if (de25_check_rbf_compatibility(path) < 0)
++	{
++		char error[4096];
++		snprintf(error, sizeof(error), "%s\nIncompatible with DE25-Nano QSPI", name);
++		printf("Refusing incompatible RBF %s\n", path);
++		Info(error, 5000);
++		return -1;
++	}
++#endif
+ 
+ 	if(cfg)
+ 	{
+@@ -439,8 +714,22 @@ int fpga_load_rbf(const char *name, const char *cfg, const char *xml)
+ 
+ 	printf("Loading RBF: %s\n", name);
+ 
+-	if(name[0] == '/') strcpy(path, name);
+-	else sprintf(path, "%s/%s", !strcasecmp(name, "menu.rbf") ? getStorageDir(0) : getRootDir(), name);
++#ifdef MISTER_DE25
++	// Keep every runtime reconfiguration behind the same checksum, persistent
++	// recovery marker, and HPS hardware-watchdog transaction used by systemd.
++	// If the kernel or SDM stalls, the watchdog reboots and preload restores
++	// Menu. Do not restart Main when the guarded loader reports a failure.
++	ret = de25_load_rbf_path(path);
++	if (ret) {
++		char error[4096];
++		snprintf(error, sizeof(error), "%s\nDE25-Nano FPGA load failed", name);
++		printf("Guarded FPGA load failed for %s: %s\n", path, strerror(errno));
++		Info(error, 5000);
++		return -1;
++	}
++	app_restart(!strcasecmp(name, "menu.rbf") ? "menu.rbf" : path, xml);
++	return 0;
++#endif
+ 
+ 	int rbf = open(path, O_RDONLY);
+ 	if (rbf < 0)
+@@ -461,12 +750,12 @@ int fpga_load_rbf(const char *name, const char *cfg, const char *xml)
+ 		}
+ 		else
+ 		{
+-			printf("Bitstream size: %lld bytes\n", st.st_size);
++			printf("Bitstream size: %lld bytes\n", (long long)st.st_size);
+ 
+ 			void *buf = malloc(st.st_size);
+ 			if (!buf)
+ 			{
+-				printf("Couldn't allocate %llu bytes.\n", st.st_size);
++				printf("Couldn't allocate %llu bytes.\n", (unsigned long long)st.st_size);
+ 				ret = -1;
+ 			}
+ 			else
+@@ -486,15 +775,15 @@ int fpga_load_rbf(const char *name, const char *cfg, const char *xml)
+ 						sz = *(uint32_t*)(((uint8_t*)buf) + 12);
+ 						p = (void*)(((uint8_t*)buf) + 16);
+ 					}
+-					do_bridge(0);
+-					ret = socfpga_load(p, sz);
++					ret = do_bridge(0);
++					if (!ret) ret = socfpga_load(p, sz);
+ 					if (ret)
+ 					{
+ 						printf("Error %d while loading %s\n", ret, path);
+ 					}
+ 					else
+ 					{
+-						do_bridge(1);
++						ret = do_bridge(1);
+ 					}
+ 				}
+ 				free(buf);
+@@ -511,27 +800,50 @@ static uint32_t gpo_copy = 0;
+ void inline fpga_gpo_write(uint32_t value)
+ {
+ 	gpo_copy = value;
++#ifdef MISTER_DE25
++	writel(value, (void*)DE25_GP_OUT);
++#else
+ 	writel(value, (void*)(SOCFPGA_MGR_ADDRESS + 0x10));
++#endif
+ }
+ 
++#ifdef MISTER_DE25
++#define fpga_gpo_writeN(value) writel((value), (void*)DE25_GP_OUT)
++#define fpga_gpo_read() gpo_copy
++#define fpga_gpi_read() (int)readl((void*)DE25_GP_IN)
++#else
+ #define fpga_gpo_writeN(value) writel((value), (void*)(SOCFPGA_MGR_ADDRESS + 0x10))
+ #define fpga_gpo_read() gpo_copy //readl((void*)(SOCFPGA_MGR_ADDRESS + 0x10))
+ #define fpga_gpi_read() (int)readl((void*)(SOCFPGA_MGR_ADDRESS + 0x14))
++#endif
+ 
+ void fpga_core_write(uint32_t offset, uint32_t value)
+ {
++#ifndef MISTER_DE25
+ 	if (offset <= 0x1FFFFF) writel(value, (void*)(SOCFPGA_LWFPGASLAVES_ADDRESS + (offset & ~3)));
++#else
++	(void)offset;
++	(void)value;
++#endif
+ }
+ 
+ uint32_t fpga_core_read(uint32_t offset)
+ {
++#ifndef MISTER_DE25
+ 	if (offset <= 0x1FFFFF) return readl((void*)(SOCFPGA_LWFPGASLAVES_ADDRESS + (offset & ~3)));
++#else
++	(void)offset;
++#endif
+ 	return 0;
+ }
+ 
+ int fpga_io_init()
+ {
++#ifdef MISTER_DE25
++	map_base = (uint32_t*)shmem_map_physical(FPGA_REG_BASE, FPGA_REG_SIZE);
++#else
+ 	map_base = (uint32_t*)shmem_map(FPGA_REG_BASE, FPGA_REG_SIZE);
++#endif
+ 	if (!map_base) return -1;
+ 
+ 	fpga_gpo_write(0);
+@@ -585,8 +897,25 @@ int fpga_get_hdmi_int()
+ 	return (fpga_gpi_read() >> 20) & 1;
+ }
+ 
++int fpga_get_osd_status()
++{
++#ifdef MISTER_DE25
++	return (fpga_gpi_read() >> 27) & 1;
++#else
++	return 0;
++#endif
++}
++
+ void reboot(int cold)
+ {
++#ifdef MISTER_DE25
++	(void)cold;
++	sync();
++	execl("/sbin/reboot", "reboot", (char *)NULL);
++	execl("/usr/sbin/reboot", "reboot", (char *)NULL);
++	printf("Unable to reboot: %s\n", strerror(errno));
++	_exit(1);
++#else
+ 	sync();
+ 	fpga_core_reset(1);
+ 
+@@ -603,6 +932,7 @@ void reboot(int cold)
+ 
+ 	writel(1, &reset_regs->ctrl);
+ 	while (1) sleep(1);
++#endif
+ }
+ 
+ char *getappname()
+@@ -630,6 +960,13 @@ void app_restart(const char *path, const char *xml, const char *exe)
+ 	const char *appname = exe ? exe : getappname();
+ 	printf("restarting to %s\n", appname);
+ 
++#ifdef MISTER_DE25
++	// systemd owns the DE25 Main process. Preserve its PID across a core
++	// switch so Restart=always cannot launch a competing second instance.
++	execl(appname, appname, path, xml, NULL);
++	printf("Something went wrong. Rebooting...\n");
++	reboot(1);
++#else
+ 	//a cleaner way to re-start
+ 	pid_t child = fork();
+ 	if (child > 0) _exit(0);
+@@ -644,6 +981,7 @@ void app_restart(const char *path, const char *xml, const char *exe)
+ 	printf("Something went wrong. Rebooting...\n");
+ 	reboot(1);
+ 	_exit(1);
++#endif
+ }
+ 
+ void fpga_core_reset(int reset)
+@@ -654,12 +992,17 @@ void fpga_core_reset(int reset)
+ 
+ int is_fpga_ready(int quick)
+ {
++#ifdef MISTER_DE25
++	(void)quick;
++	return fpga_gpi_read() >= 0;
++#else
+ 	if (quick)
+ 	{
+ 		return (fpga_gpi_read() >= 0);
+ 	}
+ 
+ 	return fpgamgr_test_fpga_ready();
++#endif
+ }
+ 
+ #define SSPI_STROBE  (1<<17)
+@@ -669,6 +1012,18 @@ void fpga_spi_en(uint32_t mask, uint32_t en)
+ {
+ 	uint32_t gpo = fpga_gpo_read() | 0x80000000;
+ 	fpga_gpo_write(en ? gpo | mask : gpo & ~mask);
++	#ifdef MISTER_DE25
++	// GP_OUT crosses through two synchronizer stages before it reaches the
++	// core. Keep a deselect phase observable long enough for the target state
++	// machine to reset before a caller can assert the same select again. The
++	// ordered lightweight-bridge reads also provide a deterministic posted-
++	// write completion interval without imposing a scheduler-scale sleep.
++	if (!en)
++	{
++		for (unsigned int settle = 0; settle < 4; ++settle)
++			(void)fpga_gpi_read();
++	}
++	#endif
+ }
+ 
+ void fpga_wait_to_reset()
+@@ -722,15 +1077,27 @@ uint16_t fpga_spi(uint16_t word)
+ 
+ uint16_t fpga_spi_fast(uint16_t word)
+ {
++#ifdef MISTER_DE25
++	// The DE25 lightweight-bridge PIO is synchronized into the core clock
++	// domain. A high/low strobe pair without the acknowledge can collapse
++	// before either synchronized edge is observed, which drops x86 IDE/RTC
++	// DMA register transfers. Preserve the fast API but complete the normal
++	// handshake on this platform.
++	return fpga_spi(word);
++#else
+ 	uint32_t gpo = (fpga_gpo_read() & ~(0xFFFF | SSPI_STROBE)) | word;
+ 	fpga_gpo_write(gpo);
+ 	fpga_gpo_write(gpo | SSPI_STROBE);
+ 	fpga_gpo_write(gpo);
+ 	return (uint16_t)fpga_gpi_read();
++#endif
+ }
+ 
+ void fpga_spi_fast_block_write(const uint16_t *buf, uint32_t length)
+ {
++#ifdef MISTER_DE25
++	while (length--) fpga_spi(*buf++);
++#else
+ 	uint32_t gpoH = (fpga_gpo_read() & ~(0xFFFF | SSPI_STROBE));
+ 	uint32_t gpo = gpoH;
+ 
+@@ -742,10 +1109,14 @@ void fpga_spi_fast_block_write(const uint16_t *buf, uint32_t length)
+ 		fpga_gpo_writeN(gpo | SSPI_STROBE);
+ 	}
+ 	fpga_gpo_write(gpo);
++#endif
+ }
+ 
+ void fpga_spi_fast_block_read(uint16_t *buf, uint32_t length)
+ {
++#ifdef MISTER_DE25
++	while (length--) *buf++ = fpga_spi(0);
++#else
+ 	uint32_t gpo = (fpga_gpo_read() & ~(0xFFFF | SSPI_STROBE));
+ 	uint32_t rem = length % 16;
+ 	length /= 16;
+@@ -825,6 +1196,7 @@ void fpga_spi_fast_block_read(uint16_t *buf, uint32_t length)
+ 		fpga_gpo_writeN(gpo);
+ 		*buf++ = (uint16_t)fpga_gpi_read();
+ 	}
++#endif
+ }
+ 
+ void fpga_spi_fast_block_write_8(const uint8_t *buf, uint32_t length)
+diff --git a/fpga_io.h b/fpga_io.h
+index b912439..96938a3 100644
+--- a/fpga_io.h
++++ b/fpga_io.h
+@@ -24,6 +24,7 @@ void fpga_set_led(uint32_t on);
+ int  fpga_get_buttons();
+ int  fpga_get_io_type();
+ int  fpga_get_hdmi_int();
++int  fpga_get_osd_status();
+ 
+ void fpga_core_reset(int reset);
+ void fpga_core_write(uint32_t offset, uint32_t value);
+diff --git a/input.cpp b/input.cpp
+index 50f1991..a598dd2 100644
+--- a/input.cpp
++++ b/input.cpp
+@@ -36,6 +36,9 @@
+ #include "frame_timer.h"
+ #include "scaler.h"
+ #include "file_io.h"
++#ifdef MISTER_DE25
++#include "support/x86/x86.h"
++#endif
+ 
+ #define NUMDEV 30
+ #define UINPUT_NAME "MiSTer virtual input"
+@@ -5139,6 +5142,13 @@ int input_test(int getchar)
+ 
+ 		unlink(CMD_FIFO);
+ 		mkfifo(CMD_FIFO, 0666);
++#ifdef MISTER_DE25
++		// The service umask otherwise reduces the requested 0666 mode to 0644,
++		// preventing the unprivileged SSH account from issuing remote Menu,
++		// status, and core-load commands.
++		if (chmod(CMD_FIFO, 0666))
++			printf("Unable to make %s remotely writable: %s\n", CMD_FIFO, strerror(errno));
++#endif
+ 
+ 		pool[NUMDEV+1].fd = open(CMD_FIFO, O_RDWR | O_NONBLOCK | O_CLOEXEC);
+ 		pool[NUMDEV+1].events = POLLIN;
+@@ -6234,6 +6244,56 @@ int input_test(int getchar)
+ 					cmd[len] = 0;
+ 					printf("MiSTer_cmd: %s\n", cmd);
+ 					if (!strncmp(cmd, "fb_cmd", 6)) video_cmd(cmd);
++					#ifdef MISTER_DE25
++					else if (!strcmp(cmd, "menu")) menu_key_set(KEY_F12 | UPSTROKE);
++					else if (!strcmp(cmd, "de25_status"))
++						MakeFile("/tmp/HW_OSD_VISIBLE", fpga_get_osd_status() ? "1" : "0");
++					else if (!strncmp(cmd, "de25_key ", 9))
++					{
++						char *end = NULL;
++						unsigned long key = strtoul(cmd + 9, &end, 0);
++						while (end && (*end == ' ' || *end == '\t')) end++;
++						long press = end ? strtol(end, NULL, 0) : 0;
++						if (key <= KEY_MAX && press >= 0 && press <= 2)
++							user_io_kbd((uint16_t)key, (int)press);
++						else
++							printf("Invalid DE25 key command: %s\n", cmd);
++					}
++					else if (!strcmp(cmd, "de25_x86_reset"))
++					{
++						if (is_x86() || is_pcxt()) x86_init();
++					}
++					else if (!strcmp(cmd, "de25_pc110_post_bypass"))
++					{
++						if (is_x86()) x86_pc110_post_bypass();
++					}
++					else if (!strncmp(cmd, "de25_load_mgl ", 14))
++					{
++						const char *path = cmd + 14;
++						mgl_struct *mgl = NULL;
++
++						// A DE25 core is already active when this command is used.
++						// Arm its content descriptor in place so loading a disk does
++						// not restart Main or request a second FPGA reconfiguration.
++						if (path[0] == '/' && isXmlName(path) == 2 &&
++						    !strchr(path, '\r') && !strchr(path, '\n') &&
++						    !access(path, R_OK))
++						{
++							mgl = mgl_parse(path);
++							if (mgl->count)
++							{
++								mgl->current = 0;
++								mgl->state = 0;
++								mgl->done = 0;
++								mgl->timer = GetTimer(mgl->item[0].delay * 1000);
++								MenuHide();
++								printf("DE25 armed MGL in place: %s\n", path);
++							}
++						}
++						if (!mgl || !mgl->count)
++							printf("Invalid or empty DE25 MGL: %s\n", path);
++					}
++					#endif
+ 					else if (!strncmp(cmd, "video_mode ", 11)) video_mode_cmd(cmd + 11);
+ 					else if (!strncmp(cmd, "load_core ", 10))
+ 					{
+diff --git a/lib/libco/ucontext.c b/lib/libco/ucontext.c
+index 72ea871..181c656 100644
+--- a/lib/libco/ucontext.c
++++ b/lib/libco/ucontext.c
+@@ -18,6 +18,7 @@
+ 
+ #define LIBCO_C
+ #include "libco.h"
++#include "settings.h"
+ 
+ #define _BSD_SOURCE
+ #include <stdlib.h>
+diff --git a/main.cpp b/main.cpp
+index f1eaf82..92e9de5 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ #include <inttypes.h>
+ #include <ctype.h>
+ #include <string.h>
++#include <strings.h>
++#include <limits.h>
+ #include "menu.h"
+ #include "user_io.h"
+ #include "input.h"
+@@ -39,6 +41,44 @@ const char *version = "$VER:" VDATE;
+ 
+ int main(int argc, char *argv[])
+ {
++	const char *core_path_arg = argc > 1 ? argv[1] : "";
++	const char *xml_path_arg = argc > 2 ? argv[2] : NULL;
++#ifdef MISTER_DE25
++	// The privileged test helper leaves a root-owned, one-shot selected-core
++	// marker. Consume it before MMIO so the first service start keeps the
++	// candidate path. A crash restart has no marker and restores Menu before
++	// touching a potentially inaccessible bridge.
++	char selected_core[PATH_MAX] = {};
++	char selected_xml[PATH_MAX] = {};
++	if (argc == 1)
++	{
++		FILE *marker = fopen("/run/mister-de25-selected-core", "r");
++		if (marker)
++		{
++			if (fgets(selected_core, sizeof(selected_core), marker))
++				selected_core[strcspn(selected_core, "\r\n")] = 0;
++			if (fgets(selected_xml, sizeof(selected_xml), marker))
++				selected_xml[strcspn(selected_xml, "\r\n")] = 0;
++			fclose(marker);
++			unlink("/run/mister-de25-selected-core");
++		}
++		if (selected_core[0] == '/' && !access(selected_core, R_OK))
++		{
++			core_path_arg = selected_core;
++			const char *extension = strrchr(selected_xml, '.');
++			if (selected_xml[0] == '/' && !access(selected_xml, R_OK) &&
++				extension && (!strcasecmp(extension, ".mgl") ||
++				               !strcasecmp(extension, ".mra")))
++				xml_path_arg = selected_xml;
++		}
++		else if (system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
++		{
++			fprintf(stderr, "Unable to recover DE25 Menu fabric image\n");
++			return 1;
++		}
++	}
++#endif
++
+ 	// Always pin main worker process to core #1 as core #0 is the
+ 	// hardware interrupt handler in Linux.  This reduces idle latency
+ 	// in the main loop by about 6-7x.
+@@ -59,8 +99,8 @@ int main(int argc, char *argv[])
+ 
+ 	printf("Version %s\n\n", version + 5);
+ 
+-	if (argc > 1) printf("Core path: %s\n", argv[1]);
+-	if (argc > 2) printf("XML path: %s\n", argv[2]);
++	if (core_path_arg[0]) printf("Core path: %s\n", core_path_arg);
++	if (xml_path_arg) printf("XML path: %s\n", xml_path_arg);
+ 
+ 	if (!is_fpga_ready(1))
+ 	{
+@@ -70,7 +110,10 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	FindStorage();
+-	user_io_init((argc > 1) ? argv[1] : "",(argc > 2) ? argv[2] : NULL);
++	user_io_init(core_path_arg, xml_path_arg);
++#ifdef MISTER_DE25
++	fprintf(stderr, "DE25 Main: user_io_init returned\n");
++#endif
+ 
+ #ifdef USE_SCHEDULER
+ 	scheduler_init();
+@@ -78,16 +121,30 @@ int main(int argc, char *argv[])
+ #else
+ 	while (1)
+ 	{
++#ifdef MISTER_DE25
++		static bool first_loop = true;
++		if (first_loop) fprintf(stderr, "DE25 Main loop: entering readiness check\n");
++#endif
+ 		if (!is_fpga_ready(1))
+ 		{
+ 			fpga_wait_to_reset();
+ 		}
+ 
++		#ifdef MISTER_DE25
++		if (first_loop) fprintf(stderr, "DE25 Main loop: entering user_io_poll\n");
++		#endif
+ 		user_io_poll();
++		#ifdef MISTER_DE25
++		if (first_loop) fprintf(stderr, "DE25 Main loop: entering frame/input/UI\n");
++		#endif
+ 		frame_timer();
+ 		input_poll(0);
+ 		HandleUI();
+ 		OsdUpdate();
++		#ifdef MISTER_DE25
++		if (first_loop) fprintf(stderr, "DE25 Main loop: first iteration complete\n");
++		first_loop = false;
++		#endif
+ 	}
+ #endif
+ 	return 0;
+diff --git a/menu.cpp b/menu.cpp
+index 831d720..88ea3a5 100644
+--- a/menu.cpp
++++ b/menu.cpp
+@@ -1103,6 +1103,7 @@ void HandleUI(void)
+ {
+ 	PROFILE_FUNCTION();
+ 
++#ifndef MISTER_DE25
+ 	if (bt_timer >= 0)
+ 	{
+ 		if (!bt_timer) bt_timer = (int32_t)GetTimer(6000);
+@@ -1128,6 +1129,13 @@ void HandleUI(void)
+ 			if (!bt_icon_timer) bt_icon_timer = 1;
+ 		}
+ 	}
++#else
++	// The current DE25 kernel has no board Bluetooth transport, and opening
++	// an HCI socket faults in bt_sock_alloc. Keep Bluetooth UI probing off;
++	// USB keyboards, mice, and controllers continue through evdev as usual.
++	bt_timer = -1;
++	bt_present = false;
++#endif
+ 
+ 	switch (user_io_core_type())
+ 	{
+@@ -1181,6 +1189,25 @@ void HandleUI(void)
+ 
+ 	mgl_struct *mgl = mgl_get();
+ 
++#ifdef MISTER_DE25
++	static int de25_old_state = -1;
++	static int de25_old_current = -1;
++	static int de25_old_done = -1;
++	static uint32_t de25_old_menustate = ~0U;
++	if (de25_old_state != mgl->state || de25_old_current != mgl->current ||
++		de25_old_done != mgl->done || de25_old_menustate != menustate)
++	{
++		fprintf(stderr,
++			"DE25 MGL: menu=%u count=%d current=%d state=%d action=%d done=%d\n",
++			menustate, mgl->count, mgl->current, mgl->state,
++			mgl->item[mgl->current].action, mgl->done);
++		de25_old_state = mgl->state;
++		de25_old_current = mgl->current;
++		de25_old_done = mgl->done;
++		de25_old_menustate = menustate;
++	}
++#endif
++
+ 	/*
+ 	static int old_state = -1;
+ 	static int old_current = -1;
+@@ -1218,6 +1245,11 @@ void HandleUI(void)
+ 		case 4:
+ 			user_io_set_kbd_reset(1);
+ 			user_io_send_buttons(1);
++			// An MGL stores an x86 disk selection before its reset action, but
++			// fixed IDE slots deliberately aren't hot-swapped by x86_set_image().
++			// Apply the stored selections only after reset is asserted so the
++			// following release boots with the requested disk attached.
++			if (is_x86() || is_pcxt()) x86_ide_set();
+ 			mgl->timer = GetTimer(mgl->item[mgl->current].hold ? (mgl->item[mgl->current].hold * 1000) : 100);
+ 			mgl->state = 5;
+ 			break;
+diff --git a/osd.cpp b/osd.cpp
+index edf7f46..05cd62b 100644
+--- a/osd.cpp
++++ b/osd.cpp
+@@ -502,6 +502,11 @@ void OsdEnable(unsigned char mode)
+ {
+ 	user_io_osd_key_enable(mode & DISABLE_KEYBOARD);
+ 	mode &= (DISABLE_KEYBOARD | OSD_MSG);
++	// Reassert high-resolution geometry whenever the active UI owns more than
++	// eight rows. The FPGA clears its height latch on disable, and an in-core
++	// menu may be enabled before its lower rows are redrawn. Derive the command
++	// from Main's requested size rather than from the loaded core persona.
++	if (osd_size > 8) spi_osd_cmd(OSD_CMD_WRITE | 8);
+ 	spi_osd_cmd(OSD_CMD_ENABLE | mode);
+ }
+ 
+diff --git a/scaler.cpp b/scaler.cpp
+index faeed0f..c336c0c 100644
+--- a/scaler.cpp
++++ b/scaler.cpp
+@@ -10,6 +10,7 @@ with help from the MiSTer contributors including Grabulosaure
+ #include <inttypes.h>
+ #include <ctype.h>
+ #include <string.h>
++#include <strings.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <atomic>
+@@ -17,7 +18,7 @@ with help from the MiSTer contributors including Grabulosaure
+ #include <sys/types.h>
+ #include <err.h>
+ 
+-#ifdef __ARM_NEON
++#if defined(__ARM_NEON) && !defined(MISTER_DE25)
+ #include <arm_neon.h>
+ const int VEC_WIDTH = 16;
+ #endif
+@@ -30,6 +31,7 @@ const int VEC_WIDTH = 16;
+ #include "shmem.h"
+ #include "file_io.h"
+ #include "menu.h"
++#include "user_io.h"
+ 
+ #ifdef PROFILING
+ #include "profiling.h"
+@@ -41,13 +43,29 @@ mister_scaler * mister_scaler_init()
+     int	 pagesize = sysconf(_SC_PAGE_SIZE);
+     if (pagesize==0) pagesize=4096;
+     int offset = MISTER_SCALER_BASEADDR;
++#ifdef MISTER_DE25
++    // ao486 and PC110 own logical DDR 0x30000000 for PC RAM. Their scalers are
++    // placed at 0x20000000 so screenshots follow the core-specific layout.
++    const char *core_name = user_io_get_core_name(1);
++    if (core_name && (!strcasecmp(core_name, "AO486") ||
++                      !strcasecmp(core_name, "PC110")))
++        offset = MISTER_AO486_SCALER_BASEADDR;
++#endif
+     int	map_start = offset & ~(pagesize - 1);
+     ms->map_off = offset - map_start;
+     ms->num_bytes=MISTER_SCALER_BUFFERSIZE;
+     //printf("map_start = %d map_off=%d offset=%d\n",map_start,ms->map_off,offset);
+ 
+     unsigned char *buffer;
++#ifdef MISTER_DE25
++    // The FPGA writes this buffer through a non-coherent LPDDR master. Map it
++    // as uncached physical I/O so the HPS cannot retain or speculatively fetch
++    // cache lines while the scaler updates them.
++    ms->map=(char *)shmem_map_physical(map_start + 0x80000000,
++                                      ms->num_bytes+ms->map_off);
++#else
+     ms->map=(char *)shmem_map(map_start, ms->num_bytes+ms->map_off);
++#endif
+     if (!ms->map)
+     {
+         mister_scaler_free(ms);
+@@ -70,6 +88,20 @@ mister_scaler * mister_scaler_init()
+     ms->output_width =buffer[12]<<8 | buffer[13];
+     ms->output_height=buffer[14]<<8 | buffer[15];
+ 
++    uint64_t image_end = (uint64_t)ms->header;
++    if (ms->height > 0)
++        image_end += (uint64_t)(ms->height - 1) * ms->line;
++    image_end += (uint64_t)ms->width * 3;
++    if (ms->header < 16 || ms->width <= 0 || ms->height <= 0 ||
++        ms->line < ms->width * 3 || image_end > (uint64_t)ms->num_bytes)
++    {
++        printf("Invalid scaler header: width=%i height=%i line=%i "
++               "header=%i end=%" PRIu64 "\n",
++               ms->width, ms->height, ms->line, ms->header, image_end);
++        mister_scaler_free(ms);
++        return NULL;
++    }
++
+     printf ("Image: Width=%i Height=%i  Line=%i  Header=%i output_width=%i output_height=%i \n",ms->width,ms->height,ms->line,ms->header,ms->output_width,ms->output_height);
+    /*
+     printf (" 1: %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X\n",
+@@ -126,7 +158,7 @@ int mister_scaler_read_yuv(mister_scaler *ms,int lineY,unsigned char *bufY, int
+ */
+ 
+ // use NEON if available
+-#if defined(__ARM_NEON)
++#if defined(__ARM_NEON) && !defined(MISTER_DE25)
+ 
+ // simd optimized copy from scaler to buffer.
+ // simd seems like overkill but it reduced the time it took to copy data from the scaler into
+@@ -285,76 +317,80 @@ int mister_scaler_read(mister_scaler *ms, unsigned char *gbuf, mister_scaler_for
+ 
+ #else
+ 
+-// no NEON available, do all scalar
+-int mister_scaler_read(mister_scaler *ms, unsigned char *gbuf, mister_scaler_format_t format = RGB)
++// No NEON is available, or this is DE25 framebuffer I/O. Do scalar reads so
++// device-mapped memory is never accessed through SIMD or speculative bursts.
++int mister_scaler_read(mister_scaler *ms, unsigned char *gbuf,
++                       mister_scaler_format_t format)
+ {
+-    #ifdef PROFILING
+-        PROFILE_FUNCTION();
+-    #endif
++#ifdef PROFILING
++    PROFILE_FUNCTION();
++#endif
+ 
++#ifdef MISTER_DE25
++    volatile unsigned char *buffer =
++        (volatile unsigned char *)(ms->map + ms->map_off);
++#else
+     unsigned char *buffer = (unsigned char *)(ms->map + ms->map_off);
++#endif
+ 
+     for (int y = 0; y < ms->height; y++) {
++#ifdef MISTER_DE25
++        volatile unsigned char *pixbuf =
++            &buffer[ms->header + y * ms->line];
++#else
+         unsigned char *pixbuf = &buffer[ms->header + y * ms->line];
++#endif
+         unsigned char *outbuf;
+ 
+-        if (format == RGBA || format == BGRA)
++        if (format == RGBA || format == BGRA || format == ARGB32)
+             outbuf = &gbuf[y * (ms->width * 4)];
+         else
+             outbuf = &gbuf[y * (ms->width * 3)];
+ 
+-        // scalar version
+-        switch (format)
+-        {
+-            case RGB:
+-                for (int x = 0; x < ms->width; x++) {
+-                    outbuf[x * 3 + 0] = pixbuf[x * 3 + 0];
+-                    outbuf[x * 3 + 1] = pixbuf[x * 3 + 1];
+-                    outbuf[x * 3 + 2] = pixbuf[x * 3 + 2];
+-                }
+-                break;
+-            case BGR:
+-                for (int x = 0; x < ms->width; x++) {
+-                    outbuf[x * 3 + 2] = pixbuf[x * 3 + 0];
+-                    outbuf[x * 3 + 1] = pixbuf[x * 3 + 1];
+-                    outbuf[x * 3 + 0] = pixbuf[x * 3 + 2];
+-                }
+-                break;
+-            case RGBA:
+-                for (int x = 0; x < ms->width; x++) {
+-                    outbuf[x * 4 + 0] = pixbuf[x * 3 + 0];
+-                    outbuf[x * 4 + 1] = pixbuf[x * 3 + 1];
+-                    outbuf[x * 4 + 2] = pixbuf[x * 3 + 2];
++        for (int x = 0; x < ms->width; x++) {
++            unsigned char red = pixbuf[x * 3 + 0];
++            unsigned char green = pixbuf[x * 3 + 1];
++            unsigned char blue = pixbuf[x * 3 + 2];
++            switch (format) {
++                case RGB:
++                    outbuf[x * 3 + 0] = red;
++                    outbuf[x * 3 + 1] = green;
++                    outbuf[x * 3 + 2] = blue;
++                    break;
++                case BGR:
++                    outbuf[x * 3 + 0] = blue;
++                    outbuf[x * 3 + 1] = green;
++                    outbuf[x * 3 + 2] = red;
++                    break;
++                case RGBA:
++                    outbuf[x * 4 + 0] = red;
++                    outbuf[x * 4 + 1] = green;
++                    outbuf[x * 4 + 2] = blue;
+                     outbuf[x * 4 + 3] = 0xFF;
+-                }
+-                break;
+-            case BGRA:
+-                for (int x = 0; x < ms->width; x++) {
+-                    outbuf[x * 4 + 2] = pixbuf[x * 3 + 0];
+-                    outbuf[x * 4 + 1] = pixbuf[x * 3 + 1];
+-                    outbuf[x * 4 + 0] = pixbuf[x * 3 + 2];
++                    break;
++                case BGRA:
++                    outbuf[x * 4 + 0] = blue;
++                    outbuf[x * 4 + 1] = green;
++                    outbuf[x * 4 + 2] = red;
+                     outbuf[x * 4 + 3] = 0xFF;
+-                }
+-                break;
+-            case ARGB32:
+-            for (int x = limit; x < ms->width; x++) {
+-            #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+-                outbuf[x * 4 + 0] = pixbuf[x * 3 + 2]; // B
+-                outbuf[x * 4 + 1] = pixbuf[x * 3 + 1]; // G
+-                outbuf[x * 4 + 2] = pixbuf[x * 3 + 0]; // R
+-                outbuf[x * 4 + 3] = 0xFF;              // A
+-            #else
+-                outbuf[x * 4 + 0] = 0xFF;              // A
+-                outbuf[x * 4 + 1] = pixbuf[x * 3 + 0]; // R
+-                outbuf[x * 4 + 2] = pixbuf[x * 3 + 1]; // G
+-                outbuf[x * 4 + 3] = pixbuf[x * 3 + 2]; // B
+-            #endif
+-                }
+-                break;
+-            case YUV:
+-                // not supported yet
+-            default:
+-                break;
++                    break;
++                case ARGB32:
++#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
++                    outbuf[x * 4 + 0] = blue;
++                    outbuf[x * 4 + 1] = green;
++                    outbuf[x * 4 + 2] = red;
++                    outbuf[x * 4 + 3] = 0xFF;
++#else
++                    outbuf[x * 4 + 0] = 0xFF;
++                    outbuf[x * 4 + 1] = red;
++                    outbuf[x * 4 + 2] = green;
++                    outbuf[x * 4 + 3] = blue;
++#endif
++                    break;
++                case YUV:
++                default:
++                    break;
++            }
+         }
+     }
+     return 0;
+@@ -652,6 +688,12 @@ void screenshot_cb(void)
+             case SCREENSHOT_SUCCESS:
+                 if (result_data->filename)
+                 {
++#ifdef MISTER_DE25
++                    // Publish the completed relative FAT path for unattended
++                    // SSH capture. Write it only after Imlib has closed the
++                    // image so a reader can immediately retrieve the file.
++                    MakeFile("/tmp/DE25_SCREENSHOT", result_data->filename);
++#endif
+                     char msg[1024];
+                     snprintf(msg, sizeof(msg), "Screen saved to\n%s",
+                             result_data->filename + strlen(SCREENSHOT_DIR "/"));
+diff --git a/scaler.h b/scaler.h
+index 6991398..0bc3d82 100644
+--- a/scaler.h
++++ b/scaler.h
+@@ -28,7 +28,15 @@ typedef struct {
+    int map_off;
+ } mister_scaler;
+ 
++#ifdef MISTER_DE25
++// Keep the DE25 video buffers disjoint from the standard core DDRAM window.
++// shmem_map() translates this logical address to 0xb0000000 in LPDDR4, which
++// matches the RAMBASE used by the common Agilex video scaler.
++#define MISTER_SCALER_BASEADDR     0x30000000
++#define MISTER_AO486_SCALER_BASEADDR 0x20000000
++#else
+ #define MISTER_SCALER_BASEADDR     0x20000000
++#endif
+ #define MISTER_SCALER_BUFFERSIZE   2048*3*1024
+ 
+ mister_scaler *mister_scaler_init();
+diff --git a/shmem.cpp b/shmem.cpp
+index ec6acaa..a985044 100644
+--- a/shmem.cpp
++++ b/shmem.cpp
+@@ -14,20 +14,32 @@
+ #include "shmem.h"
+ 
+ static int memfd = -1;
++#ifdef MISTER_DE25
++static int physical_memfd = -1;
++#endif
+ 
+-void *shmem_map(uint32_t address, uint32_t size)
++static void *shmem_map_address(uint32_t address, uint32_t size,
++                              bool device_mapping)
+ {
+-	if (memfd < 0)
++	int *selected_fd = &memfd;
++	#ifdef MISTER_DE25
++	if (device_mapping) selected_fd = &physical_memfd;
++	#endif
++
++	if (*selected_fd < 0)
+ 	{
+-		memfd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
+-		if (memfd == -1)
++		int flags = O_RDWR | O_CLOEXEC;
++		if (device_mapping) flags |= O_SYNC;
++		*selected_fd = open("/dev/mem", flags);
++		if (*selected_fd == -1)
+ 		{
+ 			printf("Error: Unable to open /dev/mem!\n");
+ 			return 0;
+ 		}
+ 	}
+ 
+-	void *res = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, memfd, address);
++	void *res = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED,
++	                 *selected_fd, address);
+ 	if (res == (void *)-1)
+ 	{
+ 		printf("Error: Unable to mmap (0x%X, %d)!\n", address, size);
+@@ -37,11 +49,39 @@ void *shmem_map(uint32_t address, uint32_t size)
+ 	return res;
+ }
+ 
++void *shmem_map(uint32_t address, uint32_t size)
++{
++#ifdef MISTER_DE25
++	// MiSTer cores and Main agree on DE10 DDR offsets, including the control
++	// page below the normal 512 MiB core window. Agilex 5 LPDDR begins at
++	// 0x80000000, so translate the complete 1 GiB logical DDR address space.
++	if (address < 0x40000000)
++		address += 0x80000000;
++#endif
++
++	#ifdef MISTER_DE25
++	// Reserved LPDDR is ordinary coherent memory. O_SYNC would force a device
++	// mapping on AArch64, where sustained RAM fills can raise BUS_ADRALN.
++	return shmem_map_address(address, size, false);
++	#else
++	return shmem_map_address(address, size, true);
++	#endif
++}
++
++#ifdef MISTER_DE25
++void *shmem_map_physical(uint32_t address, uint32_t size)
++{
++	// HPS peripheral and bridge addresses must not pass through the logical
++	// MiSTer DDR translation performed by shmem_map().
++	return shmem_map_address(address, size, true);
++}
++#endif
++
+ int shmem_unmap(void* map, uint32_t size)
+ {
+ 	if (munmap(map, size) < 0)
+ 	{
+-		printf("Error: Unable to unmap(0x%X, %d)!\n", (uint32_t)map, size);
++		printf("Error: Unable to unmap(%p, %d)!\n", map, size);
+ 		return 0;
+ 	}
+ 
+diff --git a/shmem.h b/shmem.h
+index 865bc1b..3775160 100644
+--- a/shmem.h
++++ b/shmem.h
+@@ -5,6 +5,9 @@
+ #define SHMEM_H
+ 
+ void *shmem_map(uint32_t address, uint32_t size);
++#ifdef MISTER_DE25
++void *shmem_map_physical(uint32_t address, uint32_t size);
++#endif
+ int shmem_unmap(void* map, uint32_t size);
+ int shmem_put(uint32_t address, uint32_t size, void *buf);
+ int shmem_get(uint32_t address, uint32_t size, void *buf);
+diff --git a/support/vhd/vhdcgf.cpp b/support/vhd/vhdcgf.cpp
+index e8fa31b..b70221f 100644
+--- a/support/vhd/vhdcgf.cpp
++++ b/support/vhd/vhdcgf.cpp
+@@ -227,8 +227,9 @@ vhd_error parse_vhd_config(drive_t *drive)
+ 
+ 	// find the length of the name before the extension
+ 	size_t name_len = ext - name;
+-	strncpy(cfg_name, name, name_len);
+-	strncpy(cfg_name+name_len, ".cfg", 4);
++	if (name_len + sizeof(".cfg") > sizeof(cfg_name)) return VHD_NO_CONFIG;
++	memcpy(cfg_name, name, name_len);
++	memcpy(cfg_name + name_len, ".cfg", sizeof(".cfg"));
+ 
+ 	vhd_error result = cfg_parse(cfg_name, vhd_vars, sizeof(vhd_vars)/sizeof(vhd_var_t));
+ 	if (result == VHD_NOERROR)
+diff --git a/support/x86/x86.cpp b/support/x86/x86.cpp
+index 85621ce..5b2ac84 100644
+--- a/support/x86/x86.cpp
++++ b/support/x86/x86.cpp
+@@ -50,6 +50,38 @@
+ 
+ #define IOWR(base, reg, value) x86_dma_set((base) + (reg), value)
+ 
++#ifdef MISTER_DE25
++// Agilex reserved LPDDR mappings reject the DC ZVA instruction used by
++// optimized AArch64 memset and report SIGBUS/BUS_ADRALN. Use explicit aligned
++// stores for the small x86 initialization regions, then complete all writes
++// before unmapping or releasing the core.
++static void de25_mapped_memset(void *buffer, uint8_t value, uint32_t size)
++{
++	volatile uint8_t *bytes = static_cast<volatile uint8_t *>(buffer);
++	uint64_t pattern = UINT64_C(0x0101010101010101) * value;
++
++	while (size && (reinterpret_cast<uintptr_t>(bytes) & 7))
++	{
++		*bytes++ = value;
++		size--;
++	}
++
++	volatile uint64_t *words =
++		reinterpret_cast<volatile uint64_t *>(bytes);
++	while (size >= sizeof(*words))
++	{
++		*words++ = pattern;
++		size -= sizeof(*words);
++	}
++
++	bytes = reinterpret_cast<volatile uint8_t *>(words);
++	while (size--)
++		*bytes++ = value;
++
++	__asm__ volatile("dsb sy" ::: "memory");
++}
++#endif
++
+ unsigned int hdd_table[128][3] = {
+ 	{  306,  4, 17 },		/* 0 - 7 */
+ 	{  615,  2, 17 },
+@@ -303,7 +335,11 @@ static int mem_set(uint32_t offset, uint8_t fill_byte, uint32_t size)
+ 	void *buf = shmem_map(SHMEM_ADDR + offset, size);
+ 	if (!buf) return 0;
+ 
++	#ifdef MISTER_DE25
++	de25_mapped_memset(buf, fill_byte, size);
++	#else
+ 	memset(buf, fill_byte, size);
++	#endif
+ 	shmem_unmap(buf, size);
+ 
+ 	return 1;
+@@ -325,7 +361,11 @@ static int load_rom(const char* name, uint32_t mem_offset)
+ 		return 0;
+ 	}
+ 
++	#ifdef MISTER_DE25
++	de25_mapped_memset(buf, 0, size);
++	#else
+ 	memset(buf, 0, size);
++	#endif
+ 	FileReadAdv(&f, buf, size);
+ 	shmem_unmap(buf, size);
+ 
+@@ -679,6 +719,33 @@ void x86_init()
+ 	user_io_status_set("[0]", 0);
+ }
+ 
++#ifdef MISTER_DE25
++void x86_pc110_post_bypass()
++{
++	// The stock PC110 BIOS branches to its fatal POST screen when the
++	// conventional-memory diagnostic returns nonzero at F000:49F5. Keep the
++	// original ROM files intact, but replace that conditional branch in shared
++	// RAM while reset is asserted so hardware bring-up can continue to INT 19h.
++	// This command is deliberately explicit and is not part of normal x86_init.
++	x86_init();
++	user_io_status_set("[0]", 1);
++	// Let the core clock domain observe reset and discard every cached BIOS
++	// line before changing the shared LPDDR backing store.
++	usleep(100000);
++	if (!mem_set(0xF49F7, 0xEB, 1))
++		printf("PC110 POST bypass write failed.\n");
++	else
++		printf("PC110 POST bypass installed at F000:49F7.\n");
++	usleep(100000);
++	user_io_status_set("[0]", 0);
++}
++#else
++void x86_pc110_post_bypass()
++{
++	x86_init();
++}
++#endif
++
+ static void fdd_io(uint8_t read)
+ {
+ 	fileTYPE *img = &fdd0_image;
+diff --git a/support/x86/x86.h b/support/x86/x86.h
+index 1e17929..4916e20 100644
+--- a/support/x86/x86.h
++++ b/support/x86/x86.h
+@@ -2,6 +2,7 @@
+ #define X86_H
+ 
+ void x86_init();
++void x86_pc110_post_bypass();
+ void x86_poll(int only_ide);
+ void x86_ide_set();
+ 
+diff --git a/user_io.cpp b/user_io.cpp
+index ac1b27b..3284c30 100644
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -1077,6 +1077,19 @@ static void parse_config()
+ 		ss_base = 0x3E000000;
+ 		ss_size = 0x100000;
+ 	}
++
++#ifdef MISTER_DE25
++	// DE10 cores place save states in the upper half of a 1 GiB DDR window.
++	// DE25 currently exposes 512 MiB of LPDDR and has no remapped core-DDR
++	// aperture, so HPS access to that advertised address would raise SIGBUS.
++	if (ss_base)
++	{
++		printf("DE25: disabling unsupported DDR save-state buffer at 0x%X.\n",
++			ss_base);
++		ss_base = 0;
++		ss_size = 0;
++	}
++#endif
+ }
+ 
+ //MSM6242B layout
+@@ -1324,6 +1337,17 @@ void ResetUART()
+ 
+ uint16_t sdram_sz(int sz)
+ {
++#ifdef MISTER_DE25
++	// DE25-Nano's 128 MB SDR SDRAM is soldered to the board. It has no
++	// MiSTer daughterboard ID resistor, so the conventional Menu probe stores
++	// size zero. Always report the known board capacity to every loaded core.
++	if (sz < 0)
++	{
++		printf("*** DE25 onboard SDRAM config: 3 (128 MB)\n");
++		return 0x8003;
++	}
++#endif
++
+ 	int res = 0;
+ 
+ 	void* buf = shmem_map(0x1FFFF000, 0x1000);
+@@ -1420,6 +1444,17 @@ void user_io_init(const char *path, const char *xml)
+ 	strcpy(core_path, xml ? xml : path);
+ 	strcpy(rbf_path, path);
+ 
++#ifdef MISTER_DE25
++	// Parse the guarded descriptor while the one-shot argument is still the
++	// authoritative source. This primes the MGL state machine before the
++	// remaining core initialization decides whether it has work to run.
++	if (xml && isXmlName(xml) == 2)
++	{
++		fprintf(stderr, "DE25 arming content descriptor: %s\n", xml);
++		mgl_parse(xml);
++	}
++#endif
++
+ 	memset(sd_image, 0, sizeof(sd_image));
+ 
+ 	core_type = (fpga_core_id() & 0xFF);
+@@ -1484,7 +1519,17 @@ void user_io_init(const char *path, const char *xml)
+ 	}
+ 
+ 	const char *main = getFullPath(cfg.main);
+-	if (strcasecmp(main, getappname()) && FileExists(main))
++	bool running_configured_main = !strcasecmp(main, getappname());
++#ifdef MISTER_DE25
++	// A headless migration may temporarily install a launcher at the normal
++	// MiSTer path and keep the real binary below .mister-de25/bin.  The
++	// launcher exports its own path so the real binary does not continually
++	// re-exec the launcher just because /proc/self/exe resolves to the target.
++	const char *launcher = getenv("MISTER_DE25_LAUNCHER");
++	if (!running_configured_main && launcher && !strcasecmp(main, launcher))
++		running_configured_main = true;
++#endif
++	if (!running_configured_main && FileExists(main))
+ 	{
+ 		printf("Current exec is %s, core requires exec %s\n", getappname(), main);
+ 		app_restart(path, xml, main);
+@@ -1513,12 +1558,21 @@ void user_io_init(const char *path, const char *xml)
+ 		bootcore_init(xml ? xml : path);
+ 	}
+ 
++#ifdef MISTER_DE25
++	// The shared Agilex shell owns the fixed HDMI/scaler mode. Upstream
++	// video_init() waits on Cyclone V scaler registers that do not exist in
++	// this shell and would prevent headless content launch from completing.
++	fprintf(stderr, "DE25 Main init: fixed fabric video active\n");
++#else
+ 	video_init();
++#endif
+ 	if (strlen(cfg.font)) LoadFont(cfg.font);
+ 	load_volume();
+ 
+ 	user_io_send_buttons(1);
++#ifndef MISTER_DE25
+ 	if (xml && isXmlName(xml) == 2) mgl_parse(xml);
++#endif
+ 
+ 	switch (core_type)
+ 	{
+@@ -1766,6 +1820,11 @@ void user_io_init(const char *path, const char *xml)
+ 	{
+ 		mgl_get()->timer = GetTimer(mgl_get()->item[0].delay * 1000);
+ 	}
++#ifdef MISTER_DE25
++	fprintf(stderr,
++		"DE25 Main init complete: mgl count=%d state=%d done=%d menu=%d\n",
++		mgl_get()->count, mgl_get()->state, mgl_get()->done, is_menu());
++#endif
+ }
+ 
+ static int joyswap = 0;
+@@ -3005,12 +3064,22 @@ char *user_io_get_confstr(int index)
+ static char cur_btn = 0;
+ char user_io_menu_button()
+ {
++	#ifdef MISTER_DE25
++	// DE25-Nano has one HPS-visible user key in the MiSTer shell. Use it as
++	// the OSD key so the Menu remains usable before a USB-C OTG hub is fitted.
++	return (cur_btn & (BUTTON_OSD | BUTTON_USR)) ? 1 : 0;
++	#else
+ 	return (cur_btn & BUTTON_OSD) ? 1 : 0;
++	#endif
+ }
+ 
+ char user_io_user_button()
+ {
++	#ifdef MISTER_DE25
++	return 0;
++	#else
+ 	return (cur_btn & BUTTON_USR) ? 1 : 0;
++	#endif
+ }
+ 
+ static int vga_fb = 0;
+@@ -3157,7 +3226,13 @@ void user_io_poll()
+ 	// every frame, check if a screenshot has been requested.
+ 	// this is reduce risk of screenshot occurring while the scaler
+ 	// is being updated and getting a corrupted image.
++#ifdef MISTER_DE25
++	// The fixed fabric scaler has no Main-owned frame callback source.
++	// Polling here starts requests and publishes asynchronous completions.
++	screenshot_cb();
++#else
+ 	add_frame_callback(screenshot_cb);
++#endif
+ 
+ 	if ((core_type != CORE_TYPE_SHARPMZ) &&
+ 		(core_type != CORE_TYPE_8BIT))
+@@ -4221,7 +4296,13 @@ void user_io_osd_key_enable(char on)
+ {
+ 	//printf("OSD is now %s\n", on ? "visible" : "invisible");
+ 	osd_is_visible = on;
++	#ifdef MISTER_DE25
++	// Keep an observable state marker during DE25 board bring-up even when
++	// general file-entry logging is disabled.
++	MakeFile("/tmp/OSD_VISIBLE", on ? "1" : "0");
++	#else
+ 	if (cfg.log_file_entry) MakeFile("/tmp/OSD_VISIBLE", on ? "1" : "0");
++	#endif
+ 	input_switch(-1);
+ }
+ 
+diff --git a/video.cpp b/video.cpp
+index b525136..73c9be7 100644
+--- a/video.cpp
++++ b/video.cpp
+@@ -2389,6 +2389,13 @@ static int store_custom_video_mode(char* vcfg, vmode_custom_t *v)
+ 
+ static void fb_init()
+ {
++#ifdef MISTER_DE25
++	// The current DE25 shell sends core video directly to HDMI and does not
++	// implement MiSTer's HPS frame-buffer command or its DDR aperture. Keep the
++	// optional HPS frame buffer disabled until that hardware path is available.
++	printf("DE25: HPS frame buffer is unavailable in this shell.\n");
++	return;
++#else
+ 	if (!fb_base)
+ 	{
+ 		fb_base = (volatile uint32_t*)shmem_map(FB_ADDR, FB_SIZE * 4 * 3);
+@@ -2398,6 +2405,7 @@ static void fb_init()
+ 		}
+ 	}
+ 	spi_uio_cmd16(UIO_SET_FBUF, 0);
++#endif
+ }
+ 
+ // Structure to hold DAC configuration
+@@ -3835,6 +3843,11 @@ void video_menu_bg(int n, int idle)
+ 	static Imlib_Image bg1 = 0, bg2 = 0;
+ 	static Imlib_Image curtain = 0;
+ 
++#ifdef MISTER_DE25
++	// video_menu_bg() writes directly into the optional HPS frame buffer.
++	if (!fb_base) return;
++#endif
++
+ 	static int cached_idle = 0;
+ 	bg_has_picture = 0;
+ 
+@@ -4439,4 +4452,3 @@ int video_get_rotated()
+ {
+   return current_video_info.rotated;
+ }
+-

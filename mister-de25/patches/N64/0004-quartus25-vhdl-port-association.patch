@@ -1,0 +1,28 @@
+diff --git a/rtl/RDP_pipeline.vhd b/rtl/RDP_pipeline.vhd
+--- a/rtl/RDP_pipeline.vhd
++++ b/rtl/RDP_pipeline.vhd
+@@ -182,6 +182,7 @@ architecture arch of RDP_pipeline is
+    -- stage shiftreg outputs
+    signal addr_PALETTE              : unsigned(25 downto 0);
+    signal corrected_color_TEXSELECT : tcolor4_u9;
++   signal shiftreg_color_out        : std_logic_vector(35 downto 0);
+   
+    -- stage register
+    signal stage_valid         : unsigned(0 to STAGE_OUTPUT - 1);
+@@ -446,10 +447,12 @@ begin
+    iShiftreg_color : entity mem.Shiftreg generic map (USE_BRAM => '1', DEPTH => STAGE_TEXSELECT + 1, BITS => 36)
+    port map (clk => clk1x, clk_en => pipeIn_trigger, 
+       data_in  => std_logic_vector(corrected_color(3)) & std_logic_vector(corrected_color(2)) & std_logic_vector(corrected_color(1)) & std_logic_vector(corrected_color(0)), 
+-      unsigned(data_out(35 downto 27)) => corrected_color_TEXSELECT(3),
+-      unsigned(data_out(26 downto 18)) => corrected_color_TEXSELECT(2),
+-      unsigned(data_out(17 downto 9))  => corrected_color_TEXSELECT(1),
+-      unsigned(data_out( 8 downto 0))  => corrected_color_TEXSELECT(0));
++      data_out => shiftreg_color_out);
++
++   corrected_color_TEXSELECT(3) <= unsigned(shiftreg_color_out(35 downto 27));
++   corrected_color_TEXSELECT(2) <= unsigned(shiftreg_color_out(26 downto 18));
++   corrected_color_TEXSELECT(1) <= unsigned(shiftreg_color_out(17 downto 9));
++   corrected_color_TEXSELECT(0) <= unsigned(shiftreg_color_out( 8 downto 0));
+                  
+    process (clk1x)
+       variable cvgCounter : unsigned(3 downto 0);

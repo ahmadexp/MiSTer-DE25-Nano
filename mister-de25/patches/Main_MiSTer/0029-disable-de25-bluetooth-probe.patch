@@ -1,0 +1,32 @@
+From: DE25-Nano port
+Subject: [PATCH] Disable Bluetooth probing on DE25
+
+The current DE25 kernel has no board Bluetooth transport and faults inside
+bt_sock_alloc when Main probes for an HCI route. Do not open Bluetooth sockets
+on this target. USB input continues to use the normal evdev path.
+
+diff --git a/menu.cpp b/menu.cpp
+--- a/menu.cpp
++++ b/menu.cpp
+@@ -1103,6 +1103,7 @@ void HandleUI(void)
+ {
+ 	PROFILE_FUNCTION();
+ 
++#ifndef MISTER_DE25
+ 	if (bt_timer >= 0)
+ 	{
+ 		if (!bt_timer) bt_timer = (int32_t)GetTimer(6000);
+@@ -1129,6 +1130,13 @@ void HandleUI(void)
+ 			if (!bt_icon_timer) bt_icon_timer = 1;
+ 		}
+ 	}
++#else
++	// The current DE25 kernel has no board Bluetooth transport, and opening
++	// an HCI socket faults in bt_sock_alloc. Keep Bluetooth UI probing off;
++	// USB keyboards, mice, and controllers continue through evdev as usual.
++	bt_timer = -1;
++	bt_present = false;
++#endif
+ 
+ 	switch (user_io_core_type())
+ 	{

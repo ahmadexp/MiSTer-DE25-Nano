@@ -1,0 +1,136 @@
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.3 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_pc110
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+set_global_assignment -name VERILOG_CU_MODE MFCU
+set_global_assignment -name VERILOG_MACRO "DE25_NANO=1"
+set_global_assignment -name VERILOG_MACRO "DE25_PC110_CORE=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_IGNORE_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_HDMI_BOB_DEINT=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_FB=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_FB_PALETTE=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_FB=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_FB_PALETTE=1"
+set_global_assignment -name VERILOG_MACRO "DE25_VIDEO_SCALER=1"
+set_global_assignment -name VERILOG_MACRO "DE25_PLL_DIAGNOSTIC=1"
+set_global_assignment -name VERILOG_MACRO "DE25_SI5332_ADDRESS_PROBE=1"
+
+set_global_assignment -name SEARCH_PATH ../rtl
+set_global_assignment -name SEARCH_PATH ../..
+set_global_assignment -name SEARCH_PATH ../../sys
+set_global_assignment -name SEARCH_PATH ../../rtl/ao486
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_menu_top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_clock_frequency_monitor.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/de25_si5332_address_probe.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_hps_warm_reset_handshake.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_reset_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_gp_bridge.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_audio.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/pc110_core_pll_wrapper.sv
+set_global_assignment -name VHDL_FILE ../../sys/ascal.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/adv7513_init.sv
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../../sys/hps_io.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../sys/math.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../sys/video_cleaner.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../sys/gamma_corr.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../sys/video_freak.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../sys/mt32pi.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/Menu/sys/osd.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../../PC110.sv
+set_global_assignment -name QIP_FILE ../../rtl/ao486/ao486.qip
+set_global_assignment -name QIP_FILE ../../rtl/cache/cache.qip
+set_global_assignment -name QIP_FILE ../../rtl/soc/uart/uart.qip
+set_global_assignment -name QIP_FILE ../../rtl/soc/sound/opl3/opl3.qip
+set_global_assignment -name MIF_FILE ../../rtl/soc/sound/opl3/opl3prg.mif
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/sound/sound.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/soc/sound/sound_dsp.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/soc/sound/saa1099.sv
+set_global_assignment -name VERILOG_FILE ../../rtl/common/simple_fifo.v
+set_global_assignment -name VERILOG_FILE ../../rtl/common/simple_fifo_mlab.v
+set_global_assignment -name VERILOG_FILE ../../rtl/common/simple_mult.v
+set_global_assignment -name VERILOG_FILE ../../rtl/common/simple_ram.v
+set_global_assignment -name VERILOG_FILE ../../rtl/common/simple_rom.v
+set_global_assignment -name VERILOG_FILE ../../rtl/common/simple_single_rom.v
+set_global_assignment -name VHDL_FILE ../../de25-nano/rtl/de25_bram.vhd
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/iobus.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/soc/floppy.v
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/ide.v
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/joystick.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/soc/dma.v
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/pic.v
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/pit.v
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/pit_counter.v
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/ps2.v
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/rtc.v
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/vga.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/pc110/pc110_chipset.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/pc110/pc110_ram_config.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/pc110/pc110_pcmcia_bridge.sv
+set_global_assignment -name VERILOG_FILE ../../rtl/pc110/pc110_host_bridge.v
+set_global_assignment -name VERILOG_FILE ../../rtl/system.v
+
+set_global_assignment -name QSYS_FILE ../ip/mister_pll.qsys
+set_global_assignment -name QSYS_FILE ../ip/pc110_core_pll.qsys
+set_global_assignment -name IP_FILE ../ip/ip/mister_pll/mister_pll_system_pll.ip
+set_global_assignment -name IP_FILE ../ip/ip/pc110_core_pll/pc110_core_pll_core_iopll.ip
+set_global_assignment -name IP_FILE ../ip/ip/pc110_core_pll/pc110_core_pll_vga_iopll.ip
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/mister_hps.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_clk_100.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_h2f_reset_fanout.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_ddram_cdc.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_gp_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_gp_out.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_vbuf_bridge.ip
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/jtag_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/hps_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/peripheral_subsys.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/clk_100.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/ext_hps_f2sdram_master.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/qsys_top_ace5lite_cache_coherency_translator_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/user_rst_clkgate_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/agilex_hps.ip
+set_global_assignment -name QIP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/f2sdram_adapter/f2sdram_adapter.qip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/qsys_top/emif_io96b_hps.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/fpga_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_f2sdram.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/button_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/dipsw_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/led_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/pb_cpu_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/sysid.ip
+
+set_global_assignment -name SDC_FILE DE25_MISTER_MENU.sdc
+set_global_assignment -name SDC_FILE DE25_MISTER_PC110.sdc
+source de25_mister_rev_b_pins.tcl
+source de25_mister_hps_partition.tcl
+
+# U24 Si5332B I2C pads wired to GPIO_1/JP2 physical pins 1 and 2. The probe logic is
+# strictly open drain and releases both pins permanently after address checks.
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to SI5332_SDA
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to SI5332_SCL
+set_location_assignment PIN_BV14 -to SI5332_SDA
+set_location_assignment PIN_CG26 -to SI5332_SCL
+
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO11
+set_global_assignment -name HPS_INITIALIZATION "HPS First"
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X4"
+set_global_assignment -name ACTIVE_SERIAL_CLOCK AS_FREQ_125MHZ
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_global_assignment -name POWER_APPLY_THERMAL_MARGIN ADDITIONAL

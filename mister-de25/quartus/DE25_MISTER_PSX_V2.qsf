@@ -1,0 +1,53 @@
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_psx_v2
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_FB=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SDRAM=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SPLIT_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_FB=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_DOWNSCALE_NN=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_DISABLE_ALSA=1"
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+source de25_psx_settings.tcl
+
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_PSX_MiSTer
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_PSX_MiSTer/sys
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/sys/hps_io.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/sys/math.sv
+set_global_assignment -name QIP_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/psx.qip
+# Quartus 25 no longer infers the VHDL library from mem.qip's basename. Keep
+# these primitives in the MEM library used by the PSX VHDL hierarchy. These
+# are deliberately explicit because Quartus rewrites loop-generated QSF
+# assignments with escaped Tcl variables.
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/SyncFifo.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/SyncFifoFallThrough.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/SyncFifoFallThroughMLAB.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/SyncRam.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/SyncRamDual.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/SyncRamDualNotPow2.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/SyncRamDualByteEnable.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/dpram.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/RamMLAB.vhd
+set_global_assignment -name VHDL_FILE ../rtl/psx_agilex_ram.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../rtl/psx_agilex_ram.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/sdram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/savestate_ui.sv
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/rtl/hps_ext.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_PSX_MiSTer/PSX.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/psx_core_pll_wrapper.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/mister_sync_fix.sv
+set_global_assignment -name QSYS_FILE ../ip/psx_core_pll.qsys
+set_global_assignment -name IP_FILE ../ip/ip/psx_core_pll/psx_core_pll_iopll_0.ip
+set_global_assignment -name QSYS_FILE ../ip/psx_video_pll.qsys
+set_global_assignment -name IP_FILE ../ip/ip/psx_video_pll/psx_video_pll_iopll_0.ip
+
+# Keep the PSX SDRAM bus registers in fabric. Forced packing of the 16 DQ
+# samplers succeeds, then triggers a Quartus 25.3.1 U2B2_CDB internal error in
+# the Agilex HVIO post-plan backend. The explicit C4/falling-C2 input pipeline
+# provides real timing margin without relying on that compiler path.
+
+source de25_simple_persona_base.qsf
+source de25_platform_v2.qsf
+set_global_assignment -name SDC_FILE DE25_MISTER_PSX_V2.sdc

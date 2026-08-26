@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+request=${MISTER_DE25_CORE_REQUEST:-/run/mister-de25/core.request}
+selector=${MISTER_DE25_CORE_SELECTOR:-/usr/libexec/mister-de25-select-core}
+
+if [[ ! -e $request && ! -L $request ]]; then
+    echo "DE25-Nano core request is missing or unsafe: $request" >&2
+    exit 1
+fi
+if [[ -L $request || ! -f $request ]]; then
+    # The path unit would immediately retrigger forever if an unprivileged
+    # caller left a symlink or another non-regular object at the request path.
+    # Remove only this fixed runtime inbox entry, then reject the request.
+    rm -f -- "$request"
+    echo "DE25-Nano core request is missing or unsafe: $request" >&2
+    exit 1
+fi
+IFS=$'\t' read -r mode core_id extra <"$request" || true
+rm -f -- "$request"
+
+if [[ $mode != LOAD ]]; then
+    # Accept the original one-field request format during rolling updates.
+    if [[ -z $core_id && -z $extra &&
+          $mode =~ ^[A-Za-z0-9_.-]+$ ]]; then
+        core_id=$mode
+        mode=LOAD
+    else
+        echo "Invalid DE25-Nano core request" >&2
+        exit 1
+    fi
+fi
+if [[ ! $core_id =~ ^[A-Za-z0-9_.-]+$ || -n $extra ]]; then
+    echo "Invalid DE25-Nano core request" >&2
+    exit 1
+fi
+exec "$selector" "$core_id"

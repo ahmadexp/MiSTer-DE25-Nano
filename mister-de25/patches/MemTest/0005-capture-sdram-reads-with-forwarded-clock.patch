@@ -1,0 +1,84 @@
+diff --git a/memtest.sv b/memtest.sv
+index 0b1b17b..d41add0 100644
+--- a/memtest.sv
++++ b/memtest.sv
+@@ -444,9 +444,15 @@ always @(posedge clk_ram) begin
+ end
+ 
+ wire [31:0] passcount, failcount;
++`ifdef DE25_AGILEX_PLL_RECONFIG
++wire sdram_capture_clk = de25_sdram_clk;
++`else
++wire sdram_capture_clk = clk_ram;
++`endif
+ tester my_memtst
+ (
+ 	.clk(clk_ram),
++	.clk_capture(sdram_capture_clk),
+ 	.rst_n(~reset),
+ 	.sz(sdram_sz),
+ 	.chip(sdram_chip),
+diff --git a/rtl/sdram.v b/rtl/sdram.v
+index 615e3df..d9807e0 100644
+--- a/rtl/sdram.v
++++ b/rtl/sdram.v
+@@ -37,6 +37,7 @@ done  XXXXXXXX\_________ ....... _____________ .... ______________ .... ________
+ module sdram
+ (
+ 	input             clk,
++	input             clk_capture,
+ 	input             rst_n, // total reset
+ 
+ 	input             start, // start sequence
+@@ -83,6 +84,6 @@ reg  [5:0] rcnt;
+ reg        rnw_reg;
+ reg  [1:0] rfsh;
+-reg [15:0] rdat2, rdat3;
++reg [15:0] rdat_capture, rdat2, rdat3;
+ reg        done3;
+ reg [4:0]  is, is2, is3;
+ reg [2:0]  st;
+@@ -174,7 +175,7 @@ always @ (posedge clk) begin
+ 			DRAM_DQ_OE  <= 1'b1;
+ 		end
+ 
+-		rdat3   <= DRAM_DQ_IN;
++		rdat3   <= rdat_capture;
+ 		rdat2   <= rdat3;
+ 		rdat    <= rdat2;
+ 		cmd2    <= CMD_NOP;
+@@ -280,6 +281,14 @@ always @ (posedge clk) begin
+ 	end
+ end
+ 
++// Capture returning data with the same phase-shifted clock that is forwarded
++// to the SDRAM. The following controller-clock stages preserve the original
++// read latency while giving the board-level round trip nearly a full cycle.
++always @ (posedge clk_capture) begin
++	if(!rst_n) rdat_capture <= 0;
++	else       rdat_capture <= DRAM_DQ_IN;
++end
++
+ always @ (posedge clk) begin
+ 	if(!rst_n) begin
+ 		sdaddr <= 0;
+diff --git a/rtl/tester.v b/rtl/tester.v
+index 35808d5..c967a53 100644
+--- a/rtl/tester.v
++++ b/rtl/tester.v
+@@ -9,6 +9,7 @@ error...
+ module tester
+ (
+ 	input         clk,
++	input         clk_capture,
+ 	input         rst_n,
+ 
+ 	input  [1:0]  sz,
+@@ -56,6 +57,7 @@ sdram my_dram
+ (
+ 	.rst_n(sdram_rst_n),
+ 	.clk(clk),
++	.clk_capture(clk_capture),
+ 	.sz(sz),
+ 	.chip(chip),
+ 	.start(dram_start),

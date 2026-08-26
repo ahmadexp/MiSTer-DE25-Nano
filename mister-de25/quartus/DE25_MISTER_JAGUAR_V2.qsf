@@ -1,0 +1,58 @@
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_jaguar_v2
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SDRAM=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SPLIT_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "DE25_JAGUAR_SAFE_CLOCK=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_DISABLE_ALSA=1"
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set DE25_SIMPLE_PERSONA_NATIVE_SDRAM 1
+
+set core_root ../upstream/official/MiSTer-devel_Jaguar_MiSTer
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_Jaguar_MiSTer
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_Jaguar_MiSTer/sys
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/Tom
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/Jerry
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/jaguar_common
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/sys/math.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/sys/hps_io.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/sys/video_freak.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/sys/video_freezer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/sys/gamma_corr.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/sys/hq2x.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/sys/video_mixer.sv
+
+set_global_assignment -name QIP_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/jaguar.qip
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/nuked-68k/68k.v
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/jag_controller_mux.v
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/jag_team_tap.v
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/gamedrive.v
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/ps2_mouse.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/auto_crt_ar.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/jag_lightgun.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/numstick.sv
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/eeprom_93c46_x16.v
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/tda1545a.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/cheatcodes.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/cd_stream.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/save_slot.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/mem/ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/mem/sdram_dual.sv
+set_global_assignment -name VHDL_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/rtl/mem/bram.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_Jaguar_MiSTer/Jaguar.sv
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/jaguar_core_pll_wrapper.sv
+set_global_assignment -name QSYS_FILE ../ip/jaguar_core_pll.qsys
+set_global_assignment -name IP_FILE ../ip/ip/jaguar_core_pll/jaguar_core_pll_iopll_0.ip
+
+# Keep the SDRAM return sampler in the Agilex I/O path. Command/address
+# outputs can use pin registers, while DQ data and OE remain in the Jaguar
+# controller because they change with its burst pipeline.
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to DRAM_* -entity de25_mister_top
+set_instance_assignment -name FAST_OUTPUT_REGISTER OFF -to DRAM_DQ[*] -entity de25_mister_top
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER OFF -to DRAM_DQ[*] -entity de25_mister_top
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to DRAM_DQ[*] -entity de25_mister_top
+
+source de25_simple_persona_base.qsf
+source de25_platform_v2.qsf
+set_global_assignment -name SDC_FILE DE25_MISTER_JAGUAR_V2.sdc

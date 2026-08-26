@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fat_root=${MISTER_DE25_FAT_ROOT:-/media/fat}
+control_root=${MISTER_DE25_HEADLESS_ROOT:-$fat_root/.mister-de25/headless-migration}
+
+usage() {
+    cat <<'EOF' >&2
+Usage:
+  mister-de25-migrate stage TARGET_MENU.rbf
+  mister-de25-migrate verified --confirm FLASH-VERIFIED
+  mister-de25-migrate cancel
+  mister-de25-migrate status
+
+Stage a matched Menu runtime for a remotely coordinated HPS-first platform
+migration. After the controller reports waiting-for-qspi, program and verify
+the matching JIC with program-qspi.sh. Only then issue the verified command.
+EOF
+}
+
+read_hash() {
+    local value
+    value=$(tr -d '[:space:]' <"$1" | tr '[:lower:]' '[:upper:]')
+    [[ $value =~ ^[0-9A-F]{64}$ ]] || {
+        echo "Invalid HPS I/O hash in $1" >&2
+        return 1
+    }
+    printf '%s' "$value"
+}
+
+hash_file() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+command=${1:-}
+case $command in
+    stage)
+        [[ $# -eq 2 ]] || { usage; exit 2; }
+        source_rbf=$2
+        for required in "$source_rbf" "$source_rbf.hps-io-hash" "$source_rbf.sha256"; do
+            [[ -s $required ]] || {
+                echo "Migration input is missing: $required" >&2
+                exit 1
+            }
+        done
+        [[ ! -e $control_root/request ]] || {
+            echo "A headless platform migration is already requested" >&2
+            exit 1
+        }
+        target_hash=$(read_hash "$source_rbf.hps-io-hash")
+        expected_digest=$(tr -d '[:space:]' <"$source_rbf.sha256" | \
+            tr '[:upper:]' '[:lower:]')
+        [[ $expected_digest =~ ^[0-9a-f]{64}$ ]] || {
+            echo "Invalid RBF SHA-256 in $source_rbf.sha256" >&2
+            exit 1
+        }
+        actual_digest=$(hash_file "$source_rbf")
+        [[ $actual_digest == "$expected_digest" ]] || {
+            echo "RBF SHA-256 metadata does not match: $source_rbf" >&2
+            exit 1
+        }
+
+        mkdir -p "$control_root"
+        cp "$source_rbf" "$control_root/menu.rbf.new"
+        cp "$source_rbf.hps-io-hash" "$control_root/menu.rbf.hps-io-hash.new"
+        cp "$source_rbf.sha256" "$control_root/menu.rbf.sha256.new"
+        mv -f "$control_root/menu.rbf.hps-io-hash.new" \
+            "$control_root/menu.rbf.hps-io-hash"
+        mv -f "$control_root/menu.rbf.sha256.new" \
+            "$control_root/menu.rbf.sha256"
+        mv -f "$control_root/menu.rbf.new" "$control_root/menu.rbf"
+        printf '%s\n' "$target_hash" >"$control_root/request.new"
+        mv -f "$control_root/request.new" "$control_root/request"
+        sync "$control_root" 2>/dev/null || sync
+        echo "DE25-Nano platform migration staged: $target_hash"
+        ;;
+    verified)
+        [[ $# -eq 3 && $2 == --confirm && $3 == FLASH-VERIFIED ]] || {
+            usage
+            exit 2
+        }
+        [[ -s $control_root/prepared ]] || {
+            echo "The migration controller is not waiting for QSPI verification" >&2
+            exit 1
+        }
+        prepared_hash=$(read_hash "$control_root/prepared")
+        printf '%s\n' "$prepared_hash" >"$control_root/qspi-verified.new"
+        mv -f "$control_root/qspi-verified.new" "$control_root/qspi-verified"
+        sync "$control_root" 2>/dev/null || sync
+        echo "Recorded external QSPI verification: $prepared_hash"
+        ;;
+    cancel)
+        [[ $# -eq 1 ]] || { usage; exit 2; }
+        mkdir -p "$control_root"
+        : >"$control_root/cancel"
+        sync "$control_root" 2>/dev/null || sync
+        echo "Requested cancellation of the prepared migration"
+        ;;
+    status)
+        [[ $# -eq 1 ]] || { usage; exit 2; }
+        if [[ -s $control_root/status ]]; then
+            cat "$control_root/status"
+        else
+            echo "state=idle"
+        fi
+        ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac

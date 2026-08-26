@@ -1,0 +1,89 @@
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+set_global_assignment -name TOP_LEVEL_ENTITY de25_nes_standalone_top
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.3 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_nes_standalone
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+set_global_assignment -name VERILOG_CU_MODE MFCU
+
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_HDMI_BOB_DEINT=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SPLIT_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "DE25_AGILEX_PLL_RECONFIG=1"
+set_global_assignment -name VERILOG_MACRO "DE25_NES_CORE=1"
+set_global_assignment -name VERILOG_MACRO "DE25_NES_GPI_DIAGNOSTIC=1"
+set_global_assignment -name VERILOG_MACRO "DE25_NES_PIPELINE_DIAGNOSTIC=1"
+
+set_global_assignment -name SEARCH_PATH ../rtl
+set_global_assignment -name SEARCH_PATH ../upstream/cores/NES
+set_global_assignment -name SEARCH_PATH ../upstream/cores/NES/sys
+set_global_assignment -name SEARCH_PATH ../upstream/cores/NES/rtl
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_standalone_top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_autoload_hps_io.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_m20k_dp.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_framebuffer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_audio.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_sdram_quiesce.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_loader_bridge.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_axil.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_reconfig_axil.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_pll_profiles.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_pll.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/adv7513_init.sv
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/regs_savestates.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_imports.sv
+set_global_assignment -name VHDL_FILE ../upstream/cores/NES/rtl/bus_savestates.vhd
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/sys/math.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/sys/video_freak.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/sys/gamma_corr.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/sys/video_freezer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/sys/hq2x.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/NES/sys/scandoubler.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/NES/sys/iir_filter.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/sys/video_mixer.sv
+
+set_global_assignment -name QIP_FILE ../upstream/cores/NES/rtl/t65/t65.qip
+set_global_assignment -name QIP_FILE ../upstream/cores/NES/rtl/mappers/mappers.qip
+set_global_assignment -name QIP_FILE ../upstream/cores/NES/rtl/SOUND/OPLL/OPLL.qip
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_ram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_nes_onchip_sdram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/EEPROM_24C0x.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/cheatcodes.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/miracle.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/keyboard.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/zapper.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/cart.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/video.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/ppu.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/apu.sv
+set_global_assignment -name VHDL_FILE ../upstream/cores/NES/rtl/statemanager.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/NES/rtl/savestates.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/rtl/savestate_ui.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/NES/rtl/nes.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/NES/rtl/dsp.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/NES/rtl/compat.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/NES/NES.sv
+set_global_assignment -name MIF_FILE ../upstream/cores/NES/rtl/loopy_NSF.mif
+set_global_assignment -name MIF_FILE ../upstream/cores/NES/rtl/tao.mif
+
+set_global_assignment -name QSYS_FILE ../ip/mister_pll.qsys
+set_global_assignment -name QSYS_FILE ../ip/nes_core_pll_cal.qsys
+set_global_assignment -name IP_FILE ../ip/ip/mister_pll/mister_pll_system_pll.ip
+set_global_assignment -name IP_FILE ../ip/ip/nes_core_pll_cal/nes_core_pll_cal_cal_0.ip
+set_global_assignment -name IP_FILE ../ip/ip/nes_core_pll_cal/nes_core_pll_cal_iopll_0.ip
+
+set_global_assignment -name SDC_FILE DE25_NES_STANDALONE.sdc
+source de25_nes_standalone_pins.tcl
+
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_global_assignment -name POWER_APPLY_THERMAL_MARGIN ADDITIONAL

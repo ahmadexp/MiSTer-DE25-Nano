@@ -1,0 +1,35 @@
+From: DE25-Nano Port <de25-nano@example.invalid>
+Subject: [PATCH] Disable unavailable DE25 DDR save states
+
+MiSTer cores advertise save-state storage in the upper half of the DE10-Nano's
+1 GiB DDR window. The current DE25 platform has 512 MiB of LPDDR and no remapped
+core-DDR aperture. Mapping a typical core's logical 0x3E000000 save-state area
+therefore reaches unpopulated physical memory and raises SIGBUS.
+
+Disable the optional HPS-managed save-state buffer on DE25 until the common
+shell implements a bounded DDR aperture. Core ROM transfer and gameplay use
+the separate SPI path and remain available.
+
+diff --git a/user_io.cpp b/user_io.cpp
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -1077,6 +1077,19 @@ static void parse_config()
+ 		ss_base = 0x3E000000;
+ 		ss_size = 0x100000;
+ 	}
++
++#ifdef MISTER_DE25
++	// DE10 cores place save states in the upper half of a 1 GiB DDR window.
++	// DE25 currently exposes 512 MiB of LPDDR and has no remapped core-DDR
++	// aperture, so HPS access to that advertised address would raise SIGBUS.
++	if (ss_base)
++	{
++		printf("DE25: disabling unsupported DDR save-state buffer at 0x%X.\n",
++			ss_base);
++		ss_base = 0;
++		ss_size = 0;
++	}
++#endif
+ }
+ 
+ //MSM6242B layout

@@ -1,0 +1,103 @@
+From: DE25-Nano port
+Subject: [PATCH] Trace guarded MGL initialization and transitions
+
+Emit bounded DE25-only startup and MGL state-change records. These records
+make headless core launch failures diagnosable through the system journal
+without changing behavior on existing MiSTer platforms.
+
+diff --git a/main.cpp b/main.cpp
+--- a/main.cpp
++++ b/main.cpp
+@@ -111,5 +111,8 @@ int main(int argc, char *argv[])
+ 	FindStorage();
+ 	user_io_init(core_path_arg, xml_path_arg);
++#ifdef MISTER_DE25
++	fprintf(stderr, "DE25 Main: user_io_init returned\n");
++#endif
+ 
+ #ifdef USE_SCHEDULER
+ 	scheduler_init();
+@@ -118,15 +121,29 @@ int main(int argc, char *argv[])
+ 	while (1)
+ 	{
++#ifdef MISTER_DE25
++		static bool first_loop = true;
++		if (first_loop) fprintf(stderr, "DE25 Main loop: entering readiness check\n");
++#endif
+ 		if (!is_fpga_ready(1))
+ 		{
+ 			fpga_wait_to_reset();
+ 		}
+ 
++		#ifdef MISTER_DE25
++		if (first_loop) fprintf(stderr, "DE25 Main loop: entering user_io_poll\n");
++		#endif
+ 		user_io_poll();
++		#ifdef MISTER_DE25
++		if (first_loop) fprintf(stderr, "DE25 Main loop: entering frame/input/UI\n");
++		#endif
+ 		frame_timer();
+ 		input_poll(0);
+ 		HandleUI();
+ 		OsdUpdate();
++		#ifdef MISTER_DE25
++		if (first_loop) fprintf(stderr, "DE25 Main loop: first iteration complete\n");
++		first_loop = false;
++		#endif
+ 	}
+ #endif
+ 	return 0;
+diff --git a/menu.cpp b/menu.cpp
+--- a/menu.cpp
++++ b/menu.cpp
+@@ -1181,6 +1181,25 @@ void HandleUI(void)
+ 
+ 	mgl_struct *mgl = mgl_get();
+ 
++#ifdef MISTER_DE25
++	static int de25_old_state = -1;
++	static int de25_old_current = -1;
++	static int de25_old_done = -1;
++	static uint32_t de25_old_menustate = ~0U;
++	if (de25_old_state != mgl->state || de25_old_current != mgl->current ||
++		de25_old_done != mgl->done || de25_old_menustate != menustate)
++	{
++		fprintf(stderr,
++			"DE25 MGL: menu=%u count=%d current=%d state=%d action=%d done=%d\n",
++			menustate, mgl->count, mgl->current, mgl->state,
++			mgl->item[mgl->current].action, mgl->done);
++		de25_old_state = mgl->state;
++		de25_old_current = mgl->current;
++		de25_old_done = mgl->done;
++		de25_old_menustate = menustate;
++	}
++#endif
++
+ 	/*
+ 	static int old_state = -1;
+ 	static int old_current = -1;
+diff --git a/user_io.cpp b/user_io.cpp
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -1549,6 +1549,9 @@ void user_io_init(const char *path, const char *xml)
+ 	}
+ 
+ 	video_init();
++#ifdef MISTER_DE25
++	fprintf(stderr, "DE25 Main init: video ready\n");
++#endif
+ 	if (strlen(cfg.font)) LoadFont(cfg.font);
+ 	load_volume();
+ 
+@@ -1802,6 +1805,11 @@ void user_io_init(const char *path, const char *xml)
+ 	{
+ 		mgl_get()->timer = GetTimer(mgl_get()->item[0].delay * 1000);
+ 	}
++#ifdef MISTER_DE25
++	fprintf(stderr,
++		"DE25 Main init complete: mgl count=%d state=%d done=%d menu=%d\n",
++		mgl_get()->count, mgl_get()->state, mgl_get()->done, is_menu());
++#endif
+ }
+ 
+ static int joyswap = 0;

@@ -1,0 +1,13 @@
+diff --git a/Atari7800.sv b/Atari7800.sv
+index 63f8960..d81edce 100644
+--- a/Atari7800.sv
++++ b/Atari7800.sv
+@@ -1286,7 +1286,7 @@ endmodule
+ 
+ 
+ module lfsr(
+-	output [N-1:0] rnd
++	output wire [N-1:0] rnd
+ );
+ 
+ parameter N = 63;

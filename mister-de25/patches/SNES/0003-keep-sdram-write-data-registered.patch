@@ -1,0 +1,23 @@
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -532,7 +532,10 @@ module sdram
+ 		endcase
+ 		
+ 	`ifdef DE25_AGILEX_PLL_RECONFIG
+-		SDRAM_DQ_OUT <= '0;
++		// The Agilex DQ periphery requires a continuously clocked data
++		// register beside the output-enable register. OE alone controls
++		// when this word reaches the physical SDRAM bus.
++		SDRAM_DQ_OUT <= d;
+ 		SDRAM_DQ_OE <= 0;
+ 	`else
+ 		SDRAM_DQ <= 'Z;
+@@ -540,7 +543,6 @@ module sdram
+ 		casex({init_done,ctrl_rfs,we,mode,ctrl_cmd})
+ 			{3'b101, MODE_NORMAL, CTRL_CAS}: begin
+ 	`ifdef DE25_AGILEX_PLL_RECONFIG
+-				SDRAM_DQ_OUT <= d;
+ 				SDRAM_DQ_OE <= active;
+ 	`else
+ 				SDRAM_DQ <= d;

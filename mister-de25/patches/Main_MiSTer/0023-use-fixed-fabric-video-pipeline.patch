@@ -1,0 +1,26 @@
+From: DE25-Nano port
+Subject: [PATCH] Use the fixed Agilex fabric video pipeline
+
+The shared DE25 shell owns the HDMI transmitter, output timing, and scaler.
+Do not enter Main's Cyclone V scaler initialization, which waits on registers
+that are intentionally absent and prevents user_io_init from returning.
+
+diff --git a/user_io.cpp b/user_io.cpp
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -1548,9 +1548,13 @@ void user_io_init(const char *path, const char *xml)
+ 		bootcore_init(xml ? xml : path);
+ 	}
+ 
+-	video_init();
+ #ifdef MISTER_DE25
+-	fprintf(stderr, "DE25 Main init: video ready\n");
++	// The shared Agilex shell owns the fixed HDMI/scaler mode. Upstream
++	// video_init() waits on Cyclone V scaler registers that do not exist in
++	// this shell and would prevent headless content launch from completing.
++	fprintf(stderr, "DE25 Main init: fixed fabric video active\n");
++#else
++	video_init();
+ #endif
+ 	if (strlen(cfg.font)) LoadFont(cfg.font);
+ 	load_volume();

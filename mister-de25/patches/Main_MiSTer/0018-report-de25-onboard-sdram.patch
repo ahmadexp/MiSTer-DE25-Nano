@@ -1,0 +1,21 @@
+diff --git a/user_io.cpp b/user_io.cpp
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -1337,6 +1337,17 @@ void ResetUART()
+ 
+ uint16_t sdram_sz(int sz)
+ {
++#ifdef MISTER_DE25
++	// DE25-Nano's 128 MB SDR SDRAM is soldered to the board. It has no
++	// MiSTer daughterboard ID resistor, so the conventional Menu probe stores
++	// size zero. Always report the known board capacity to every loaded core.
++	if (sz < 0)
++	{
++		printf("*** DE25 onboard SDRAM config: 3 (128 MB)\n");
++		return 0x8003;
++	}
++#endif
++
+ 	int res = 0;
+ 
+ 	void* buf = shmem_map(0x1FFFF000, 0x1000);

@@ -1,0 +1,1570 @@
+diff --git a/SMS.sv b/SMS.sv
+index 299c92e..ddf939b 100644
+--- a/SMS.sv
++++ b/SMS.sv
+@@ -24,6 +24,128 @@ module emu
+ 	`include "sys/emu_ports.vh"
+ );
+ 
++wire        locked;
++wire        clk_sys;
++wire [63:0] status;
++wire  [1:0] buttons;
++wire [15:0] joy_0, joy_1, joy_2, joy_3;
++wire  [7:0] joy[4];
++wire  [7:0] joy0_x, joy0_y, joy1_x, joy1_y;
++wire  [7:0] paddle_0, paddle_1;
++wire [10:0] ps2_key;
++wire [24:0] ps2_mouse;
++wire        forced_scandoubler;
++wire [21:0] gamma_bus;
++
++wire        ioctl_wr;
++wire [24:0] ioctl_addr;
++wire  [7:0] ioctl_dout;
++wire        ioctl_download;
++wire  [7:0] ioctl_index;
++wire [31:0] ioctl_file_ext;
++reg         ioctl_wait;
++
++wire code_index;
++wire code_download;
++wire bios_download;
++wire gg_bios_download;
++wire cart_download;
++wire bios_en;
++wire ext_bios_sel;
++wire eject_rom;
++wire raw_reset;
++wire reset_active;
++
++reg         rom_wr = 0;
++wire        sd_wrack;
++reg  [23:0] romwr_a;
++wire        gg_avail;
++reg         gg = 0;
++reg         systeme = 0;
++reg  [21:0] cart_mask, cart_mask512;
++reg         cart_sz512;
++
++wire  [7:0] ss_info;
++wire        ss_info_req;
++wire        ss_status;
++wire  [1:0] ss_slot;
++wire        sr_ddram_clk;
++wire  [7:0] sr_ddram_burstcnt;
++wire [28:0] sr_ddram_addr;
++wire [63:0] sr_ddram_din;
++wire  [7:0] sr_ddram_be;
++wire        sr_ddram_we;
++wire        sr_ddram_rd;
++
++wire [12:0] key_a;
++wire  [7:0] key_d;
++wire  [6:0] gg_link_in;
++wire  [6:0] gg_link_out;
++wire        gg_link;
++wire        raw_serial;
++wire        swap;
++wire        sk1100_en;
++wire        sc3000_en;
++wire  [1:0] sc_cart_ram;
++wire        sg_palette;
++wire        sc_multicart_en;
++wire        sc_megacart_en;
++wire  [2:0] sk1100_row_sel;
++wire [11:0] sk1100_row_data;
++
++reg   [7:0] joya;
++reg   [7:0] joyb;
++reg   [7:0] joyser;
++wire        joya_tr_out;
++wire        joya_th_out;
++wire        joyb_tr_out;
++wire        joyb_th_out;
++reg         joya_th;
++reg         joyb_th;
++reg         joyser_th;
++
++wire  [7:0] pedal;
++wire  [7:0] paddle2;
++wire  [7:0] paddle;
++wire        paddle_en;
++wire        en16khz;
++
++wire [15:0] audio_l, audio_r;
++wire  [8:0] x;
++wire  [8:0] y;
++wire [11:0] color;
++wire        mask_column;
++wire        smode_M1, smode_M2, smode_M3;
++wire        pal;
++wire        border;
++wire        ggres;
++wire        turbo;
++reg         ce_cpu;
++reg         ce_snd;
++reg         ce_vdp;
++reg         ce_pix;
++reg         ce_sp;
++wire        HS, VS;
++wire        HBlank, VBlank;
++wire  [2:0] scale;
++
++reg         bk_pending;
++wire        downloading;
++reg         old_downloading = 0;
++reg         bk_ena = 0;
++reg         bk_loading = 0;
++reg         bk_state = 0;
++reg         osd_btn = 0;
++wire        gun_en;
++wire        gun_target;
++wire        gun_sensor;
++wire        gun_trigger;
++wire        gun_port;
++wire  [1:0] gun_crosshair;
++reg         dbg_menu = 0;
++reg   [3:0] paddle_0_nib, paddle_1_nib;
++reg         paddle_0_tr, paddle_1_tr;
++
+ 
+ assign ADC_BUS  = 'Z;
+ assign VGA_F1 = 0;
+@@ -105,7 +227,7 @@ wire video_rotated;
+ wire no_rotate = ~status[41];
+ wire flip = status[42];
+ wire rotate_ccw = 1'b0;
+-wire [5:0] arx, ary;
++reg [5:0] arx, ary;
+ 
+ always_comb begin
+ 	if (no_rotate) begin
+@@ -280,9 +402,86 @@ parameter CONF_STR = {
+ 
+ ////////////////////   CLOCKS   ///////////////////
+ 
+-wire locked;
+-wire clk_sys;
++`ifdef DE25_AGILEX_PLL_RECONFIG
++wire de25_pll_busy;
++wire de25_pll_done;
++wire de25_pll_error;
++wire de25_control_reset;
++wire de25_sdram_clk;
++wire de25_sdram_capture_clk;
++wire de25_sdram_controller_quiesced;
++wire de25_ram_quiesced;
++wire de25_ram_active;
++wire de25_want_pal_async = pal;
++reg  [1:0] de25_want_pal_sync = 2'b00;
++wire de25_want_pal = de25_want_pal_sync[1];
++reg  de25_pll_profile_pal = 0;
++reg  de25_pll_applied_pal = 0;
++reg  de25_reconfig_request = 0;
++reg  de25_reconfig_issued = 0;
++reg  de25_reconfig_start = 0;
++
++de25_sms_pll pll
++(
++	.refclk(CLK_50M),
++	.reset(RESET),
++	.pal_profile(de25_pll_profile_pal),
++	.start(de25_reconfig_start),
++	.clk_system(clk_sys),
++	.clk_sdram_physical(de25_sdram_clk),
++	.clk_sdram_capture(de25_sdram_capture_clk),
++	.locked(locked),
++	.busy(de25_pll_busy),
++	.done(de25_pll_done),
++	.error(de25_pll_error),
++	.control_reset(de25_control_reset)
++);
++
++de25_sdram_quiesce de25_ram_quiesce
++(
++	.clk_control(CLK_50M),
++	.reset_control(de25_control_reset),
++	.clk_sdram(clk_sys),
++	.pll_locked(locked),
++	.request_control(de25_reconfig_request),
++	.hold_sdram(1'b0),
++	.ready_sdram(de25_sdram_controller_quiesced),
++	.quiesced_control(de25_ram_quiesced),
++	.sdram_active(de25_ram_active)
++);
++
++always @(posedge CLK_50M) begin
++	de25_want_pal_sync <= {de25_want_pal_sync[0], de25_want_pal_async};
++	de25_reconfig_start <= 0;
++
++	if(de25_control_reset) begin
++		de25_pll_profile_pal <= 0;
++		de25_pll_applied_pal <= 0;
++		de25_reconfig_request <= 0;
++		de25_reconfig_issued <= 0;
++	end
++	else begin
++		if(!de25_reconfig_request &&
++		   (de25_want_pal != de25_pll_applied_pal)) begin
++			de25_pll_profile_pal <= de25_want_pal;
++			de25_reconfig_request <= 1;
++			de25_reconfig_issued <= 0;
++		end
++
++		if(de25_reconfig_request && de25_ram_quiesced &&
++		   !de25_reconfig_issued && !de25_pll_busy && !de25_pll_error) begin
++			de25_reconfig_start <= 1;
++			de25_reconfig_issued <= 1;
++		end
+ 
++		if(de25_pll_done) begin
++			de25_pll_applied_pal <= de25_pll_profile_pal;
++			de25_reconfig_request <= 0;
++			de25_reconfig_issued <= 0;
++		end
++	end
++end
++`else
+ pll pll
+ (
+ 	.refclk(CLK_50M),
+@@ -349,6 +548,7 @@ always @(posedge CLK_50M) begin
+ 		endcase
+ 	end
+ end
++`endif
+ 
+ // BIOS and System Reset Control
+ reg        ext_bios_loaded = 0;
+@@ -393,7 +593,13 @@ always_ff @(posedge clk_sys) begin
+ 	bios_config_reset <= (reset_timer > 0);
+ end
+ 
+-wire raw_reset = RESET | status[0] | buttons[1] | cart_download | bios_download | gg_bios_download | bios_config_reset | bk_loading | eject_rom;
++assign raw_reset = RESET | status[0] | buttons[1] | cart_download |
++                 bios_download | gg_bios_download | bios_config_reset |
++                 bk_loading | eject_rom
++`ifdef DE25_AGILEX_PLL_RECONFIG
++		 | de25_reconfig_request | de25_pll_busy | de25_pll_error
++`endif
++		 ;
+ 
+ reg [13:0] ram_clr_addr;
+ reg        ram_clr_run = 0;
+@@ -408,16 +614,9 @@ always_ff @(posedge clk_sys) begin
+ 	end
+ end
+ 
+-wire reset_active = raw_reset | ram_clr_run;
++assign reset_active = raw_reset | ram_clr_run;
+ 
+ //////////////////   HPS I/O   ///////////////////
+-wire [15:0] joy_0, joy_1, joy_2, joy_3;
+-wire  [7:0] joy[4];
+-wire  [7:0] joy0_x,joy0_y,joy1_x,joy1_y;
+-wire  [7:0] paddle_0, paddle_1;
+-wire  [1:0] buttons;
+-wire [10:0] ps2_key;
+-wire [63:0] status;
+ reg  [127:0] status_in = 0;
+ reg          status_set = 0;
+ reg         sc3000_auto = 0;
+@@ -425,14 +624,6 @@ reg         sc_multicart_auto = 0;
+ reg         sc_megacart_auto = 0;
+ reg         sc3000_menu_auto = 0;
+ 
+-wire        ioctl_wr;
+-wire [24:0] ioctl_addr;
+-wire  [7:0] ioctl_dout;
+-wire        ioctl_download;
+-wire  [7:0] ioctl_index;
+-wire [31:0] ioctl_file_ext;
+-wire        ioctl_wait;
+-
+ reg  [31:0] sd_lba;
+ reg         sd_rd = 0;
+ reg         sd_wr = 0;
+@@ -446,11 +637,6 @@ wire        img_mounted;
+ wire        img_readonly;
+ wire [63:0] img_size;
+ 
+-wire        forced_scandoubler;
+-wire [21:0] gamma_bus;
+-
+-wire [24:0] ps2_mouse;
+-
+ hps_io #(.CONF_STR(CONF_STR), .WIDE(0)) hps_io
+ (
+ 	.clk_sys(clk_sys),
+@@ -509,11 +695,11 @@ wire [21:0] ram_addr;
+ wire  [7:0] ram_dout;
+ wire        ram_rd;
+ 
+-wire code_index = &ioctl_index;
+-wire code_download = ioctl_download & code_index;
+-wire bios_download = ioctl_download & (ioctl_index[4:0] == 3);
+-wire gg_bios_download = ioctl_download & (ioctl_index[4:0] == 4);
+-wire cart_download = ioctl_download & ~code_index & (ioctl_index[4:0]!=3) & (ioctl_index[4:0]!=4) & (ioctl_index!=254);
++assign code_index = &ioctl_index;
++assign code_download = ioctl_download & code_index;
++assign bios_download = ioctl_download & (ioctl_index[4:0] == 3);
++assign gg_bios_download = ioctl_download & (ioctl_index[4:0] == 4);
++assign cart_download = ioctl_download & ~code_index & (ioctl_index[4:0]!=3) & (ioctl_index[4:0]!=4) & (ioctl_index!=254);
+ 
+ // Rolling signature of the currently loaded ROM image.
+ // Used by savestates header validation to reject cross-ROM loads.
+@@ -528,9 +714,9 @@ always @(posedge clk_sys) begin
+ end
+ 
+ // BIOS mode: status[44:43] == 2'b00->Disable, 01->Internal, 10->Ext. File
+-wire bios_en      = (status[44:43] != 2'b00) & ~systeme & ~gg;
+-wire ext_bios_sel = (status[44:43] == 2'b10);
+-wire eject_rom    = status[9];
++assign bios_en      = (status[44:43] != 2'b00) & ~systeme & ~gg;
++assign ext_bios_sel = (status[44:43] == 2'b10);
++assign eject_rom    = status[9];
+ 
+ // Soft Reset: maps to port $DD bit 4 (active-low) on SMS hardware.
+ // The OSD 'R' item sets status[11]=1 as soon as the cursor lands on it and
+@@ -568,9 +754,22 @@ sdram ram
+ (
+ 	.*,
+ 
+-	.init(~locked),
++	.init(~locked
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	      || de25_reconfig_request
++`endif
++	     ),
+ 	.clk(clk_sys),
+ 	.clkref(systeme ? ce_pix : turbo ? ce_pix : ce_cpu),
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	.clk_capture(de25_sdram_capture_clk),
++	.active(de25_ram_active),
++	.quiesce(de25_reconfig_request),
++	.quiesced(de25_sdram_controller_quiesced),
++	.SDRAM_DQ_IN(de25_sdram_dq_in),
++	.SDRAM_DQ_OUT(de25_sdram_dq_out),
++	.SDRAM_DQ_OE(de25_sdram_dq_oe),
++`endif
+ 
+ 	.waddr(romwr_a),
+ 	.din(ioctl_dout),
+@@ -583,6 +782,9 @@ sdram ram
+ 	.rd_rdy()
+ );
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++assign SDRAM_CLK = de25_sdram_clk;
++`else
+ altddio_out
+ #(
+ 	.extend_oe_disable("OFF"),
+@@ -607,10 +809,8 @@ sdramclk_ddr
+ 	.sclr(1'b0),
+ 	.sset(1'b0)
+ );
++`endif
+ 
+-reg  rom_wr = 0;
+-wire sd_wrack;
+-reg  [23:0] romwr_a;
+ reg  ysj_quirk = 0;
+ 
+ always @(posedge clk_sys) begin
+@@ -654,7 +854,6 @@ assign AUDIO_S = 1;
+ assign AUDIO_MIX = 1;
+ 
+ reg [128:0] gg_code;
+-wire gg_avail;
+ 
+ // Code layout:
+ // {clock bit, code flags,     32'b address, 32'b compare, 32'b replace}
+@@ -698,16 +897,12 @@ always @(posedge clk_sys) begin
+ end
+ // [Handled in unified control block above]
+ 
+-reg        gg          = 0;
+ wire       gg_bios_en  = status[49] & gg;
+-reg        systeme     = 0;
+ reg        palettemode = 0;
+ reg        load_sc     = 0;
+ reg        load_sg     = 0;
+ reg        load_sc_multicart = 0;
+ reg        load_sc_megacart = 0;
+-reg [21:0] cart_mask, cart_mask512;
+-reg        cart_sz512;
+ wire [7:0] ioctl_ext_b0 = ioctl_file_ext[7:0];
+ wire [7:0] ioctl_ext_b1 = ioctl_file_ext[15:8];
+ wire [7:0] ioctl_ext_b2 = ioctl_file_ext[23:16];
+@@ -893,7 +1088,6 @@ wire         ss_psg2_set;
+ wire [13:0]  ss_wram_A, ss_wram_WA;
+ wire  [7:0]  ss_wram_WD;
+ wire         ss_wram_WE;
+-wire [1:0]   ss_slot;
+ wire         ss_save_raw, ss_load_raw;
+ wire         ss_save, ss_load;
+ wire         ss_bios_mode = bios_en & ~dbr;
+@@ -901,18 +1095,6 @@ wire         ss_state_allowed = dbr | ss_bios_mode;
+ assign ss_save = ss_save_raw & ss_state_allowed;
+ assign ss_load = ss_load_raw & ss_state_allowed;
+ 
+-wire  [7:0]  ss_info;
+-wire         ss_info_req;
+-wire         ss_status;    // one-cycle pulse: push new slot to OSD
+-
+-wire        sr_ddram_clk;
+-wire [7:0]  sr_ddram_burstcnt;
+-wire [28:0] sr_ddram_addr;
+-wire [63:0] sr_ddram_din;
+-wire [7:0]  sr_ddram_be;
+-wire        sr_ddram_we;
+-wire        sr_ddram_rd;
+-
+ wire [3:0] mapper_sel = status[48:45];
+ wire mapper_force_sega      = (mapper_sel == 4'd1) & ~systeme;
+ wire mapper_force_codies    = (mapper_sel == 4'd2);
+@@ -1239,9 +1421,6 @@ assign DDRAM_BE       = ss_freeze ? ss_ddram_be       : sr_ddram_be;
+ assign DDRAM_WE       = ss_freeze ? ss_ddram_we       : sr_ddram_we;
+ assign DDRAM_RD       = ss_freeze ? ss_ddram_rd       : sr_ddram_rd;
+ 
+-wire [12:0] key_a;
+-wire [7:0] key_d;
+-
+ wire [12:0] encrypt_a;
+ 
+ wire encrypt_range = ioctl_addr[24:13]==12'b0_0000_0100_100;
+@@ -1267,41 +1446,25 @@ assign joy[3] = joy_3[7:0];
+ 
+ wire [1:0] userio_mode = status[56:55];
+ wire       userio_snac = userio_mode == 2'd1;
+-wire       gg_link = (userio_mode == 2'd2) & gg;
+-wire [6:0] gg_link_in;
+-wire [6:0] gg_link_out;
++assign gg_link = (userio_mode == 2'd2) & gg;
+ wire [6:0] gg_user_out;
+-wire       raw_serial = userio_snac & ~gg_link;
++assign raw_serial = userio_snac & ~gg_link;
+ wire pause_combo = status[17];
+-wire swap = status[1];
+-wire sk1100_en = status[57];
+-wire sc3000_en = status[58] | sc3000_auto;
+-wire [1:0] sc_cart_ram = status[60:59];
+-wire sg_palette = palettemode | sc3000_en;
+-wire sc_multicart_en = sg_palette & sc_multicart_auto;
+-wire sc_megacart_en = sc_multicart_en & sc_megacart_auto;
+-
+-wire [7:0] joya;
+-wire [7:0] joyb;
+-wire [7:0] joyser;
+-wire [2:0] sk1100_row_sel;
+-wire [11:0] sk1100_row_data;
+-
+-wire      joya_tr_out;
+-wire      joya_th_out;
+-wire      joyb_tr_out;
+-wire      joyb_th_out;
+-wire      joya_th;
+-wire      joyb_th;
+-wire      joyser_th;
++assign swap = status[1];
++assign sk1100_en = status[57];
++assign sc3000_en = status[58] | sc3000_auto;
++assign sc_cart_ram = status[60:59];
++assign sg_palette = palettemode | sc3000_en;
++assign sc_multicart_en = sg_palette & sc_multicart_auto;
++assign sc_megacart_en = sc_multicart_en & sc_megacart_auto;
+ reg [1:0] jcnt = 0;
+ 
+ wire has_pedal = SYSMODE[0][3];
+-wire [7:0] pedal = paddle_en ? paddle_1 : !joy0_y[7] ? 8'h00: {~joy0_y[6:0],~joy0_y[6]};
++assign pedal = paddle_en ? paddle_1 : !joy0_y[7] ? 8'h00: {~joy0_y[6:0],~joy0_y[6]};
+ wire [7:0] paddlein = paddle_en ? paddle_0 : has_pedal ? {~joy0_x[7],joy0_x[6:0]} : {joy0_x[7],joy0_x[7],joy0_x[7],joy0_x[7],joy0_x[7],joy0_x[7:5]};
+-wire [7:0] paddle2 = paddle_en ? paddle_1 : joy1_x;
++assign paddle2 = paddle_en ? paddle_1 : joy1_x;
+ wire [7:0] pedallimit = paddlein[7:5]==3'b111 ? 8'hE0 : paddlein[7:5]==3'b000 ? 8'h20 : paddlein;
+-wire [7:0] paddle = has_pedal ? pedallimit : paddlein;
++assign paddle = has_pedal ? pedallimit : paddlein;
+ wire [11:0] sk1100_joy_row = {
+ 	joyb[5], joyb[4], joyb[0], joyb[1], joyb[2], joyb[3],
+ 	joya[5], joya[4], joya[0], joya[1], joya[2], joya[3]
+@@ -1401,8 +1564,6 @@ spram #(.widthad_a(14)) ram_inst
+ 	.q         (ram_q)
+ );
+ 
+-wire [15:0] audio_l, audio_r;
+-
+ assign AUDIO_L=audio_l;
+ assign AUDIO_R=audio_r;
+ 
+@@ -1413,15 +1574,10 @@ assign AUDIO_R=audio_r;
+ //	AUDIO_L,       AUDIO_R
+ //);
+ 
+-wire [8:0] x;
+-wire [8:0] y;
+-wire [11:0] color;
+-wire mask_column;
+-wire smode_M1, smode_M2, smode_M3;
+-wire pal = status[2];
+-wire border = status[13] & ~gg;
+-wire ggres = ~status[39] & gg;
+-wire turbo = status[40];
++assign pal = status[2];
++assign border = status[13] & ~gg;
++assign ggres = ~status[39] & gg;
++assign turbo = status[40];
+ 
+ video video
+ (
+@@ -1446,11 +1602,6 @@ video video
+ 	.vblank(VBlank)
+ );
+ 
+-reg ce_cpu;
+-reg ce_snd;
+-reg ce_vdp;
+-reg ce_pix;
+-reg ce_sp;
+ always @(negedge clk_sys) begin
+ 	ce_sp <= clkd[0];
+ 	ce_vdp <= 0;//div5
+@@ -1478,11 +1629,8 @@ always @(negedge clk_sys) begin
+ 	end
+ end
+ 
+-wire HS, VS;
+ reg  HSync, VSync;
+-wire HBlank, VBlank;
+-
+-wire [2:0] scale = status[5:3];
++assign scale = status[5:3];
+ wire [2:0] sl = scale ? scale - 1'd1 : 3'd0;
+ 
+ assign CLK_VIDEO = clk_sys;
+@@ -1513,8 +1661,6 @@ video_mixer #(.HALF_DEPTH(1), .LINE_LENGTH(300), .GAMMA(1)) video_mixer
+ 
+ /////////////////////////  STATE SAVE/LOAD  /////////////////////////////
+ wire bk_save_write = nvram_we;
+-reg bk_pending;
+-
+ always @(posedge clk_sys) begin
+ 	if (~old_downloading & downloading)
+ 		bk_pending <= 1'b0;
+@@ -1538,9 +1684,7 @@ dpram #(.widthad_a(15)) nvram_inst
+ 	.q_b         (sd_buff_din)
+ );
+ 
+-wire downloading = cart_download;
+-reg old_downloading = 0;
+-reg bk_ena = 0;
++assign downloading = cart_download;
+ always @(posedge clk_sys) begin
+ 
+ 	old_downloading <= downloading;
+@@ -1553,10 +1697,6 @@ end
+ 
+ wire bk_load    = status[6];
+ wire bk_save    = status[7] | (bk_pending & OSD_STATUS && status[25]);
+-reg  bk_loading = 0;
+-reg  bk_state   = 0;
+-
+-reg osd_btn = 0;
+ always @(posedge clk_sys) begin
+ 
+ 	reg old_load = 0, old_save = 0, old_ack;
+@@ -1611,12 +1751,9 @@ end
+ 
+ wire [1:0] gun_mode = status[19:18];
+ wire       gun_btn_mode = status[20];
+-wire       gun_port = status[21];
+-wire       gun_en = gun_mode && !gg;
+-wire       gun_target;
+-wire       gun_sensor;
+-wire       gun_trigger;
+-wire [1:0] gun_crosshair = status[23:22];
++assign gun_port = status[21];
++assign gun_en = gun_mode && !gg;
++assign gun_crosshair = status[23:22];
+ 
+ lightgun lightgun
+ (
+@@ -1645,12 +1782,10 @@ lightgun lightgun
+ 
+ // Paddle support
+ wire       jp_region    = status[10];
+-wire       paddle_en    = status[37] | status[38];
++assign paddle_en = status[37] | status[38];
+ wire       paddle_joy   = status[38];
+ 
+-reg  [3:0] paddle_0_nib,   paddle_1_nib;
+ reg  [3:0] paddle_0_nib_q, paddle_1_nib_q;
+-reg        paddle_0_tr,    paddle_1_tr;
+ 
+ reg        joya_th_out_q,  joyb_th_out_q;
+ wire       joya_th_rise,   joyb_th_rise;
+@@ -1713,7 +1848,6 @@ assign joyb_th_rise = ~joyb_th_out_q &  joyb_th_out;
+ assign joya_th_fall =  joya_th_out_q & ~joya_th_out;
+ assign joyb_th_fall =  joyb_th_out_q & ~joyb_th_out;
+ 
+-wire       en16khz;
+ reg [11:0] cnt_en16khz;
+ 
+ always_ff @(posedge clk_sys) begin
+@@ -1722,7 +1856,6 @@ always_ff @(posedge clk_sys) begin
+ end
+ assign en16khz = cnt_en16khz == 0;
+ 
+-reg dbg_menu = 0;
+ always @(posedge clk_sys) begin
+ 	reg old_stb;
+ 	reg enter = 0;
+diff --git a/rtl/MC8123.v b/rtl/MC8123.v
+index 48f35ae..7709f1d 100644
+--- a/rtl/MC8123.v
++++ b/rtl/MC8123.v
+@@ -57,6 +57,7 @@ function [7:0] decrypt_type_0;
+ 	input [7:0] value;
+ 	input [3:0] p; // param
+ 	input [1:0] swap;
++	begin
+ 
+ 	v = value;
+ 	case (swap)
+@@ -81,7 +82,7 @@ function [7:0] decrypt_type_0;
+ 	};
+ 
+ 	decrypt_type_0 = p[0] ? `bitswap8(7,6,5,1,4,3,2,0) : v;
+-
++	end
+ endfunction
+ 
+ // decrypt type 1a
+@@ -90,6 +91,7 @@ function [7:0] decrypt_type_1a;
+ 	input [7:0] value;
+ 	input [3:0] p; // param
+ 	input [1:0] swap;
++	begin
+ 
+ 	v = value;
+ 	case (swap)
+@@ -113,6 +115,7 @@ function [7:0] decrypt_type_1a;
+ 	};
+ 
+ 	decrypt_type_1a = p[0] ? `bitswap8(7,6,1,4,3,2,5,0) : v;
++	end
+ endfunction
+ 
+ // decrypt type 1b
+@@ -121,6 +124,7 @@ function [7:0] decrypt_type_1b;
+ 	input [7:0] value;
+ 	input [3:0] p; // param
+ 	input [1:0] swap;
++	begin
+ 
+ 	v = value;
+ 	case (swap)
+@@ -143,6 +147,7 @@ function [7:0] decrypt_type_1b;
+ 	};
+ 
+ 	decrypt_type_1b = v;
++	end
+ endfunction
+ 
+ // decrypt type 2a
+@@ -151,6 +156,7 @@ function [7:0] decrypt_type_2a;
+ 	input [7:0] value;
+ 	input [3:0] p; // param
+ 	input [1:0] swap;
++	begin
+ 
+ 	v = value;
+ 	case (swap)
+@@ -180,6 +186,7 @@ function [7:0] decrypt_type_2a;
+ 	endcase
+ 
+ 	decrypt_type_2a = v;
++	end
+ endfunction
+ 
+ // decrypt type 2b
+@@ -188,6 +195,7 @@ function [7:0] decrypt_type_2b;
+ 	input [7:0] value;
+ 	input [3:0] p; // param
+ 	input [1:0] swap;
++	begin
+ 
+ 	v = value;
+ 	case (swap)
+@@ -221,7 +229,7 @@ function [7:0] decrypt_type_2b;
+ 		 v[0] ^ s
+ 	};
+ 	decrypt_type_2b = v;
+-
++	end
+ endfunction
+ 
+ // decrypt type 3a
+@@ -230,6 +238,7 @@ function [7:0] decrypt_type_3a;
+ 	input [7:0] value;
+ 	input [3:0] p; // param
+ 	input [1:0] swap;
++	begin
+ 
+ 	v = value;
+ 	case (swap)
+@@ -276,6 +285,7 @@ function [7:0] decrypt_type_3a;
+ 		 v[0] ^ p[0]
+ 	};
+ 	decrypt_type_3a = v;
++	end
+ endfunction
+ 
+ 
+@@ -285,6 +295,7 @@ function [7:0] decrypt_type_3b;
+ 	input [7:0] value;
+ 	input [3:0] p; // param
+ 	input [1:0] swap;
++	begin
+ 
+ 	v = value;
+ 	case (swap)
+@@ -322,6 +333,7 @@ function [7:0] decrypt_type_3b;
+ 	};
+ 
+ 	decrypt_type_3b = v;
++	end
+ endfunction
+ 
+ endmodule
+diff --git a/rtl/T80/T80.vhd b/rtl/T80/T80.vhd
+index f158435..acacd43 100644
+--- a/rtl/T80/T80.vhd
++++ b/rtl/T80/T80.vhd
+@@ -277,7 +277,7 @@ begin
+ 	          DIR(175 downto 160) & -- DE'
+ 	          DIR(159 downto 144);  -- BC'
+ 
+-	mcode : work.T80_MCode
++	mcode : entity work.T80_MCode
+ 		generic map(
+ 			Mode   => Mode,
+ 			Flag_C => Flag_C,
+@@ -345,7 +345,7 @@ begin
+ 			Write       => Write,
+ 			XYbit_undoc => XYbit_undoc);
+ 
+-	alu : work.T80_ALU
++	alu : entity work.T80_ALU
+ 		generic map(
+ 			Mode   => Mode,
+ 			Flag_C => Flag_C,
+@@ -641,7 +641,7 @@ begin
+ 						F(Flag_N) <= DI_Reg(7);
+ 						F(Flag_C) <= ioq(8);
+ 						F(Flag_H) <= ioq(8);
+-						ioq := (ioq and x"7") xor ('0'&BusA);
++						ioq := (ioq and "000000111") xor ('0'&BusA);
+ 						F(Flag_P) <= not (ioq(0) xor ioq(1) xor ioq(2) xor ioq(3) xor ioq(4) xor ioq(5) xor ioq(6) xor ioq(7));
+ 					end if;
+ 
+@@ -960,7 +960,7 @@ begin
+ 		end if;
+ 	end process;
+ 
+-	Regs : work.T80_Reg
++	Regs : entity work.T80_Reg
+ 		port map(
+ 			Clk => CLK_n,
+ 			CEN => ClkEn,
+diff --git a/rtl/T80/T80pa.vhd b/rtl/T80/T80pa.vhd
+index c09f15a..f709178 100644
+--- a/rtl/T80/T80pa.vhd
++++ b/rtl/T80/T80pa.vhd
+@@ -109,7 +109,7 @@ begin
+ 
+ 	BUSAK_n <= BUSAK;
+ 
+-	u0 : work.T80
++	u0 : entity work.T80
+ 		generic map(
+ 			Mode    => Mode,
+ 			IOWait  => 1
+diff --git a/rtl/T80/T80s.vhd b/rtl/T80/T80s.vhd
+index da05f7d..ace2266 100644
+--- a/rtl/T80/T80s.vhd
++++ b/rtl/T80/T80s.vhd
+@@ -117,7 +117,7 @@ architecture rtl of T80s is
+ 
+ begin
+ 
+-	u0 : work.T80
++	u0 : entity work.T80
+ 		generic map(
+ 			Mode => Mode,
+ 			IOWait => IOWait)
+diff --git a/rtl/VM2413/controller.vhd b/rtl/VM2413/controller.vhd
+index 788464a..8b76f87 100644
+--- a/rtl/VM2413/controller.vhd
++++ b/rtl/VM2413/controller.vhd
+@@ -128,7 +128,7 @@ architecture rtl of controller is
+     end component;
+ 
+     -- the array which caches instrument number of each channel.
+-    type inst_array is array (ch_type'range) of integer range 0 to 15;
++    type inst_array is array (ch_type'low to ch_type'high) of integer range 0 to 15;
+     signal inst_cache : inst_array;
+ 
+     type kl_array is array (0 to 15) of std_logic_vector(5 downto 0);
+@@ -342,6 +342,9 @@ begin   -- rtl
+                                     user_voice_tmp.rr := data(3 downto 0);
+                                     user_voice_wr <= '1';
+                                 end if;
++
++                            when others =>
++                                null;
+                         end case;
+ 
+                         user_voice_wdata <= user_voice_tmp;
+@@ -504,6 +507,9 @@ begin   -- rtl
+                     end if;
+                 end if;
+ 
++            when others =>
++                null;
++
+             end case;
+ 
+         end if; end if;
+diff --git a/rtl/VM2413/envelopegenerator.vhd b/rtl/VM2413/envelopegenerator.vhd
+index e8a66e6..f186cfe 100644
+--- a/rtl/VM2413/envelopegenerator.vhd
++++ b/rtl/VM2413/envelopegenerator.vhd
+@@ -189,6 +189,8 @@ begin
+                         when Finish =>
+                             egtmp(egtmp'high downto egtmp'high -1) := "00";
+                             egtmp(egtmp'high-2 downto 0) := (others=>'1');
++                        when others =>
++                            null;
+                     end case;
+ 
+                     -- SD and HH
+@@ -234,6 +236,8 @@ begin
+                                 egphase := egphase + dphase(egphase'range);
+                             when Finish =>
+                                 null;
++                            when others =>
++                                null;
+                         end case;
+ 
+                     end if;
+@@ -254,6 +258,8 @@ begin
+                             end if;
+                         when Finish =>
+                             egphase := (others => '1');
++                        when others =>
++                            null;
+                     end case;
+ 
+                     if lastkey(conv_integer(slot)) = '0' and key = '1' then
+@@ -277,4 +283,3 @@ begin
+     end process;
+ 
+ end rtl;
+-
+diff --git a/rtl/VM2413/voicememory.vhd b/rtl/VM2413/voicememory.vhd
+index 7395bb8..6470eb4 100644
+--- a/rtl/VM2413/voicememory.vhd
++++ b/rtl/VM2413/voicememory.vhd
+@@ -51,7 +51,7 @@ architecture RTL of VoiceMemory is
+ 
+   -- The following array is mapped into a Single-Clock Synchronous RAM with two-read
+   -- addresses by Altera's QuartusII compiler.
+-  type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE'range) of VOICE_VECTOR_TYPE;
++  type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE'low to VOICE_ID_TYPE'high) of VOICE_VECTOR_TYPE;
+   signal voices : VOICE_ARRAY_TYPE;
+ 
+   component VoiceRom port (
+@@ -107,4 +107,4 @@ begin
+ 
+   end process;
+ 
+-end RTL;
+\ No newline at end of file
++end RTL;
+diff --git a/rtl/VM2413/voicerom.vhd b/rtl/VM2413/voicerom.vhd
+index c76acb1..ac189b3 100644
+--- a/rtl/VM2413/voicerom.vhd
++++ b/rtl/VM2413/voicerom.vhd
+@@ -46,7 +46,7 @@ end VoiceRom;
+ 
+ architecture RTL of VoiceRom is
+ 
+-  type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE'range) of VOICE_VECTOR_TYPE;
++  type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE'low to VOICE_ID_TYPE'high) of VOICE_VECTOR_TYPE;
+  
+   constant base_voices : VOICE_ARRAY_TYPE := (
+   -- APEK<ML>KL< TL >W<F><AR><DR><SL><RR>
+@@ -194,4 +194,4 @@ begin
+ 
+   end process;
+ 
+-end RTL;
+\ No newline at end of file
++end RTL;
+diff --git a/rtl/cheatcodes.sv b/rtl/cheatcodes.sv
+index f0485eb..2365b50 100644
+--- a/rtl/cheatcodes.sv
++++ b/rtl/cheatcodes.sv
+@@ -15,8 +15,8 @@ module CODES(
+ 	input  [ADDR_WIDTH - 1:0] addr_in,
+ 	input  [DATA_WIDTH - 1:0] data_in,
+ 	input  [128:0] code,
+-	output genie_ovr,
+-	output [DATA_WIDTH - 1:0] genie_data
++	output reg genie_ovr,
++	output reg [DATA_WIDTH - 1:0] genie_data
+ );
+ 
+ parameter ADDR_WIDTH   = 16; // Not more than 32
+diff --git a/rtl/compressor.sv b/rtl/compressor.sv
+index db726d6..ca8acb7 100644
+--- a/rtl/compressor.sv
++++ b/rtl/compressor.sv
+@@ -22,7 +22,7 @@ module compressor
+ (
+ 	input         clk,
+ 	input  [11:0] in1, in2,
+-	output [15:0] out1, out2
++	output reg [15:0] out1, out2
+ );
+ 
+ always @(posedge clk) out1 <= {in1[11], in1[11] ? ~tbl[~in1[10:0]] : tbl[in1[10:0]]};
+diff --git a/rtl/dpram.vhd b/rtl/dpram.vhd
+index 5b08908..a450223 100644
+--- a/rtl/dpram.vhd
++++ b/rtl/dpram.vhd
+@@ -69,7 +69,6 @@ ARCHITECTURE SYN OF dpram IS
+ 			wren_a	: IN STD_LOGIC ;
+ 			clock0	: IN STD_LOGIC ;
+ 			wren_b	: IN STD_LOGIC ;
+-			clock1	: IN STD_LOGIC ;
+ 			address_a	: IN STD_LOGIC_VECTOR (widthad_a-1 DOWNTO 0);
+ 			address_b	: IN STD_LOGIC_VECTOR (widthad_a-1 DOWNTO 0);
+ 			q_a	: OUT STD_LOGIC_VECTOR (width_a-1 DOWNTO 0);
+@@ -80,19 +79,22 @@ ARCHITECTURE SYN OF dpram IS
+ 	END COMPONENT;
+ 
+ BEGIN
+-	q_a    <= sub_wire0(width_a-1 DOWNTO 0);
+-	q_b    <= sub_wire1(width_a-1 DOWNTO 0);
++	-- Every SMS instance drives both ports from clk_sys. Agilex 5 true dual-port
++	-- RAM therefore uses CLOCK0 for both ports. Forward local writes to preserve
++	-- the legacy NEW_DATA_NO_NBE_READ behavior.
++	q_a <= data_a when wren_a = '1' else sub_wire0(width_a-1 DOWNTO 0);
++	q_b <= data_b when wren_b = '1' else sub_wire1(width_a-1 DOWNTO 0);
+ 
+ 	altsyncram_component : altsyncram
+ 	GENERIC MAP (
+-		address_reg_b => "CLOCK1",
++		address_reg_b => "CLOCK0",
+ 		clock_enable_input_a => "BYPASS",
+ 		clock_enable_input_b => "BYPASS",
+ 		clock_enable_output_a => "BYPASS",
+ 		clock_enable_output_b => "BYPASS",
+-		indata_reg_b => "CLOCK1",
++		indata_reg_b => "CLOCK0",
+ 		init_file => init_file,
+-		intended_device_family => "Cyclone III",
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",
+ 		numwords_a => 2**widthad_a,
+ 		numwords_b => 2**widthad_a,
+@@ -100,23 +102,22 @@ BEGIN
+ 		outdata_aclr_a => "NONE",
+ 		outdata_aclr_b => "NONE",
+ 		outdata_reg_a => outdata_reg_a,
+-		outdata_reg_b => outdata_reg_a,
++		outdata_reg_b => outdata_reg_b,
+ 		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
+-		read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
++		read_during_write_mode_port_a => "DONT_CARE",
++		read_during_write_mode_port_b => "DONT_CARE",
+ 		widthad_a => widthad_a,
+ 		widthad_b => widthad_a,
+ 		width_a => width_a,
+ 		width_b => width_a,
+ 		width_byteena_a => 1,
+ 		width_byteena_b => 1,
+-		wrcontrol_wraddress_reg_b => "CLOCK1"
++		wrcontrol_wraddress_reg_b => "CLOCK0"
+ 	)
+ 	PORT MAP (
+ 		wren_a => wren_a,
+ 		clock0 => clock_a,
+ 		wren_b => wren_b,
+-		clock1 => clock_b,
+ 		address_a => address_a,
+ 		address_b => address_b,
+ 		data_a => data_a,
+diff --git a/rtl/jt89/jt89.v b/rtl/jt89/jt89.v
+index 7a27cfc..45a8006 100644
+--- a/rtl/jt89/jt89.v
++++ b/rtl/jt89/jt89.v
+@@ -48,6 +48,7 @@ module jt89(
+ );
+ 
+ wire signed [ 8:0] ch0, ch1, ch2, noise;
++(* direct_enable = 1 *) reg cen_16;
+ 
+ assign ready = 1'b1;
+ 
+@@ -72,7 +73,6 @@ reg [2:0] ctrl3;
+ reg [2:0] regn;
+ 
+ reg [3:0] clk_div;
+-(* direct_enable = 1 *) reg cen_16;
+ 
+ always @(negedge clk )
+     if( rst ) begin
+diff --git a/rtl/jt89/jt89.vhd b/rtl/jt89/jt89.vhd
+index ae99351..4a292f9 100644
+--- a/rtl/jt89/jt89.vhd
++++ b/rtl/jt89/jt89.vhd
+@@ -1,7 +1,7 @@
+ library IEEE;
+ use IEEE.std_logic_1164.all;
+ 
+-package jt89 is 
++package jt89_pkg is
+ 
+ component jt89
+ port
+@@ -22,4 +22,4 @@ port
+ );
+ end component;
+ 
+-end;
++end package jt89_pkg;
+diff --git a/rtl/lightgun.sv b/rtl/lightgun.sv
+index cc0c57d..5f7c8a7 100644
+--- a/rtl/lightgun.sv
++++ b/rtl/lightgun.sv
+@@ -20,8 +20,8 @@ module lightgun
+ 	input  [7:0] SENSOR_DELAY,
+ 	
+ 	output       TARGET,
+-	output       SENSOR,
+-	output       TRIGGER
++	output reg   SENSOR,
++	output reg   TRIGGER
+ );
+ 
+ assign TARGET  = ~offscreen & draw;
+@@ -129,4 +129,4 @@ always @(posedge CLK) begin
+ 				((SIZE[1] || ($signed(vcnt) >= $signed(ym) && vcnt <= yp)) && x == hcnt));
+ end
+ 
+-endmodule
+\ No newline at end of file
++endmodule
+diff --git a/rtl/parts.v b/rtl/parts.v
+index da33c14..ed95024 100644
+--- a/rtl/parts.v
++++ b/rtl/parts.v
+@@ -223,7 +223,7 @@ module LineBuf
+ 	output reg [10:0]	rdat1
+ );
+ 
+-reg [10:0] ram[1024];
++reg [10:0] ram[0:1023];
+ 
+ always @(posedge clkr) begin
+ 	if(clre) begin
+@@ -361,4 +361,3 @@ assign oDATA = iSEL0 ? iDATA0 :
+ 					dData;
+ 
+ endmodule
+-
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+index 0c10053..04f306e 100644
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -24,7 +24,13 @@ module sdram
+ (
+ 
+ 	// interface to the MT48LC16M16 chip
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	input      [15:0] SDRAM_DQ_IN,// data read from the SDRAM pins
++	output reg [15:0] SDRAM_DQ_OUT,// data driven during a write
++	output reg        SDRAM_DQ_OE,// output enable for SDRAM_DQ_OUT
++`else
+ 	inout  reg [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
++`endif
+ 	output reg [12:0] SDRAM_A,    // 13 bit multiplexed address bus
+ 	output            SDRAM_DQML, // byte mask
+ 	output            SDRAM_DQMH, // byte mask
+@@ -39,6 +45,12 @@ module sdram
+ 	input             init,			// init signal after FPGA config to initialize RAM
+ 	input             clk,			// sdram is accessed at up to 128MHz
+ 	input             clkref,		// reference clock to sync to
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	input             clk_capture,
++	input             active,
++	input             quiesce,
++	output            quiesced,
++`endif
+ 	
+ 	input      [24:0] raddr,      // 25 bit byte address
+ 	input             rd,         // cpu/chipset requests read
+@@ -51,7 +63,11 @@ module sdram
+ 	output reg        we_ack = 0
+ );
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++assign SDRAM_CKE = active;
++`else
+ assign SDRAM_CKE = 1;
++`endif
+ assign {SDRAM_DQMH,SDRAM_DQML} = SDRAM_A[12:11];
+ 
+ // no burst configured
+@@ -69,6 +85,7 @@ localparam STATE_START = 4'd1;   // state in which a new command can be started
+ localparam STATE_CONT  = STATE_START+RASCAS_DELAY; // 4 command can be continued
+ localparam STATE_LAST  = 4'd7;   // last state in cycle
+ localparam STATE_READY = STATE_CONT+CAS_LATENCY+1;
++localparam STATE_READ_READY = STATE_READY+1;
+ 
+ 
+ reg  [3:0] q;
+@@ -78,6 +95,18 @@ reg  [7:0] data;
+ reg [15:0] sd_dat;
+ reg        wr;
+ reg        ram_req=0;
++localparam MODE_NORMAL = 2'b00;
++localparam MODE_RESET  = 2'b01;
++localparam MODE_LDM    = 2'b10;
++localparam MODE_PRE    = 2'b11;
++reg [1:0] mode;
++
++`ifdef DE25_AGILEX_PLL_RECONFIG
++(* ASYNC_REG = "TRUE" *) reg [1:0] quiesce_sync = 2'b00;
++always @(posedge clk) quiesce_sync <= {quiesce_sync[0], quiesce};
++assign quiesced = quiesce_sync[1] && q == STATE_IDLE &&
++		          mode == MODE_NORMAL && !ram_req;
++`endif
+ 
+ assign dout = a[0] ? sd_dat[15:8] : sd_dat[7:0];
+ 
+@@ -94,14 +123,22 @@ always @(posedge clk) begin
+ 		ram_req <= 0;
+ 		wr <= 0;
+ 
+-		if(we_ack != we) begin
++		if(
++`ifdef DE25_AGILEX_PLL_RECONFIG
++		   !quiesce_sync[1] &&
++`endif
++		   we_ack != we) begin
+ 			ram_req <= 1;
+ 			wr <= 1;
+ 			{bank,a} <= waddr;
+ 			data <= din;
+ 		end
+ 		else
+-		if(~old_rd & rd) begin
++		if(
++`ifdef DE25_AGILEX_PLL_RECONFIG
++		   !quiesce_sync[1] &&
++`endif
++		   ~old_rd & rd) begin
+ 			rd_rdy <= 0;
+ 			ram_req <= 1;
+ 			wr <= 0;
+@@ -111,20 +148,20 @@ always @(posedge clk) begin
+ 
+ 	if (q == STATE_READY && ram_req) begin
+ 		if(wr) we_ack <= we;
++`ifndef DE25_AGILEX_PLL_RECONFIG
+ 		else   rd_rdy <= 1;
++`endif
+ 	end
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	if (q == STATE_READ_READY && ram_req && ~wr)
++		rd_rdy <= 1;
++`endif
+ 
+ 	if(~&q) q <= q + 1'd1;
+ 	if(~old_ref & clkref) q <= STATE_IDLE;
+ end
+ 
+-localparam MODE_NORMAL = 2'b00;
+-localparam MODE_RESET  = 2'b01;
+-localparam MODE_LDM    = 2'b10;
+-localparam MODE_PRE    = 2'b11;
+-
+ // initialization 
+-reg [1:0] mode;
+ always @(posedge clk) begin
+ 	reg [4:0] reset=5'h1f;
+ 	reg init_old=0;
+@@ -152,6 +189,32 @@ localparam CMD_PRECHARGE       = 4'b0010;
+ localparam CMD_AUTO_REFRESH    = 4'b0001;
+ localparam CMD_LOAD_MODE       = 4'b0000;
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++reg [15:0] data_capture = '0;
++reg        read_capture_toggle = 1'b0;
++reg  [1:0] read_capture_pipe = 2'b00;
++reg        read_capture_seen = 1'b0;
++(* ASYNC_REG = "TRUE" *) reg [1:0] capture_init_sync = 2'b11;
++
++// READ is launched on clk and captured by the SDRAM on the phase-shifted
++// physical clock. Delay the request through two capture stages, register DQ
++// on STATE_READY, then consume it on STATE_READ_READY in the controller.
++always @(posedge clk_capture) begin
++	capture_init_sync <= {capture_init_sync[0], init};
++	read_capture_pipe <= {read_capture_pipe[0], read_capture_toggle};
++	if(read_capture_pipe[1] != read_capture_seen) begin
++		read_capture_seen <= read_capture_pipe[1];
++		data_capture <= SDRAM_DQ_IN;
++	end
++
++	if(capture_init_sync[1]) begin
++		data_capture <= '0;
++		read_capture_pipe <= 2'b00;
++		read_capture_seen <= 1'b0;
++	end
++end
++`endif
++
+ // SDRAM state machines
+ always @(posedge clk) begin
+ 	casex({ram_req,wr,mode,q})
+@@ -180,9 +243,23 @@ always @(posedge clk) begin
+ 
+ 	if(q == STATE_START) SDRAM_BA <= (mode == MODE_NORMAL) ? bank : 2'b00;
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	// Keep write data continuously registered. OE alone controls when the
++	// registered word reaches the physical bus, which lets Quartus pack both
++	// data and enable into the Agilex SDRAM I/O registers.
++	SDRAM_DQ_OUT <= {data,data};
++	SDRAM_DQ_OE <= 0;
++	if(q == STATE_CONT && wr && ram_req)
++		SDRAM_DQ_OE <= active;
++	if(q == STATE_CONT && ~wr && ram_req)
++		read_capture_toggle <= ~read_capture_toggle;
++	if(q == STATE_READ_READY && ~wr && ram_req)
++		sd_dat <= data_capture;
++`else
+ 	SDRAM_DQ <= 16'hZZZZ;
+ 	if(q == STATE_CONT) SDRAM_DQ <= {data,data};
+ 	if(q == STATE_READY && ~wr && ram_req) sd_dat <= SDRAM_DQ;
++`endif
+ end
+ 
+ endmodule
+diff --git a/rtl/spram.vhd b/rtl/spram.vhd
+index c7e857e..6ad9ec0 100644
+--- a/rtl/spram.vhd
++++ b/rtl/spram.vhd
+@@ -35,7 +35,6 @@ ARCHITECTURE SYN OF spram IS
+ 		clock_enable_output_a		: STRING;
+ 		init_file		: STRING;
+ 		intended_device_family		: STRING;
+-		lpm_hint		: STRING;
+ 		lpm_type		: STRING;
+ 		numwords_a		: NATURAL;
+ 		operation_mode		: STRING;
+@@ -57,22 +56,23 @@ ARCHITECTURE SYN OF spram IS
+ 	END COMPONENT;
+ 
+ BEGIN
+-	q    <= sub_wire0(width_a-1 DOWNTO 0);
++	-- Agilex 5 single-port RAM supports OLD_DATA here. Forward writes at the
++	-- wrapper boundary to preserve the legacy NEW_DATA_NO_NBE_READ behavior.
++	q <= data when wren = '1' else sub_wire0(width_a-1 DOWNTO 0);
+ 
+ 	altsyncram_component : altsyncram
+ 	GENERIC MAP (
+ 		clock_enable_input_a => "BYPASS",
+ 		clock_enable_output_a => "BYPASS",
+ 		init_file => init_file,
+-		intended_device_family => "Cyclone III",
+-		lpm_hint => "ENABLE_RUNTIME_MOD=NO",
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",
+ 		numwords_a => 2**widthad_a,
+ 		operation_mode => "SINGLE_PORT",
+ 		outdata_aclr_a => "NONE",
+ 		outdata_reg_a => outdata_reg_a,
+ 		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
++		read_during_write_mode_port_a => "OLD_DATA",
+ 		widthad_a => widthad_a,
+ 		width_a => width_a,
+ 		width_byteena_a => 1
+diff --git a/rtl/system.vhd b/rtl/system.vhd
+index aa457fa..67a276a 100644
+--- a/rtl/system.vhd
++++ b/rtl/system.vhd
+@@ -3,7 +3,7 @@ use IEEE.STD_LOGIC_1164.ALL;
+ use IEEE.NUMERIC_STD.ALL; 
+ --use IEEE.STD_LOGIC_ARITH.ALL;
+ -- use IEEE.STD_LOGIC_UNSIGNED.ALL; 
+-use work.jt89.all;
++use work.jt89_pkg.all;
+ 
+ entity system is
+ 	generic (
+@@ -651,7 +651,7 @@ begin
+ 		ss_in  => psg2_in
+ 	);
+ 	
+-	fm: work.opll
++	fm: entity work.opll
+ 	port map
+ 	(
+ 		xin		=> clk_sys,
+@@ -1283,6 +1283,7 @@ port map(
+ 							when "01" => bank3 <= D_in;
+ 							when "10" => bank0 <= D_in;
+ 							when "11" => bank1 <= D_in;
++							when others => null;
+ 						end case;
+ 					end if ;
+ 				elsif ss_freeze = '0' and mapper_manual_force = '0' and bootloader_n = '1' and WR_n='0' and MREQ_n='0' and A=x"3FFE" and sega_mapper_write_seen = '0' then
+@@ -1313,6 +1314,7 @@ port map(
+ 								when "01" => bank0 <= D_in;
+ 								when "10" => bank1 <= D_in;
+ 								when "11" => bank2 <= D_in ; 
++								when others => null;
+ 							end case;
+ 						end if;
+ 					end if;
+diff --git a/rtl/vdp_sprites.vhd b/rtl/vdp_sprites.vhd
+index 4d4b1f8..7eb1859 100644
+--- a/rtl/vdp_sprites.vhd
++++ b/rtl/vdp_sprites.vhd
+@@ -329,4 +329,3 @@ begin
+ 	end process;
+ 
+ end Behavioral;
+-
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+index ad59e00..28ab75c 100644
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -110,11 +110,17 @@ output        DDRAM_WE,
+ 
+ //SDRAM interface with lower latency
+ output        SDRAM_CLK,
+-output        SDRAM_CKE,
+-output [12:0] SDRAM_A,
+-output  [1:0] SDRAM_BA,
+-inout  [15:0] SDRAM_DQ,
+-output        SDRAM_DQML,
++output        SDRAM_CKE,
++output [12:0] SDRAM_A,
++output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++input  [15:0] de25_sdram_dq_in,
++output [15:0] de25_sdram_dq_out,
++output        de25_sdram_dq_oe,
++`else
++inout  [15:0] SDRAM_DQ,
++`endif
++output        SDRAM_DQML,
+ output        SDRAM_DQMH,
+ output        SDRAM_nCS,
+ output        SDRAM_nCAS,
+@@ -147,7 +153,7 @@ input         UART_DSR,
+ // 1 - D-/TX
+ // 2..6 - USR2..USR6
+ // Set USER_OUT to 1 to read from USER_IN.
+-input   [6:0] USER_IN,
+-output  [6:0] USER_OUT,
++input   [6:0] USER_IN,
++output reg [6:0] USER_OUT,
+ 
+ input         OSD_STATUS
+diff --git a/sys/hps_io.sv b/sys/hps_io.sv
+index 1df2e02..848cc11 100644
+--- a/sys/hps_io.sv
++++ b/sys/hps_io.sv
+@@ -178,6 +178,15 @@ assign EXT_BUS[31:16] = HPS_BUS[31:16];
+ assign EXT_BUS[35:33] = HPS_BUS[35:33];
+ 
+ localparam DW = (WIDE) ? 15 : 7;
++
++reg  [7:0] kbd_data;
++reg        kbd_we;
++wire [8:0] kbd_data_host;
++reg        kbd_rd;
++reg  [7:0] mouse_data;
++reg        mouse_we;
++wire [8:0] mouse_data_host;
++reg        mouse_rd;
+ localparam AW = (WIDE) ? 12 : 13;
+ localparam VD = VDNUM-1;
+ 
+@@ -216,6 +225,9 @@ end
+ 
+ /////////////////////////////////////////////////////////
+ 
++localparam MAX_W = $clog2((64 > (STRLEN+2)) ? 64 : (STRLEN+2))-1;
++reg [MAX_W:0] byte_cnt;
++
+ wire [15:0] vc_dout;
+ video_calc video_calc
+ (
+@@ -237,8 +249,6 @@ video_calc video_calc
+ 
+ /////////////////////////////////////////////////////////
+ 
+-localparam MAX_W = $clog2((64 > (STRLEN+2)) ? 64 : (STRLEN+2))-1;
+-
+ wire [7:0] conf_byte;
+ generate
+ 	if(CONF_STR_BRAM) begin
+@@ -259,7 +269,6 @@ reg [31:0] ps2_key_raw = 0;
+ wire       pressed  = (ps2_key_raw[15:8] != 8'hf0);
+ wire       extended = (~pressed ? (ps2_key_raw[23:16] == 8'he0) : (ps2_key_raw[15:8] == 8'he0));
+ 
+-reg [MAX_W:0] byte_cnt;
+ reg   [3:0] sdn_ack;
+ wire [15:0] disk = 16'd1 << io_din[11:8];
+ 
+@@ -559,11 +568,6 @@ generate
+ 			end
+ 		end
+ 
+-		reg  [7:0] kbd_data;
+-		reg        kbd_we;
+-		wire [8:0] kbd_data_host;
+-		reg        kbd_rd;
+-
+ 		ps2_device keyboard
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -582,11 +586,6 @@ generate
+ 			.rd(kbd_rd)
+ 		);
+ 
+-		reg  [7:0] mouse_data;
+-		reg        mouse_we;
+-		wire [8:0] mouse_data_host;
+-		reg        mouse_rd;
+-
+ 		ps2_device mouse
+ 		(
+ 			.clk_sys(clk_sys),
+diff --git a/sys/hq2x.sv b/sys/hq2x.sv
+index f5fcc71..29c45c6 100644
+--- a/sys/hq2x.sv
++++ b/sys/hq2x.sv
+@@ -83,6 +83,7 @@ wire     [23:0] Curr21 = HALF_DEPTH ? h2rgb(Curr21tmp) : Curr21tmp;
+ reg  [AWIDTH:0] wrin_addr2;
+ reg  [DWIDTH:0] wrpix;
+ reg             wrin_en;
++reg  [AWIDTH:0] offs;
+ 
+ function [23:0] h2rgb;
+ 	input [11:0] v;
+@@ -145,7 +146,6 @@ end
+ 
+ wire [DWIDTH:0] blend_result = HALF_DEPTH ? rgb2h(blend_result_pre) : blend_result_pre[DWIDTH:0];
+ 
+-reg [AWIDTH:0] offs;
+ always @(posedge clk) begin
+ 	reg old_reset_line;
+ 	reg old_reset_frame;
+@@ -306,7 +306,7 @@ module Blend
+ 	input  [23:0] D,
+ 	input  [23:0] F,
+ 	input  [23:0] H,
+-	output [23:0] Result
++	output reg [23:0] Result
+ );
+ 
+ 	localparam BLEND1 = 7'b110_10_00; // (A * 12 + B * 4        ) >> 4
+diff --git a/sys/scandoubler.v b/sys/scandoubler.v
+index 81e7c3f..344c207 100644
+--- a/sys/scandoubler.v
++++ b/sys/scandoubler.v
+@@ -91,6 +91,8 @@ end
+ 
+ reg req_line_reset;
+ reg [DWIDTH:0] r_d, g_d, b_d;
++reg ce_x4o, ce_x2o;
++reg [1:0] sd_line;
+ always @(posedge clk_vid) begin
+ 	if(ce_x1i) begin
+ 		req_line_reset <= hb_in;
+@@ -119,7 +121,6 @@ Hq2x #(.LENGTH(LENGTH), .HALF_DEPTH(HALF_DEPTH)) Hq2x
+ reg  [7:0] pix_out_cnt = 0;
+ wire [7:0] pc_out = pix_out_cnt + 1'b1;
+ 
+-reg ce_x4o, ce_x2o;
+ always @(posedge clk_vid) begin
+ 	reg hs;
+ 
+@@ -140,7 +141,6 @@ always @(posedge clk_vid) begin
+ 	end
+ end
+ 
+-reg [1:0] sd_line;
+ reg [3:0] vbo;
+ reg [3:0] vso;
+ reg [8:0] hbo;
+diff --git a/sys/video_mixer.sv b/sys/video_mixer.sv
+index e53e1c0..42b99b4 100644
+--- a/sys/video_mixer.sv
++++ b/sys/video_mixer.sv
+@@ -80,25 +80,29 @@ video_freezer freezer
+ 	.vbl_out(frz_vbl)
+ );
+ 
+-reg frz;
++reg frz;
+ always @(posedge CLK_VIDEO) begin
+ 	reg frz1;
+ 	
+ 	frz1 <= HDMI_FREEZE;
+ 	frz  <= frz1;
+-end
+-
+-generate
+-	if(GAMMA && HALF_DEPTH) begin
+-		wire [7:0] R_in  = frz ? 8'd0 : {R,R};
+-		wire [7:0] G_in  = frz ? 8'd0 : {G,G};
+-		wire [7:0] B_in  = frz ? 8'd0 : {B,B};
+-	end else begin
+-		wire [DWIDTH:0] R_in = frz ? 1'd0 : R;
+-		wire [DWIDTH:0] G_in = frz ? 1'd0 : G;
+-		wire [DWIDTH:0] B_in = frz ? 1'd0 : B;
+-	end
+-endgenerate
++end
++
++wire [DWIDTH_SD:0] R_in;
++wire [DWIDTH_SD:0] G_in;
++wire [DWIDTH_SD:0] B_in;
++
++generate
++	if(GAMMA && HALF_DEPTH) begin
++		assign R_in = frz ? 8'd0 : {R,R};
++		assign G_in = frz ? 8'd0 : {G,G};
++		assign B_in = frz ? 8'd0 : {B,B};
++	end else begin
++		assign R_in = frz ? 1'd0 : R;
++		assign G_in = frz ? 1'd0 : G;
++		assign B_in = frz ? 1'd0 : B;
++	end
++endgenerate
+ 
+ wire hs_g, vs_g;
+ wire hb_g, vb_g;

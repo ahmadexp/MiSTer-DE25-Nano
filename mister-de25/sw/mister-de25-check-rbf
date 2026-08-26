@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+rbf=${1:-}
+platform_hash_file=${MISTER_DE25_HPS_IO_HASH:-/etc/mister-de25/hps-io-hash}
+migration_pending=${MISTER_DE25_MIGRATION_PENDING:-/var/lib/mister-de25/platform-migration/pending}
+
+if [[ -z $rbf ]]; then
+    echo "Usage: mister-de25-check-rbf RUNTIME.rbf" >&2
+    exit 2
+fi
+if [[ -e $migration_pending ]]; then
+    echo "DE25-Nano platform migration is pending; refusing all FPGA loads" >&2
+    exit 1
+fi
+
+runtime_hash_file=$rbf.hps-io-hash
+runtime_digest_file=$rbf.sha256
+if [[ ! -s $runtime_hash_file && -s $rbf.hps_io_hash ]]; then
+    runtime_hash_file=$rbf.hps_io_hash
+fi
+if [[ ! -s $rbf ]]; then
+    echo "DE25-Nano FPGA image is missing or empty: $rbf" >&2
+    exit 1
+fi
+for hash_file in "$platform_hash_file" "$runtime_hash_file"; do
+    if [[ ! -s $hash_file ]]; then
+        echo "DE25-Nano HPS I/O compatibility metadata is missing: $hash_file" >&2
+        exit 1
+    fi
+done
+if [[ ! -s $runtime_digest_file ]]; then
+    echo "DE25-Nano RBF SHA-256 metadata is missing: $runtime_digest_file" >&2
+    exit 1
+fi
+
+read_hash() {
+    local hash
+    hash=$(tr -d '[:space:]' <"$1" | tr '[:lower:]' '[:upper:]')
+    if [[ ! $hash =~ ^[0-9A-F]{64}$ ]]; then
+        echo "Invalid DE25-Nano HPS I/O hash in $1" >&2
+        exit 1
+    fi
+    printf '%s' "$hash"
+}
+
+read_digest() {
+    local digest
+    digest=$(tr -d '[:space:]' <"$1" | tr '[:upper:]' '[:lower:]')
+    if [[ ! $digest =~ ^[0-9a-f]{64}$ ]]; then
+        echo "Invalid DE25-Nano RBF SHA-256 in $1" >&2
+        exit 1
+    fi
+    printf '%s' "$digest"
+}
+
+hash_file() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | awk '{print $1}'
+    else
+        echo "No SHA-256 utility is installed" >&2
+        exit 1
+    fi
+}
+
+platform_hash=$(read_hash "$platform_hash_file")
+runtime_hash=$(read_hash "$runtime_hash_file")
+if [[ $runtime_hash != "$platform_hash" ]]; then
+    echo "Refusing incompatible DE25-Nano FPGA image: $rbf" >&2
+    echo "  QSPI HPS I/O hash: $platform_hash" >&2
+    echo "  RBF HPS I/O hash:  $runtime_hash" >&2
+    exit 1
+fi
+
+expected_digest=$(read_digest "$runtime_digest_file")
+actual_digest=$(hash_file "$rbf")
+if [[ $actual_digest != "$expected_digest" ]]; then
+    echo "Refusing DE25-Nano FPGA image with stale or mismatched metadata: $rbf" >&2
+    echo "  Metadata SHA-256: $expected_digest" >&2
+    echo "  Actual SHA-256:   $actual_digest" >&2
+    exit 1
+fi
+
+echo "DE25-Nano HPS I/O compatibility verified: $platform_hash"
+echo "DE25-Nano RBF payload verified: $actual_digest"

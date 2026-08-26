@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Thu, 13 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Recover Menu before DE25 MMIO
+
+When a core leaves the lightweight HPS bridge inaccessible, the first Main
+register access raises SIGBUS. A systemd restart has no core arguments, so use
+that unambiguous condition to reload the known-good Menu through the privileged
+FPGA-region helper before mapping or touching the bridge. Core handoff restarts
+carry the selected RBF in argv and therefore retain the newly loaded core.
+---
+ main.cpp | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/main.cpp b/main.cpp
+index 97a3c2b..e508176 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -35,6 +35,17 @@ const char *version = "$VER:" VDATE;
+ 
+ int main(int argc, char *argv[])
+ {
++#ifdef MISTER_DE25
++	// A service start or crash restart has no selected-core argument. Restore
++	// Menu before the first MMIO access so an inaccessible bridge cannot trap
++	// Main in a SIGBUS restart loop.
++	if (argc == 1 && system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
++	{
++		fprintf(stderr, "Unable to recover DE25 Menu fabric image\n");
++		return 1;
++	}
++#endif
++
+ 	// Always pin main worker process to core #1 as core #0 is the
+ 	// hardware interrupt handler in Linux.  This reduces idle latency
+ 	// in the main loop by about 6-7x.
+-- 
+2.43.0

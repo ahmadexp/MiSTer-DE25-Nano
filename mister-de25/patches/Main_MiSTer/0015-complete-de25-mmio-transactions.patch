@@ -1,0 +1,45 @@
+From: DE25-Nano Port <de25-nano@example.invalid>
+Subject: [PATCH] Complete DE25 MMIO transactions
+
+The Agilex 5 lightweight bridge may report a failed posted transaction as an
+asynchronous ARM SError. Volatile accesses are sufficient for occasional OSD
+updates but not for sustained ROM transfers. Add device completion barriers
+around DE25 PIO reads and writes so every transaction finishes before the next
+one is issued.
+
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -47,8 +47,32 @@ static struct nic301_registers       *nic301_regs  = (nic301_registers *)SOCFPGA
+ 
+ static uint32_t *map_base;
+ 
++#ifdef MISTER_DE25
++// The Agilex 5 lightweight bridge can report a failed posted transaction as
++// an asynchronous ARM SError.  A volatile access alone does not wait for the
++// interconnect response, which lets sustained file transfers overrun the PIO
++// path even though occasional OSD accesses appear reliable.  Complete each
++// device transaction before issuing the next one.
++static inline void de25_writel(uint32_t value, uintptr_t address)
++{
++	*MAP_ADDR(address) = value;
++	__asm__ volatile("dsb sy" ::: "memory");
++}
++
++static inline uint32_t de25_readl(uintptr_t address)
++{
++	__asm__ volatile("dsb sy" ::: "memory");
++	uint32_t value = *MAP_ADDR(address);
++	__asm__ volatile("dsb sy" ::: "memory");
++	return value;
++}
++
++#define writel(val, reg) de25_writel((uint32_t)(val), (uintptr_t)(reg))
++#define readl(reg) de25_readl((uintptr_t)(reg))
++#else
+ #define writel(val, reg) *MAP_ADDR(reg) = val
+ #define readl(reg) *MAP_ADDR(reg)
++#endif
+ 
+ #define clrsetbits_le32(addr, clear, set) writel((readl(addr) & ~(clear)) | (set), addr)
+ #define setbits_le32(addr, set)           writel( readl(addr) | (set), addr)

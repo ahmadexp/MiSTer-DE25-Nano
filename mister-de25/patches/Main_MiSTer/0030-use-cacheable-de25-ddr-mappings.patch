@@ -1,0 +1,138 @@
+From: DE25-Nano port
+Subject: [PATCH] Use safe access for DE25 reserved DDR
+
+Keep HPS and bridge MMIO on a synchronized /dev/mem descriptor, but map the
+reserved LPDDR aperture through a separate descriptor without O_SYNC. Also
+avoid the AArch64 DC ZVA memset path for x86 initialization. The board's
+reserved mapping rejects that instruction with SIGBUS/BUS_ADRALN while Main
+initializes UMA and BIOS memory.
+
+diff --git a/shmem.cpp b/shmem.cpp
+--- a/shmem.cpp
++++ b/shmem.cpp
+@@ -14,20 +14,32 @@
+ #include "shmem.h"
+ 
+ static int memfd = -1;
++#ifdef MISTER_DE25
++static int physical_memfd = -1;
++#endif
+ 
+-static void *shmem_map_address(uint32_t address, uint32_t size)
++static void *shmem_map_address(uint32_t address, uint32_t size,
++                              bool device_mapping)
+ {
+-	if (memfd < 0)
++	int *selected_fd = &memfd;
++	#ifdef MISTER_DE25
++	if (device_mapping) selected_fd = &physical_memfd;
++	#endif
++
++	if (*selected_fd < 0)
+ 	{
+-		memfd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
+-		if (memfd == -1)
++		int flags = O_RDWR | O_CLOEXEC;
++		if (device_mapping) flags |= O_SYNC;
++		*selected_fd = open("/dev/mem", flags);
++		if (*selected_fd == -1)
+ 		{
+ 			printf("Error: Unable to open /dev/mem!\n");
+ 			return 0;
+ 		}
+ 	}
+ 
+-	void *res = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, memfd, address);
++	void *res = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED,
++	                 *selected_fd, address);
+ 	if (res == (void *)-1)
+ 	{
+ 		printf("Error: Unable to mmap (0x%X, %d)!\n", address, size);
+@@ -47,7 +59,13 @@ void *shmem_map(uint32_t address, uint32_t size)
+ 		address += 0x80000000;
+ #endif
+ 
+-	return shmem_map_address(address, size);
++	#ifdef MISTER_DE25
++	// Reserved LPDDR is ordinary coherent memory. O_SYNC would force a device
++	// mapping on AArch64, where sustained RAM fills can raise BUS_ADRALN.
++	return shmem_map_address(address, size, false);
++	#else
++	return shmem_map_address(address, size, true);
++	#endif
+ }
+ 
+ #ifdef MISTER_DE25
+@@ -55,6 +73,6 @@ void *shmem_map_physical(uint32_t address, uint32_t size)
+ {
+ 	// HPS peripheral and bridge addresses must not pass through the logical
+ 	// MiSTer DDR translation performed by shmem_map().
+-	return shmem_map_address(address, size);
++	return shmem_map_address(address, size, true);
+ }
+ #endif
+diff --git a/support/x86/x86.cpp b/support/x86/x86.cpp
+--- a/support/x86/x86.cpp
++++ b/support/x86/x86.cpp
+@@ -50,6 +50,38 @@
+ 
+ #define IOWR(base, reg, value) x86_dma_set((base) + (reg), value)
+ 
++#ifdef MISTER_DE25
++// Agilex reserved LPDDR mappings reject the DC ZVA instruction used by
++// optimized AArch64 memset and report SIGBUS/BUS_ADRALN. Use explicit aligned
++// stores for the small x86 initialization regions, then complete all writes
++// before unmapping or releasing the core.
++static void de25_mapped_memset(void *buffer, uint8_t value, uint32_t size)
++{
++	volatile uint8_t *bytes = static_cast<volatile uint8_t *>(buffer);
++	uint64_t pattern = UINT64_C(0x0101010101010101) * value;
++
++	while (size && (reinterpret_cast<uintptr_t>(bytes) & 7))
++	{
++		*bytes++ = value;
++		size--;
++	}
++
++	volatile uint64_t *words =
++		reinterpret_cast<volatile uint64_t *>(bytes);
++	while (size >= sizeof(*words))
++	{
++		*words++ = pattern;
++		size -= sizeof(*words);
++	}
++
++	bytes = reinterpret_cast<volatile uint8_t *>(words);
++	while (size--)
++		*bytes++ = value;
++
++	__asm__ volatile("dsb sy" ::: "memory");
++}
++#endif
++
+ unsigned int hdd_table[128][3] = {
+ 	{  306,  4, 17 },		/* 0 - 7 */
+ 	{  615,  2, 17 },
+@@ -303,7 +335,11 @@ static int mem_set(uint32_t offset, uint8_t fill_byte, uint32_t size)
+ 	void *buf = shmem_map(SHMEM_ADDR + offset, size);
+ 	if (!buf) return 0;
+ 
++	#ifdef MISTER_DE25
++	de25_mapped_memset(buf, fill_byte, size);
++	#else
+ 	memset(buf, fill_byte, size);
++	#endif
+ 	shmem_unmap(buf, size);
+ 
+ 	return 1;
+@@ -325,6 +361,10 @@ static int load_rom(const char* name, uint32_t mem_offset)
+ 		return 0;
+ 	}
+ 
++	#ifdef MISTER_DE25
++	de25_mapped_memset(buf, 0, size);
++	#else
+ 	memset(buf, 0, size);
++	#endif
+ 	FileReadAdv(&f, buf, size);
+ 	shmem_unmap(buf, size);

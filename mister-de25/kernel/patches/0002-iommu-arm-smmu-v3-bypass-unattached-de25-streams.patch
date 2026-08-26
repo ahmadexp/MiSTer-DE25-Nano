@@ -1,0 +1,43 @@
+diff --git a/drivers/iommu/arm/arm-smmu-v3/arm-smmu-v3.c b/drivers/iommu/arm/arm-smmu-v3/arm-smmu-v3.c
+--- a/drivers/iommu/arm/arm-smmu-v3/arm-smmu-v3.c
++++ b/drivers/iommu/arm/arm-smmu-v3/arm-smmu-v3.c
+@@ -1686,13 +1686,19 @@ EXPORT_SYMBOL_IF_KUNIT(arm_smmu_make_s2_domain_ste);
+  * This can safely directly manipulate the STE memory without a sync sequence
+  * because the STE table has not been installed in the SMMU yet.
+  */
+-static void arm_smmu_init_initial_stes(struct arm_smmu_ste *strtab,
++static void arm_smmu_init_initial_stes(struct arm_smmu_device *smmu,
++                                      struct arm_smmu_ste *strtab,
+ 				       unsigned int nent)
+ {
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < nent; ++i) {
+-		arm_smmu_make_abort_ste(strtab);
++		/*
++		 * DE25-Nano peripherals without an iommus property use direct DMA.
++		 * Keep their unattached stream IDs in bypass while the explicitly
++		 * attached SDM service retains its translated domain.
++		 */
++		arm_smmu_make_bypass_ste(smmu, strtab);
+ 		strtab++;
+ 	}
+ }
+@@ -1716,7 +1722,7 @@ static int arm_smmu_init_l2_strtab(struct arm_smmu_device *smmu, u32 sid)
+ 		return -ENOMEM;
+ 	}
+ 
+-	arm_smmu_init_initial_stes((*l2table)->stes,
++	arm_smmu_init_initial_stes(smmu, (*l2table)->stes,
+ 				   ARRAY_SIZE((*l2table)->stes));
+ 	arm_smmu_write_strtab_l1_desc(&cfg->l2.l1tab[arm_smmu_strtab_l1_idx(sid)],
+ 				      l2ptr_dma);
+@@ -3670,6 +3676,7 @@ static int arm_smmu_init_strtab_linear(struct arm_smmu_device *smmu)
+ 	}
+ 	cfg->linear.num_ents = 1 << smmu->sid_bits;
+ 
+-	arm_smmu_init_initial_stes(cfg->linear.table, cfg->linear.num_ents);
++	arm_smmu_init_initial_stes(smmu, cfg->linear.table,
++				   cfg->linear.num_ents);
+ 	return 0;
+ }

@@ -1,0 +1,37 @@
+diff --git a/rtl/sdram.v b/rtl/sdram.v
+index f4995f6..63f06e3 100644
+--- a/rtl/sdram.v
++++ b/rtl/sdram.v
+@@ -126,8 +126,15 @@ always @ (posedge clk) begin
+ 	reg [2:0]  cas_cmd, cas_cmd2;
+ 	reg        wdat_req;
+ 
+-	st    <= st + 1'd1;
+-	state <= st;
++	// Do not depend on family-specific register power-up behavior. The phase
++	// counter drives both SDRAM initialization and every CAS transaction.
++	if(!rst_n) begin
++		st    <= 0;
++		state <= 0;
++	end else begin
++		st    <= st + 1'd1;
++		state <= st;
++	end
+ 
+ 	DRAM_DQ_OE <= 1'b0;
+ 
+diff --git a/rtl/tester.v b/rtl/tester.v
+index 6561f1a..f3ff805 100644
+--- a/rtl/tester.v
++++ b/rtl/tester.v
+@@ -145,6 +145,10 @@ always @(posedge clk) begin
+ 	 
+ 	curr_state <= ( reset_req & dram_done ) ? RESET : next_state;
+ 	if(~rst_n) begin
++		// The original core relied on Cyclone V power-up state here. Agilex
++		// synthesis cannot prove any state reachable unless the FSM itself is
++		// reset explicitly, and otherwise removes the entire read/compare path.
++		curr_state <= RESET;
+ 		reset_req <= 1;
+ 		rst_cnt <= 0;
+ 	end

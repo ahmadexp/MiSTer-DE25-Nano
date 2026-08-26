@@ -1,0 +1,62 @@
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+index 8182cb1..d5e0c13 100644
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -104,6 +104,27 @@ static int de25_set_bridges(bool enable)
+ 	return 0;
+ }
+ 
++static int de25_check_rbf_compatibility(const char *rbf_path)
++{
++	pid_t child = fork();
++	if (child < 0) return -1;
++	if (!child) {
++		execl("/usr/libexec/mister-de25-check-rbf", "mister-de25-check-rbf",
++		      rbf_path, (char *)NULL);
++		_exit(127);
++	}
++
++	int status = 0;
++	while (waitpid(child, &status, 0) < 0) {
++		if (errno != EINTR) return -1;
++	}
++	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
++		errno = EPERM;
++		return -1;
++	}
++	return 0;
++}
++
+ static int copy_file_to_path(const char *source_path, const char *target_path)
+ {
+ 	int in = open(source_path, O_RDONLY | O_CLOEXEC);
+@@ -616,6 +637,19 @@ int fpga_load_rbf(const char *name, const char *cfg, const char *xml)
+ 	OsdDisable();
+ 	static char path[1024];
+ 	int ret = 0;
++	if(name[0] == '/') strcpy(path, name);
++	else sprintf(path, "%s/%s", !strcasecmp(name, "menu.rbf") ? getStorageDir(0) : getRootDir(), name);
++
++#ifdef MISTER_DE25
++	if (de25_check_rbf_compatibility(path) < 0)
++	{
++		char error[4096];
++		snprintf(error, sizeof(error), "%s\nIncompatible with DE25-Nano QSPI", name);
++		printf("Refusing incompatible RBF %s\n", path);
++		Info(error, 5000);
++		return -1;
++	}
++#endif
+ 
+ 	if(cfg)
+ 	{
+@@ -628,9 +662,6 @@ int fpga_load_rbf(const char *name, const char *cfg, const char *xml)
+ 
+ 	printf("Loading RBF: %s\n", name);
+ 
+-	if(name[0] == '/') strcpy(path, name);
+-	else sprintf(path, "%s/%s", !strcasecmp(name, "menu.rbf") ? getStorageDir(0) : getRootDir(), name);
+-
+ 	int rbf = open(path, O_RDONLY);
+ 	if (rbf < 0)
+ 	{

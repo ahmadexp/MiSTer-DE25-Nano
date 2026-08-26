@@ -1,0 +1,45 @@
+diff --git a/menu.sv b/menu.sv
+index 0ac5ef1..4b03c44 100644
+--- a/menu.sv
++++ b/menu.sv
+@@ -122,6 +122,7 @@ sdram sdr
+ (
+ 	.init(~locked),
+ 	.clk(clk_sys),
++	.clk_capture(de25_sdram_clk),
+ 	.SDRAM_DQ_IN(de25_sdram_dq_in),
+ 	.SDRAM_DQ_OUT(sdram_dq_out),
+ 	.SDRAM_DQ_OE(sdram_dq_oe),
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+index be9a85f..5264dcf 100644
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -30,6 +30,7 @@ module sdram
+ (
+    input             init,        // reset to initialize RAM
+    input             clk,         // clock ~100MHz
++   input             clk_capture, // phase-shifted SDRAM read-capture clock
+                                   //
+                                   // SDRAM_* - signals to the MT48LC16M16 chip
+    input      [15:0] SDRAM_DQ_IN, // data read from the SDRAM pins
+@@ -86,6 +87,11 @@ reg [26:0] save_addr;
+ reg        chip = 0;
+ 
+ reg [15:0] data;
++reg [15:0] data_capture = '0;
++
++// Capture returning data with the same phase-shifted clock that is forwarded
++// to the SDRAM. The controller consumes this register on a later clk edge.
++always @(posedge clk_capture) data_capture <= SDRAM_DQ_IN;
+ 
+ assign SDRAM_nCS  = chip;
+ assign SDRAM_nRAS = command[2];
+@@ -124,7 +130,7 @@ always @(posedge clk) begin
+ 
+ 	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY:1]};
+ 
+-	if(data_ready_delay[0]) {ready, data}  <= {1'b1, SDRAM_DQ_IN};
++	if(data_ready_delay[0]) {ready, data}  <= {1'b1, data_capture};
+ 
+ 	case(state)
+ 		STATE_STARTUP: begin

@@ -1,0 +1,9 @@
+[Unit]
+Description=Coordinate a DE25-Nano HPS-first platform migration
+Requires=mister-de25-watchdog-keeper.service
+After=mister-de25-preload.service mister-de25-watchdog-keeper.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/mister-de25-headless-migrate
+TimeoutStartSec=infinity

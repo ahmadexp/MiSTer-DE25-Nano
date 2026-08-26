@@ -1,0 +1,20 @@
+diff --git a/boards/MiSTer/Apple-I.sv b/boards/MiSTer/Apple-I.sv
+--- a/boards/MiSTer/Apple-I.sv
++++ b/boards/MiSTer/Apple-I.sv
+@@ -96,6 +96,8 @@ module emu
+ 	input         TAPE_IN,
+ 
+ 	//ADC
++`ifndef DE25_OMIT_ADC_BUS
+ 	inout   [3:0] ADC_BUS,
++`endif
+ 
+ 	//SD-SPI
+@@ -165,5 +167,7 @@ module emu
+ 
+ ///////// Default values for ports not used in this core /////////
+ 
++`ifndef DE25_OMIT_ADC_BUS
+ assign ADC_BUS  = 'Z;
++`endif
+ assign USER_OUT = '1;

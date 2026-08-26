@@ -1,0 +1,23 @@
+diff --git a/menu.sv b/menu.sv
+--- a/menu.sv
++++ b/menu.sv
+@@ -55,5 +55,7 @@ assign de25_sdram_dq_out = sdram_dq_out;
+ assign de25_sdram_dq_oe = sdram_dq_oe;
+ 
++`ifndef DE25_OMIT_ADC_BUS
+ assign ADC_BUS  = 'Z;
++`endif
+ assign {UART_RTS, UART_DTR} = 0;
+ assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -87,6 +87,8 @@ output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
+ output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
+ 
+ //ADC
++`ifndef DE25_OMIT_ADC_BUS
+ inout   [3:0] ADC_BUS,
++`endif
+ 
+ //SD-SPI

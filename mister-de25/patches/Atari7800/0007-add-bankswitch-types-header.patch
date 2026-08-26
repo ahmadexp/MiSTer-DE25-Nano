@@ -1,0 +1,16 @@
+diff --git a/rtl/bankswitch_types.svh b/rtl/bankswitch_types.svh
+new file mode 100644
+--- /dev/null
++++ b/rtl/bankswitch_types.svh
+@@ -0,0 +1,11 @@
++`ifndef ATARI7800_BANKSWITCH_TYPES_SVH
++`define ATARI7800_BANKSWITCH_TYPES_SVH
++
++typedef enum logic [4:0] {
++	BANK00, BANKF8, BANKF6, BANKFE, BANKE0,   BANK3F,   BANKF4,  BANKP2,
++	BANKFA, BANKCV, BANK2K, BANKUA, BANKE7,   BANKF0,   BANK32,  BANKAR,
++	BANK3E, BANKSB, BANKWD, BANKEF, BANKJANE, BANKDPCP, BANKCTY, BANKCDF,
++	BANKEND
++} bss_type;
++
++`endif

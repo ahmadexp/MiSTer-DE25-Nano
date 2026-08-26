@@ -1,0 +1,24 @@
+diff --git a/NES.sv b/NES.sv
+--- a/NES.sv
++++ b/NES.sv
+@@ -8,6 +8,8 @@ module emu
+ 	`include "sys/emu_ports.vh"
+ );
+ 
++`ifndef DE25_OMIT_ADC_BUS
+ assign ADC_BUS  = 'Z;
++`endif
+ 
+ assign AUDIO_S   = 0;
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -87,6 +87,8 @@ output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
+ output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
+ 
+ //ADC
++`ifndef DE25_OMIT_ADC_BUS
+ inout   [3:0] ADC_BUS,
++`endif
+ 
+ //SD-SPI

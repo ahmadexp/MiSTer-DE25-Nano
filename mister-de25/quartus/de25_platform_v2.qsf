@@ -1,0 +1,27 @@
+# Common Platform V2 overlay. A persona sources its existing DE25 QSF first,
+# then sources this file so every port uses the same clock, I2C, audio, HPS,
+# pin, and timing contract.
+set_global_assignment -name VERILOG_MACRO "DE25_PLATFORM_V2=1"
+set_global_assignment -name VERILOG_MACRO "DE25_PLL_DIAGNOSTIC=1"
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/platform_v2/de25_i2c_register_master.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/de25_si5332_address_probe.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_clock_frequency_monitor.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/platform_v2/de25_si5332_service.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/platform_v2/de25_platform_v2_clock_service.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/platform_v2/de25_mister_audio_v2.sv
+set_global_assignment -name SDC_FILE de25_platform_v2.sdc
+
+# Native Platform V2 children added to the generated HPS system. Keeping these
+# assignments explicit prevents stale auto-discovered IP paths when changing
+# between platform revisions.
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_clk_100.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_h2f_reset_fanout.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_vbuf_bridge.ip
+
+# U24 Si5332B pads are wired to GPIO_1/JP2 physical pins 1 and 2. RTL drives both as
+# 3.3 V open-drain signals. The baseline never writes clock configuration.
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to SI5332_SDA -entity de25_mister_top
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to SI5332_SCL -entity de25_mister_top
+set_location_assignment PIN_BV14 -to SI5332_SDA
+set_location_assignment PIN_CG26 -to SI5332_SCL

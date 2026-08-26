@@ -1,0 +1,81 @@
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -239,17 +239,21 @@ reg [1:0] refreshForce_1;
+ reg saved_wr;
+ reg saved_128read = 0;
+ 
+-reg [CAS_LATENCY+BURST_LENGTH:0] data_ready_delay1, data_ready_delay2, data_ready_delay3;
++reg [CAS_LATENCY+BURST_LENGTH+1:0] data_ready_delay1, data_ready_delay2, data_ready_delay3;
+ 
+ reg [12:0] cas_addr;
+ reg [31:0] saved_data;
+ reg  [3:0] saved_be;
+ reg [15:0] dq_reg;
++reg [15:0] dq_pipe;
+ 
+ // The Cyclone V core relied on an I/O DDR primitive for its forwarded clock.
+-// Capture the return bus with an explicit related phase on Agilex instead of
+-// asking a fabric register to meet the half-cycle pin-to-register path.
++// Capture the return bus with an explicit late phase on Agilex. Transfer that
++// sample on clk's falling edge, then consume it on a later rising edge. This
++// real pipeline keeps one word per cycle while giving both fabric paths about
++// half a cycle, without forcing the Quartus 25.3.1 HVIO register packer.
+ always @(posedge clk_capture) dq_reg <= sdram_dq_in;
++always @(negedge clk) dq_pipe <= dq_reg;
+ 
+ reg [1:0] ch;
+ 
+@@ -297,14 +301,14 @@ always @(posedge clk) begin
+    if (cache_done_2) begin cache_data <= ch1_dout[ 95:64]; cache_wr <= cache_wr_next; cache_wr_next <= { cache_wr_next[2:0], 1'b0 }; end
+    if (cache_done_3) begin cache_data <= ch1_dout[127:96]; cache_wr <= cache_wr_next; cache_wr_next <= { cache_wr_next[2:0], 1'b0 }; end
+       
+-   if(data_ready_delay1[7]) ch1_dout[ 15: 00]  <= dq_reg;
+-   if(data_ready_delay1[6]) ch1_dout[ 31: 16]  <= dq_reg;
+-   if(data_ready_delay1[5]) ch1_dout[ 47: 32]  <= dq_reg;
+-   if(data_ready_delay1[4]) ch1_dout[ 63: 48]  <= dq_reg;
+-   if(data_ready_delay1[3]) ch1_dout[ 79: 64]  <= dq_reg;
+-   if(data_ready_delay1[2]) ch1_dout[ 95: 80]  <= dq_reg;
+-   if(data_ready_delay1[1]) ch1_dout[111: 96]  <= dq_reg;
+-   if(data_ready_delay1[0]) ch1_dout[127:112]  <= dq_reg;
++   if(data_ready_delay1[7]) ch1_dout[ 15: 00]  <= dq_pipe;
++   if(data_ready_delay1[6]) ch1_dout[ 31: 16]  <= dq_pipe;
++   if(data_ready_delay1[5]) ch1_dout[ 47: 32]  <= dq_pipe;
++   if(data_ready_delay1[4]) ch1_dout[ 63: 48]  <= dq_pipe;
++   if(data_ready_delay1[3]) ch1_dout[ 79: 64]  <= dq_pipe;
++   if(data_ready_delay1[2]) ch1_dout[ 95: 80]  <= dq_pipe;
++   if(data_ready_delay1[1]) ch1_dout[111: 96]  <= dq_pipe;
++   if(data_ready_delay1[0]) ch1_dout[127:112]  <= dq_pipe;
+    if(data_ready_delay1[6] && ~dma_buffer && ~cache_buffer_next) ch1_ready_ramclock <= 1;
+    if(data_ready_delay1[4] && cache_buffer_next)                 ch1_ready_ramclock <= 1;
+    if(data_ready_delay1[6] && dma_buffer)                        dma_done <= 1;
+@@ -315,12 +319,12 @@ always @(posedge clk) begin
+    if(data_ready_delay1[2] && cache_buffer_next) cache_done_2 <= 1;
+    if(data_ready_delay1[0] && cache_buffer_next) cache_done_3 <= 1;
+ 
+-	if(data_ready_delay2[7]) ch2_dout[15:00]    <= dq_reg;
+-	if(data_ready_delay2[6]) ch2_dout[31:16]    <= dq_reg;
++	if(data_ready_delay2[7]) ch2_dout[15:00]    <= dq_pipe;
++	if(data_ready_delay2[6]) ch2_dout[31:16]    <= dq_pipe;
+ 	if(data_ready_delay2[2]) ch2_ready_ramclock <= 1;
+ 
+-	if(data_ready_delay3[7]) ch3_dout[15:00]    <= dq_reg;
+-	if(data_ready_delay3[6]) ch3_dout[31:16]    <= dq_reg;
++	if(data_ready_delay3[7]) ch3_dout[15:00]    <= dq_pipe;
++	if(data_ready_delay3[6]) ch3_dout[31:16]    <= dq_pipe;
+ 	if(data_ready_delay3[2]) ch3_ready_ramclock <= 1;
+ 
+ 	sdram_dq_out <= 16'b0;
+@@ -526,9 +530,9 @@ always @(posedge clk) begin
+             else begin
+                command <= CMD_READ;
+                state   <= STATE_IDLE_9;
+-                  if(ch == 0) data_ready_delay1[CAS_LATENCY+BURST_LENGTH] <= 1;
+-               else if(ch == 1) data_ready_delay2[CAS_LATENCY+BURST_LENGTH] <= 1;
+-               else             data_ready_delay3[CAS_LATENCY+BURST_LENGTH] <= 1;
++                  if(ch == 0) data_ready_delay1[CAS_LATENCY+BURST_LENGTH+1] <= 1;
++               else if(ch == 1) data_ready_delay2[CAS_LATENCY+BURST_LENGTH+1] <= 1;
++               else             data_ready_delay3[CAS_LATENCY+BURST_LENGTH+1] <= 1;
+             end
+          end
+    

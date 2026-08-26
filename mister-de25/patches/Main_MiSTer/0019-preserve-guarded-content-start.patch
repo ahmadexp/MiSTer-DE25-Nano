@@ -1,0 +1,49 @@
+From: DE25-Nano Port <de25-nano@example.invalid>
+Subject: [PATCH] Preserve guarded content on one-shot core start
+
+The DE25 candidate loader restarts Main after programming a compatibility-
+checked runtime core. Extend its root-owned one-shot marker with an optional
+MGL or MRA path, allowing automated hardware tests to launch content without
+a local keyboard. Accept only absolute, readable game-list formats and retain
+the existing crash behavior that restores Menu on the next service start.
+
+diff --git a/main.cpp b/main.cpp
+--- a/main.cpp
++++ b/main.cpp
+@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ #include <inttypes.h>
+ #include <ctype.h>
+ #include <string.h>
++#include <strings.h>
+ #include <limits.h>
+ #include "menu.h"
+ #include "user_io.h"
+@@ -48,6 +49,7 @@ int main(int argc, char *argv[])
+ 	// candidate path. A crash restart has no marker and restores Menu before
+ 	// touching a potentially inaccessible bridge.
+ 	char selected_core[PATH_MAX] = {};
++	char selected_xml[PATH_MAX] = {};
+ 	if (argc == 1)
+ 	{
+ 		FILE *marker = fopen("/run/mister-de25-selected-core", "r");
+@@ -56,6 +58,8 @@ int main(int argc, char *argv[])
+ 		{
+ 			if (fgets(selected_core, sizeof(selected_core), marker))
+ 				selected_core[strcspn(selected_core, "\r\n")] = 0;
++			if (fgets(selected_xml, sizeof(selected_xml), marker))
++				selected_xml[strcspn(selected_xml, "\r\n")] = 0;
+ 			fclose(marker);
+ 			unlink("/run/mister-de25-selected-core");
+ 		}
+@@ -63,6 +67,11 @@ int main(int argc, char *argv[])
+ 		if (selected_core[0] == '/' && !access(selected_core, R_OK))
+ 		{
+ 			core_path_arg = selected_core;
++			const char *extension = strrchr(selected_xml, '.');
++			if (selected_xml[0] == '/' && !access(selected_xml, R_OK) &&
++				extension && (!strcasecmp(extension, ".mgl") ||
++				               !strcasecmp(extension, ".mra")))
++				xml_path_arg = selected_xml;
+ 		}
+ 		else if (system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
+ 		{

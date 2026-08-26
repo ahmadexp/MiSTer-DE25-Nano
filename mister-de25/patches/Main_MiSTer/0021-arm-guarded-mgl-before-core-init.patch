@@ -1,0 +1,47 @@
+From: DE25-Nano port
+Subject: [PATCH] Arm guarded MGL before peripheral initialization
+
+The DE25 service supplies a root-owned one-shot MGL argument. Parse it while
+that argument is still authoritative and before the rest of core setup can
+initialize the MGL state machine as empty. Keep upstream timing unchanged on
+other MiSTer platforms.
+
+diff --git a/user_io.cpp b/user_io.cpp
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -1424,6 +1424,17 @@ void user_io_init(const char *path, const char *xml)
+ 	// browse
+ 	strcpy(core_path, xml ? xml : path);
+ 	strcpy(rbf_path, path);
++
++#ifdef MISTER_DE25
++	// Parse the guarded descriptor while the one-shot argument is still the
++	// authoritative source. This primes the MGL state machine before the
++	// remaining core initialization decides whether it has work to run.
++	if (xml && isXmlName(xml) == 2)
++	{
++		fprintf(stderr, "DE25 arming content descriptor: %s\n", xml);
++		mgl_parse(xml);
++	}
++#endif
+ 
+ 	memset(sd_image, 0, sizeof(sd_image));
+ 
+@@ -1542,15 +1554,9 @@ void user_io_init(const char *path, const char *xml)
+ 	load_volume();
+ 
+ 	user_io_send_buttons(1);
+-	// Main's DE25 one-shot service launch supplies the content descriptor
+-	// through an argument or a consumed runtime marker. core_path is the
+-	// stable copy made at function entry; use it after platform, storage, and
+-	// video initialization instead of retaining the caller's original buffer.
+-	int content_type = isXmlName(core_path);
+-#ifdef MISTER_DE25
+-	printf("DE25 content descriptor type %d: %s\n", content_type, core_path);
++#ifndef MISTER_DE25
++	if (xml && isXmlName(xml) == 2) mgl_parse(xml);
+ #endif
+-	if (content_type == 2) mgl_parse(core_path);
+ 
+ 	switch (core_type)
+ 	{

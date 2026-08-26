@@ -1,0 +1,44 @@
+diff --git a/NES.sv b/NES.sv
+--- a/NES.sv
++++ b/NES.sv
+@@ -583,7 +583,12 @@
+ // 6  IN    P2D0        TX+
+ 
+ reg [3:0] user_out_low;
++`ifdef DE25_NES_GPI_DIAGNOSTIC
++wire [5:0] de25_gpi_diagnostic;
++assign USER_OUT = {1'b1, de25_gpi_diagnostic};
++`else
+ assign USER_OUT = {3'b111, user_out_low};
++`endif
+ 
+ reg [4:0] joypad1_data, joypad2_data;
+ 
+@@ -1175,6 +1180,27 @@ wire [1:0] reticle;
+ wire hold_reset;
+ wire ce_pix;
+ wire HSync,VSync,HBlank,VBlank;
++`ifdef DE25_NES_GPI_DIAGNOSTIC
++// Stable state exported through the DE25 HPS GPI diagnostic field. PPU
++// activity latches after the first observed cycle transition outside reset.
++reg [8:0] de25_last_cycle = 9'd0;
++reg       de25_ppu_active = 1'b0;
++always @(posedge clk) begin
++	de25_last_cycle <= cycle;
++	if(reset_nes)
++		de25_ppu_active <= 1'b0;
++	else if(cycle != de25_last_cycle)
++		de25_ppu_active <= 1'b1;
++end
++assign de25_gpi_diagnostic = {
++	de25_ppu_active,
++	~reset_nes,
++	~loader_fail,
++	rom_loaded,
++	de25_ram_active,
++	clock_locked
++};
++`endif
+ wire [7:0] nes_R,nes_G,nes_B;
+ `ifdef DE25_NES_DIAGNOSTIC
+ // Eight red/green blocks across the upper-left of the active NES image:

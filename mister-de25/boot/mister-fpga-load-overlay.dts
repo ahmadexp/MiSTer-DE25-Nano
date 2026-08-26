@@ -1,0 +1,15 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    fragment@0 {
+        target-path = "/fpga-region";
+
+        __overlay__ {
+            #address-cells = <2>;
+            #size-cells = <2>;
+            firmware-name = "mister-de25-core.rbf";
+            config-complete-timeout-us = <30000000>;
+        };
+    };
+};

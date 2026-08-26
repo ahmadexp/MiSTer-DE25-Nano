@@ -1,0 +1,102 @@
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+set_global_assignment -name TOP_LEVEL_ENTITY de25_pc110_diag
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.1.1 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/adv7513_init.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_pc110_diag.sv
+set_global_assignment -name IP_FILE ../ip/ResetRelease.ip
+set_global_assignment -name SDC_FILE DE25_PC110_DIAG.sdc
+
+# DE25-Nano rev-B clock, switch, key, LED, and HDMI assignments. These are
+# taken from Terasic's rev-B v1.0.0 Golden_top and HDMI_TX projects.
+set_instance_assignment -name IO_STANDARD "1.1-V" -to CLOCK0_50
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CLOCK1_50
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CLOCK2_50
+set_location_assignment PIN_DJ35 -to CLOCK0_50
+set_location_assignment PIN_V16  -to CLOCK1_50
+set_location_assignment PIN_BF23 -to CLOCK2_50
+
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to KEY[*]
+set_location_assignment PIN_C8  -to KEY[0]
+set_location_assignment PIN_C11 -to KEY[1]
+
+set_instance_assignment -name IO_STANDARD "1.1-V" -to SW[*]
+set_location_assignment PIN_DK24 -to SW[0]
+set_location_assignment PIN_DD24 -to SW[1]
+set_location_assignment PIN_DD27 -to SW[2]
+set_location_assignment PIN_DF27 -to SW[3]
+
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[*]
+set_location_assignment PIN_DF35 -to LED[0]
+set_location_assignment PIN_DJ32 -to LED[1]
+set_location_assignment PIN_DN22 -to LED[2]
+set_location_assignment PIN_DP23 -to LED[3]
+set_location_assignment PIN_DN25 -to LED[4]
+set_location_assignment PIN_DP25 -to LED[5]
+set_location_assignment PIN_DJ27 -to LED[6]
+set_location_assignment PIN_DP30 -to LED[7]
+
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_LRCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_MCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_SCLK
+set_instance_assignment -name IO_STANDARD "1.1-V" -to HDMI_TX_CLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_TX_HS
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_TX_VS
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_TX_D[*]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_TX_DE
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_I2C_SCL
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_I2C_SDA
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_TX_INT
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to HDMI_I2S
+
+set_location_assignment PIN_BR6  -to HDMI_LRCLK
+set_location_assignment PIN_CF1  -to HDMI_MCLK
+set_location_assignment PIN_BW1  -to HDMI_SCLK
+set_location_assignment PIN_DJ24 -to HDMI_TX_CLK
+set_location_assignment PIN_BR11 -to HDMI_TX_HS
+set_location_assignment PIN_BR14 -to HDMI_TX_VS
+set_location_assignment PIN_AV19 -to HDMI_TX_D[0]
+set_location_assignment PIN_AT11 -to HDMI_TX_D[1]
+set_location_assignment PIN_BE11 -to HDMI_TX_D[2]
+set_location_assignment PIN_AV14 -to HDMI_TX_D[3]
+set_location_assignment PIN_AT19 -to HDMI_TX_D[4]
+set_location_assignment PIN_AT14 -to HDMI_TX_D[5]
+set_location_assignment PIN_AV16 -to HDMI_TX_D[6]
+set_location_assignment PIN_AV11 -to HDMI_TX_D[7]
+set_location_assignment PIN_BH11 -to HDMI_TX_D[8]
+set_location_assignment PIN_BE14 -to HDMI_TX_D[9]
+set_location_assignment PIN_BE19 -to HDMI_TX_D[10]
+set_location_assignment PIN_BH14 -to HDMI_TX_D[11]
+set_location_assignment PIN_BV6  -to HDMI_TX_D[12]
+set_location_assignment PIN_BJ23 -to HDMI_TX_D[13]
+set_location_assignment PIN_BV4  -to HDMI_TX_D[14]
+set_location_assignment PIN_BU23 -to HDMI_TX_D[15]
+set_location_assignment PIN_BH16 -to HDMI_TX_D[16]
+set_location_assignment PIN_DA1  -to HDMI_TX_D[17]
+set_location_assignment PIN_BH19 -to HDMI_TX_D[18]
+set_location_assignment PIN_CP2  -to HDMI_TX_D[19]
+set_location_assignment PIN_CM1  -to HDMI_TX_D[20]
+set_location_assignment PIN_DA2  -to HDMI_TX_D[21]
+set_location_assignment PIN_CP1  -to HDMI_TX_D[22]
+set_location_assignment PIN_CU2  -to HDMI_TX_D[23]
+set_location_assignment PIN_CJ2  -to HDMI_TX_DE
+set_location_assignment PIN_BT1  -to HDMI_I2C_SCL
+set_location_assignment PIN_BW2  -to HDMI_I2C_SDA
+set_location_assignment PIN_CF2  -to HDMI_TX_INT
+set_location_assignment PIN_CB2  -to HDMI_I2S
+
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO11
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X4"
+set_global_assignment -name ACTIVE_SERIAL_CLOCK AS_FREQ_125MHZ
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to HDMI_TX_CLK -disable

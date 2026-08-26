@@ -1,0 +1,129 @@
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+if {![info exists de25_platform_revision_owns_top_level]} {
+    set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+}
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.3 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_sms
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_HDMI_BOB_DEINT=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_FB=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_FB=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SDRAM=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SPLIT_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "DE25_AGILEX_PLL_RECONFIG=1"
+set_global_assignment -name VERILOG_MACRO "DE25_VIDEO_SCALER=1"
+
+set_global_assignment -name SEARCH_PATH ../rtl
+set_global_assignment -name SEARCH_PATH ../upstream/cores/SMS
+set_global_assignment -name SEARCH_PATH ../upstream/cores/SMS/sys
+set_global_assignment -name SEARCH_PATH ../upstream/cores/SMS/rtl
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_menu_top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_hps_warm_reset_handshake.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_reset_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_gp_bridge.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_audio.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_sdram_quiesce.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_axil.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_reconfig_axil.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_sms_pll_profiles.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_sms_pll.sv
+set_global_assignment -name VHDL_FILE ../../sys/ascal.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/adv7513_init.sv
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/sys/math.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/sys/hps_io.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/Menu/sys/osd.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/sys/video_freak.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/sys/gamma_corr.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/sys/video_freezer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/sys/hq2x.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/SMS/sys/scandoubler.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/sys/video_mixer.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/SMS/sys/arcade_video.v
+
+set_global_assignment -name QIP_FILE ../upstream/cores/SMS/rtl/T80/T80.qip
+set_global_assignment -name QIP_FILE ../upstream/cores/SMS/rtl/VM2413/OPLL.qip
+set_global_assignment -name QIP_FILE ../upstream/cores/SMS/rtl/jt89/jt89.qip
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/savestate_ui.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/savestates.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/MC8123.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/SEGASYS1_PRGDEC.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/parts.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/compressor.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/sdram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/cheatcodes.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/lightgun.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/rtl/keyboard.sv
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/video.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/sprom.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/spram.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/dpram.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/vdp_sprite_shifter.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/vdp_sprites.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/vdp_background.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/vdp_main.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/vdp_cram.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/vdp.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/io.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/AudioMix.vhd
+set_global_assignment -name VHDL_FILE ../upstream/cores/SMS/rtl/system.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/SMS.sv
+set_global_assignment -name MIF_FILE ../upstream/cores/SMS/rtl/mboot.mif
+
+set_global_assignment -name QSYS_FILE ../ip/mister_pll.qsys
+set_global_assignment -name QSYS_FILE ../ip/sms_core_pll_cal.qsys
+set_global_assignment -name IP_FILE ../ip/ip/mister_pll/mister_pll_system_pll.ip
+set_global_assignment -name IP_FILE ../ip/ip/sms_core_pll_cal/sms_core_pll_cal_cal_0.ip
+set_global_assignment -name IP_FILE ../ip/ip/sms_core_pll_cal/sms_core_pll_cal_iopll_0.ip
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/mister_hps.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_ddram_cdc.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_gp_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/mister_hps/mister_hps_mister_gp_out.ip
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/jtag_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/hps_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/peripheral_subsys.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/clk_100.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/ext_hps_f2sdram_master.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/qsys_top_ace5lite_cache_coherency_translator_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/user_rst_clkgate_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/agilex_hps.ip
+set_global_assignment -name QIP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/f2sdram_adapter/f2sdram_adapter.qip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/qsys_top/emif_io96b_hps.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/fpga_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_f2sdram.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/button_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/dipsw_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/led_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/pb_cpu_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/sysid.ip
+
+set_global_assignment -name SDC_FILE DE25_MISTER_MENU.sdc
+source de25_mister_rev_b_pins.tcl
+source de25_mister_hps_partition.tcl
+
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to DRAM_*
+set_instance_assignment -name FAST_OUTPUT_REGISTER OFF -to DRAM_DQ[*]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER OFF -to DRAM_DQ[*]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to DRAM_DQ[*]
+
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO11
+set_global_assignment -name HPS_INITIALIZATION "HPS First"
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X4"
+set_global_assignment -name ACTIVE_SERIAL_CLOCK AS_FREQ_125MHZ
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_global_assignment -name POWER_APPLY_THERMAL_MARGIN ADDITIONAL

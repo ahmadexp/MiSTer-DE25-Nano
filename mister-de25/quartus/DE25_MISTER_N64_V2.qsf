@@ -1,0 +1,47 @@
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_n64_v2
+set_global_assignment -name VERILOG_MACRO "DE25_HPS_BUS_49=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_FB=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SDRAM=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SPLIT_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_FB=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_DOWNSCALE_NN=1"
+set_global_assignment -name VERILOG_MACRO "MISTER_DISABLE_ALSA=1"
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+source de25_n64_settings.tcl
+
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_N64_MiSTer
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_N64_MiSTer/sys
+set_global_assignment -name SEARCH_PATH ../upstream/official/MiSTer-devel_N64_MiSTer/rtl
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/sys/hps_io.sv
+set_global_assignment -name QIP_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/N64.qip
+set_global_assignment -name VHDL_FILE ../rtl/n64_agilex_ram.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../rtl/n64_agilex_ram.vhd
+# N64 VHDL instantiates these entities from library MEM. Quartus 25 does not
+# preserve the old implicit library association when it imports mem.qip, so
+# keep the assignments explicit just as in the PSX project.
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/SyncFifo.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/SyncFifoFallThrough.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/SyncFifoFallThroughMLAB.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/SyncRam.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/SyncRamDual.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/SyncRamDualNotPow2.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/SyncRamDualByteEnable.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/dpram.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/RamMLAB.vhd
+set_global_assignment -library MEM -name VHDL_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/Shiftreg.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/sdram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/savestate_ui.sv
+set_global_assignment -name VERILOG_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/rtl/N64_SNAC.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/official/MiSTer-devel_N64_MiSTer/N64.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/n64_core_pll_wrapper.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/mister_sync_fix.sv
+set_global_assignment -name QSYS_FILE ../ip/n64_core_pll.qsys
+set_global_assignment -name IP_FILE ../ip/ip/n64_core_pll/n64_core_pll_iopll_0.ip
+set_global_assignment -name QSYS_FILE ../ip/n64_video_pll.qsys
+set_global_assignment -name IP_FILE ../ip/ip/n64_video_pll/n64_video_pll_iopll_0.ip
+
+source de25_simple_persona_base.qsf
+source de25_platform_v2.qsf
+set_global_assignment -name SDC_FILE DE25_MISTER_N64_V2.sdc

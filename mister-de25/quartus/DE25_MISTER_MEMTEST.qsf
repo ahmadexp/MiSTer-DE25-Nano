@@ -1,0 +1,90 @@
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.3 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_memtest
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+set_global_assignment -name VERILOG_CU_MODE MFCU
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_HDMI_BOB_DEINT=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SDRAM=1"
+set_global_assignment -name VERILOG_MACRO "DE25_CORE_HAS_SPLIT_SDRAM_DQ=1"
+set_global_assignment -name VERILOG_MACRO "DE25_AGILEX_PLL_RECONFIG=1"
+
+set_global_assignment -name SEARCH_PATH ../rtl
+set_global_assignment -name SEARCH_PATH ../upstream/cores/MemTest
+set_global_assignment -name SEARCH_PATH ../upstream/cores/MemTest/sys
+set_global_assignment -name SEARCH_PATH ../upstream/cores/MemTest/rtl
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_menu_top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_hps_warm_reset_handshake.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_reset_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_gp_bridge.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_audio.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_sdram_quiesce.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_avmm.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_reconfig.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_axil.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_reconfig_axil.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_memtest_pll_profiles.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_memtest_pll.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/adv7513_init.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/Menu/sys/hps_io.sv
+set_global_assignment -name VERILOG_FILE ../upstream/cores/Menu/sys/osd.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/MemTest/rtl/sdram.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/MemTest/rtl/vgaout.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/MemTest/rtl/rnd_vec_gen.v
+set_global_assignment -name VERILOG_FILE ../upstream/cores/MemTest/rtl/tester.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/MemTest/memtest.sv
+
+set_global_assignment -name QSYS_FILE ../ip/mister_pll.qsys
+set_global_assignment -name QSYS_FILE ../ip/memtest_core_pll_cal.qsys
+set_global_assignment -name QSYS_FILE ../ip/memtest_video_pll.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/mister_hps.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/jtag_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/hps_subsys.qsys
+set_global_assignment -name QSYS_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/peripheral_subsys.qsys
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/clk_100.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/ext_hps_f2sdram_master.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/qsys_top_ace5lite_cache_coherency_translator_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/ip/qsys_top/user_rst_clkgate_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/agilex_hps.ip
+set_global_assignment -name QIP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/hps_subsys/f2sdram_adapter/f2sdram_adapter.qip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/hps_subsys/ip/qsys_top/emif_io96b_hps.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/fpga_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_f2sdram.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/hps_m.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/jtag_subsys/ip/jtag_subsys/jtag_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/button_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/dipsw_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/led_pio.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/pb_cpu_0.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_clk.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/periph_rst_in.ip
+set_global_assignment -name IP_FILE ../../de25-nano/vendor/terasic-ghrd/peripheral_subsys/ip/peripheral_subsys/sysid.ip
+
+set_global_assignment -name SDC_FILE DE25_MISTER_MENU.sdc
+source de25_mister_rev_b_pins.tcl
+source de25_mister_hps_partition.tcl
+
+# Preserve MiSTer's SDR SDRAM I/O-register placement intent. Dedicated pin
+# registers minimize the round-trip read delay and keep command/data launch
+# skew small on the DE25-Nano's onboard SDRAM bus.
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to DRAM_*
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to DRAM_DQ[*]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to DRAM_DQ[*]
+
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO11
+set_global_assignment -name HPS_INITIALIZATION "HPS First"
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X4"
+set_global_assignment -name ACTIVE_SERIAL_CLOCK AS_FREQ_125MHZ
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_global_assignment -name POWER_APPLY_THERMAL_MARGIN ADDITIONAL

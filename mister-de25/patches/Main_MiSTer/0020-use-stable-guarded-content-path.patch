@@ -1,0 +1,20 @@
+diff --git a/user_io.cpp b/user_io.cpp
+--- a/user_io.cpp
++++ b/user_io.cpp
+@@ -1542,7 +1542,15 @@ void user_io_init(const char *path, const char *xml)
+ 	load_volume();
+ 
+ 	user_io_send_buttons(1);
+-	if (xml && isXmlName(xml) == 2) mgl_parse(xml);
++	// Main's DE25 one-shot service launch supplies the content descriptor
++	// through an argument or a consumed runtime marker. core_path is the
++	// stable copy made at function entry; use it after platform, storage, and
++	// video initialization instead of retaining the caller's original buffer.
++	int content_type = isXmlName(core_path);
++#ifdef MISTER_DE25
++	printf("DE25 content descriptor type %d: %s\n", content_type, core_path);
++#endif
++	if (content_type == 2) mgl_parse(core_path);
+ 
+ 	switch (core_type)
+ 	{

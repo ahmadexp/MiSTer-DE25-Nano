@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Read Platform V2 Si5332 status through the HPS lightweight bridge."""
+
+import mmap
+import os
+import struct
+import sys
+import time
+
+
+LW_BRIDGE_BASE = 0x20000000
+LW_BRIDGE_SPAN = 0x00400000
+GPO_OFFSET = 0x00020000
+GPI_OFFSET = 0x00020010
+LIVE_BIT = 1 << 31
+SELECTOR_MASK = 0x001E001F
+DIAGNOSTIC_SHIFT = 21
+DIAGNOSTIC_MASK = 0x3F
+
+
+def read_u32(mapping: mmap.mmap, offset: int) -> int:
+    return struct.unpack_from("<I", mapping, offset)[0]
+
+
+def write_u32(mapping: mmap.mmap, offset: int, value: int) -> None:
+    struct.pack_into("<I", mapping, offset, value & 0xFFFFFFFF)
+
+
+def read_page(mapping: mmap.mmap, base: int, page: int) -> int:
+    write_u32(mapping, GPO_OFFSET, base | page)
+    time.sleep(0.005)
+    return (read_u32(mapping, GPI_OFFSET) >> DIAGNOSTIC_SHIFT) & DIAGNOSTIC_MASK
+
+
+def main() -> int:
+    if os.geteuid() != 0:
+        print("root is required to read the lightweight bridge", file=sys.stderr)
+        return 2
+
+    with open("/dev/mem", "r+b", buffering=0) as device:
+        mapping = mmap.mmap(
+            device.fileno(),
+            LW_BRIDGE_SPAN,
+            flags=mmap.MAP_SHARED,
+            prot=mmap.PROT_READ | mmap.PROT_WRITE,
+            offset=LW_BRIDGE_BASE,
+        )
+        saved_gpo = read_u32(mapping, GPO_OFFSET)
+        base_gpo = ((saved_gpo | LIVE_BIT) & ~SELECTOR_MASK) & 0xFFFFFFFF
+        try:
+            probe = read_page(mapping, base_gpo, 0)
+            flags = read_page(mapping, base_gpo, 1)
+
+            identity = 0
+            for page in range(2, 18):
+                identity |= read_page(mapping, base_gpo, page) << (6 * (page - 2))
+
+            clock1_khz = 0
+            for page in range(18, 22):
+                clock1_khz |= read_page(mapping, base_gpo, page) << (6 * (page - 18))
+
+            clock2_khz = 0
+            for page in range(22, 26):
+                clock2_khz |= read_page(mapping, base_gpo, page) << (6 * (page - 22))
+
+            address = (read_page(mapping, base_gpo, 26) << 1) | (flags & 1)
+        finally:
+            write_u32(mapping, GPO_OFFSET, saved_gpo)
+            mapping.close()
+
+    print(
+        f"probe=0x{probe:02X} identity_valid={(flags >> 5) & 1} "
+        f"clocks_ready={(flags >> 4) & 1} fault={(flags >> 3) & 1}"
+    )
+    print(f"address=0x{address:02X} identity=0x{identity:024X}")
+    print(f"CLOCK1_50={clock1_khz} kHz CLOCK2_50={clock2_khz} kHz")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

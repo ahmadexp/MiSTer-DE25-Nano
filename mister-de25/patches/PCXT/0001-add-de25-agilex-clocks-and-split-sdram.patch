@@ -1,0 +1,77 @@
+--- a/PCXT.sv
++++ b/PCXT.sv
+@@ -173,7 +173,13 @@
+         output        SDRAM_CKE,
+         output [12:0] SDRAM_A,
+         output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++        input  [15:0] de25_sdram_dq_in,
++        output [15:0] de25_sdram_dq_out,
++        output        de25_sdram_dq_oe,
++`else
+         inout  [15:0] SDRAM_DQ,
++`endif
+         output        SDRAM_DQML,
+         output        SDRAM_DQMH,
+         output        SDRAM_nCS,
+@@ -449,6 +455,7 @@
+ 
+     wire clk_sys;
+     wire pll_locked;
++    wire pll_system_locked;
+ 
+     wire clk_100;
+     wire clk_28_636;
+@@ -464,6 +471,20 @@
+ 
+     localparam [27:0] cur_rate = 28'd50000000;
+ 
++`ifdef DE25_AGILEX_PLL
++    de25_pcxt_pll pll_all (
++        .refclk(CLK_50M),
++        .reset(RESET),
++        .clk_100(clk_100),
++        .clk_chipset(clk_chipset),
++        .clk_28_636(clk_28_636),
++        .clk_57_272(clk_57_272),
++        .clk_114_544(clk_114_544),
++        .clk_video_out_ps(clk_video_out_ps),
++        .locked(pll_locked)
++    );
++    assign pll_system_locked = pll_locked;
++`else
+     pll pll 
+ 	(
+ 		.refclk(CLK_50M),
+@@ -473,8 +494,6 @@
+ 		.locked(pll_locked)
+ 	);
+ 
+-    wire pll_system_locked;
+-
+     pll_system pll_system_inst (
+         .refclk(CLK_50M),
+         .rst(0),
+@@ -484,6 +503,7 @@
+         .outclk_3(clk_video_out_ps),
+         .locked(pll_system_locked)
+     );
++`endif
+ 
+     wire reset_wire = RESET | status[0] | buttons[1] | !pll_locked | !pll_system_locked  | splashscreen | splash_reset_hold | splash_pending;
+     wire video_retime_reset = RESET | status[0] | buttons[1] | !pll_locked | !pll_system_locked | splash_pending;
+@@ -1172,8 +1192,14 @@
+     wire        SDRAM_DQ_IO;
+     wire        initilized_sdram;
+ 
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++    assign SDRAM_DQ_IN = de25_sdram_dq_in;
++    assign de25_sdram_dq_out = SDRAM_DQ_OUT;
++    assign de25_sdram_dq_oe = ~SDRAM_DQ_IO;
++`else
+     assign SDRAM_DQ_IN = SDRAM_DQ;
+     assign SDRAM_DQ = ~SDRAM_DQ_IO ? SDRAM_DQ_OUT : 16'hZZZZ;
++`endif
+ 
+     wire s6_3_mux;
+     wire [2:0] SEGMENT;

@@ -1,0 +1,33 @@
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+set_global_assignment -name TOP_LEVEL_ENTITY de25_remote_rescue
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.3 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_rescue
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_remote_rescue.sv
+set_global_assignment -name SDC_FILE DE25_REMOTE_RESCUE.sdc
+
+set_instance_assignment -name IO_STANDARD "1.1-V" -to CLOCK0_50
+set_location_assignment PIN_DJ35 -to CLOCK0_50
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[0]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[1]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[2]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[3]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[4]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[5]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[6]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to LED[7]
+set_location_assignment PIN_DF35 -to LED[0]
+set_location_assignment PIN_DJ32 -to LED[1]
+set_location_assignment PIN_DN22 -to LED[2]
+set_location_assignment PIN_DP23 -to LED[3]
+set_location_assignment PIN_DN25 -to LED[4]
+set_location_assignment PIN_DP25 -to LED[5]
+set_location_assignment PIN_DJ27 -to LED[6]
+set_location_assignment PIN_DP30 -to LED[7]
+
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ

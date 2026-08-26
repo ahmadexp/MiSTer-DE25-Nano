@@ -1,0 +1,6 @@
+# Sega Master System and Game Gear persona on Platform V2.
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+source DE25_MISTER_SMS.qsf
+
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_sms_v2
+source de25_platform_v2.qsf

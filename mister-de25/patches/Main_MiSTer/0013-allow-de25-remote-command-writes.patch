@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Thu, 13 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Allow DE25 remote command writes
+
+Main creates its command FIFO with mode 0666, but the service umask reduces it
+to 0644. Restore the intended mode explicitly on DE25 so the SSH account can
+request Menu display, status capture, and compatibility-checked core loads
+without root privileges.
+---
+ input.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/input.cpp b/input.cpp
+index 955fb53..072492a 100644
+--- a/input.cpp
++++ b/input.cpp
+@@ -5140,5 +5140,12 @@ int input_test(int getchar)
+ 		unlink(CMD_FIFO);
+ 		mkfifo(CMD_FIFO, 0666);
++#ifdef MISTER_DE25
++		// The service umask otherwise reduces the requested 0666 mode to 0644,
++		// preventing the unprivileged SSH account from issuing remote Menu,
++		// status, and core-load commands.
++		if (chmod(CMD_FIFO, 0666))
++			printf("Unable to make %s remotely writable: %s\n", CMD_FIFO, strerror(errno));
++#endif
+ 
+ 		pool[NUMDEV+1].fd = open(CMD_FIFO, O_RDWR | O_NONBLOCK | O_CLOEXEC);
+ 		pool[NUMDEV+1].events = POLLIN;
+-- 
+2.43.0

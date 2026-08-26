@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+rbf=${1:-/media/fat/menu.rbf}
+fat_root=${MISTER_DE25_FAT_ROOT:-/media/fat}
+firmware=${MISTER_DE25_FIRMWARE:-/lib/firmware/mister-de25-core.rbf}
+overlay_source=${MISTER_DE25_OVERLAY_SOURCE:-/usr/lib/mister-de25/fpga-load.dtbo}
+configfs_root=${MISTER_DE25_CONFIGFS_ROOT:-/sys/kernel/config}
+overlay_root=$configfs_root/device-tree/overlays
+overlay_dir=$overlay_root/mister-de25
+region_sysfs=${MISTER_DE25_REGION_SYSFS:-/sys/class/fpga_region/region0}
+manager_state=${MISTER_DE25_MANAGER_STATE:-/sys/class/fpga_manager/fpga0/state}
+bridge_helper=${MISTER_DE25_BRIDGE_HELPER:-/usr/libexec/mister-de25-bridge}
+compatibility_helper=${MISTER_DE25_COMPATIBILITY_HELPER:-/usr/libexec/mister-de25-check-rbf}
+migration_helper=${MISTER_DE25_MIGRATION_HELPER:-/usr/libexec/mister-de25-platform-migration}
+watchdog_helper=${MISTER_DE25_WATCHDOG_HELPER:-/usr/libexec/mister-de25-watchdog-run}
+watchdog_armed=${MISTER_DE25_WATCHDOG_ARMED:-0}
+load_state_dir=${MISTER_DE25_LOAD_STATE_DIR:-/var/lib/mister-de25}
+load_pending=$load_state_dir/fpga-load.pending
+last_failed_load=$load_state_dir/fpga-load.last-failed
+current_load=$load_state_dir/fpga-load.current
+
+if [[ ! -s $rbf ]]; then
+    echo "MiSTer RBF is missing or empty: $rbf" >&2
+    exit 1
+fi
+if [[ ! -s $overlay_source ]]; then
+    echo "MiSTer FPGA-region overlay is missing: $overlay_source" >&2
+    exit 1
+fi
+if [[ ! -x $bridge_helper ]]; then
+    echo "MiSTer bridge helper is missing: $bridge_helper" >&2
+    exit 1
+fi
+if [[ ! -x $compatibility_helper ]]; then
+    echo "MiSTer compatibility helper is missing: $compatibility_helper" >&2
+    exit 1
+fi
+if [[ ! -x $migration_helper ]]; then
+    echo "MiSTer platform migration helper is missing: $migration_helper" >&2
+    exit 1
+fi
+if [[ ! -x $watchdog_helper ]]; then
+    echo "MiSTer hardware-watchdog helper is missing: $watchdog_helper" >&2
+    exit 1
+fi
+
+"$migration_helper" finalize-boot
+"$compatibility_helper" "$rbf"
+
+rbf_path=$(readlink -f "$rbf" 2>/dev/null || printf '%s' "$rbf")
+rbf_digest=$(sha256sum "$rbf" | awk '{print $1}')
+
+mkdir -p "$load_state_dir"
+boot_id=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || printf unknown)
+
+if [[ -s $load_pending ]]; then
+    IFS=$'\t' read -r failed_rbf failed_boot <"$load_pending" || true
+    printf '%s\t%s\t%s\n' "$failed_rbf" "$failed_boot" "$boot_id" \
+        >"$last_failed_load"
+    rm -f "$load_pending"
+    sync "$load_state_dir"
+    echo "Previous DE25-Nano FPGA load did not complete: $failed_rbf" >&2
+
+    # If the boot Menu itself caused the preceding watchdog reset, do not
+    # create a permanent reboot loop. Leave the QSPI fabric active so Linux,
+    # Ethernet, and JTAG remain available for recovery.
+    if [[ $failed_rbf == "$rbf" && ${rbf##*/} == menu.rbf ]]; then
+        echo "Skipping repeated failed Menu load; recovery services remain available" >&2
+        exit 1
+    fi
+fi
+
+# Preload owns the persistent watchdog keeper, while Main independently
+# verifies that Menu is present before its first MMIO access. Treat the second
+# request as an idempotent success when this boot already loaded the exact same
+# payload and the FPGA manager still reports user mode. This preserves the
+# keeper's service lifetime without performing an unsafe duplicate transition.
+if [[ -s $current_load && -r $manager_state ]] && \
+   [[ $(<"$manager_state") == operating ]]; then
+    IFS=$'\t' read -r current_path current_digest current_boot \
+        <"$current_load" || true
+    if [[ $current_boot == "$boot_id" && \
+          $current_digest == "$rbf_digest" ]]; then
+        echo "DE25-Nano FPGA already operates with $(basename "$rbf_path")"
+        exit 0
+    fi
+fi
+
+# Re-enter only the validated operation beneath the hardware watchdog. The
+# recursive invocation repeats all checks, then reaches the programming path
+# with MISTER_DE25_WATCHDOG_ARMED set.
+if [[ $watchdog_armed != 1 ]]; then
+    exec env MISTER_DE25_WATCHDOG_ARMED=1 \
+        "$watchdog_helper" "$0" "$rbf"
+fi
+
+# Do not rely on udev coldplug winning a boot-time race with this service.
+# of-fpga-region registers region0 only after the Agilex secure-service FPGA
+# manager exists, and that manager is provided by stratix10_soc.
+modprobe stratix10_soc
+modprobe of-fpga-region
+for _ in {1..100}; do
+    [[ -d $region_sysfs ]] && break
+    sleep 0.01
+done
+if [[ ! -d $region_sysfs ]]; then
+    echo "Linux did not register FPGA region0" >&2
+    exit 1
+fi
+
+mkdir -p "$(dirname "$firmware")" "$configfs_root"
+install -m 0644 "$rbf" "$firmware.new"
+sync "$firmware.new"
+mv -f "$firmware.new" "$firmware"
+
+printf '%s\t%s\n' "$rbf" "$boot_id" >"$load_pending"
+sync "$load_pending" "$load_state_dir"
+
+if [[ ! -d $overlay_root ]]; then
+    mount -t configfs configfs "$configfs_root"
+fi
+
+rmdir "$overlay_dir" 2>/dev/null || true
+mkdir "$overlay_dir"
+"$bridge_helper" disable
+if cp "$overlay_source" "$overlay_dir/dtbo"; then
+    :
+else
+    saved_status=$?
+    rmdir "$overlay_dir" 2>/dev/null || true
+    exit "$saved_status"
+fi
+
+if [[ $(<"$overlay_dir/status") != applied ]]; then
+    echo "MiSTer FPGA-region overlay did not reach applied state" >&2
+    exit 1
+fi
+
+for _ in {1..3000}; do
+    if [[ -r $manager_state ]] && [[ $(<"$manager_state") == operating ]]; then
+        "$bridge_helper" enable
+        printf '%s\t%s\t%s\n' "$rbf_path" "$rbf_digest" "$boot_id" \
+            >"$current_load.new"
+        mv -f "$current_load.new" "$current_load"
+        rm -f "$load_pending"
+        sync "$load_state_dir"
+        echo "DE25-Nano FPGA is operating with $(basename "$rbf")"
+        exit 0
+    fi
+    sleep 0.01
+done
+
+echo "Timed out waiting for the DE25-Nano FPGA to enter user mode" >&2
+exit 1

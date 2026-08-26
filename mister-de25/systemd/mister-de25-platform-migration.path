@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for a verified DE25-Nano platform migration request
+RequiresMountsFor=/media/fat
+
+[Path]
+PathExists=/media/fat/.mister-de25/headless-migration/request
+Unit=mister-de25-platform-migration-request.service
+
+[Install]
+WantedBy=multi-user.target

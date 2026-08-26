@@ -1,0 +1,27 @@
+diff --git a/memtest.sv b/memtest.sv
+--- a/memtest.sv
++++ b/memtest.sv
+@@ -384,14 +384,19 @@ always @(posedge CLK_50M) begin
+ 	end
+ 	
+ 	if(status[0] | buttons[1]) begin
++	`ifdef DE25_AGILEX_PLL_RECONFIG
++		// The generated IOPLL already boots in the signed-off 80 MHz profile.
++		// A normal reset does not need to rewrite the same PLL profile.
++		recfg <= 0;
++	`else
+ 		recfg <= 1;
+-	`ifdef DE25_AGILEX_PLL_RECONFIG
+-		pos <= 36;
+-		auto <= 0;
+-	`else
+ 		pos <= 0;
+ 		auto <= 1;
+ 	`endif
++	`ifdef DE25_AGILEX_PLL_RECONFIG
++		pos <= 36;
++		auto <= 0;
++	`endif
+ 		sdram_chip <= 0;
+ 	end
+ end

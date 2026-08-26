@@ -1,0 +1,68 @@
+diff --git a/arch/arm64/boot/dts/intel/socfpga_agilex5_de25_nano.dts b/arch/arm64/boot/dts/intel/socfpga_agilex5_de25_nano.dts
+--- a/arch/arm64/boot/dts/intel/socfpga_agilex5_de25_nano.dts
++++ b/arch/arm64/boot/dts/intel/socfpga_agilex5_de25_nano.dts
+@@ -42,6 +42,8 @@
+ };
+ 
+ &gmac0 {
++	/delete-property/ iommus;
++	/delete-property/ dma-coherent;
+ 	status = "okay";
+ 	phy-mode = "rgmii";
+ 	phy-handle = <&emac0_phy0>;
+@@ -60,6 +62,8 @@
+ };
+ 
+ &mmc {
++	/delete-property/ iommus;
++	/delete-property/ dma-coherent;
+ 	status = "okay";
+ 	bus-width = <4>;
+ 	no-1-8-v;
+@@ -121,10 +125,46 @@
+ };
+ 
+ &usb0 {
++	/delete-property/ iommus;
+ 	status = "okay";
+ 	disable-over-current;
+ };
+ 
++/*
++ * The Agilex 5 SMMU command queue stops consuming commands after a full
++ * phase-2 FPGA transition. Keep only the SDM service stream translated. All
++ * ordinary peripherals use direct, noncoherent DMA with normal CPU cache
++ * maintenance, so Linux remains alive after the fabric enters user mode.
++ */
++&gmac1 {
++	/delete-property/ iommus;
++	/delete-property/ dma-coherent;
++};
++
++&gmac2 {
++	/delete-property/ iommus;
++	/delete-property/ dma-coherent;
++};
++
++&nand {
++	/delete-property/ iommus;
++	/delete-property/ dma-coherent;
++};
++
++&dmac0 {
++	/delete-property/ iommus;
++	/delete-property/ dma-coherent;
++};
++
++&dmac1 {
++	/delete-property/ iommus;
++	/delete-property/ dma-coherent;
++};
++
++&usb31 {
++	/delete-property/ iommus;
++};
++
+ &smmu {
+ 	status = "okay";
+ };

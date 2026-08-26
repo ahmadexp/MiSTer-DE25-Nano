@@ -1,0 +1,43 @@
+diff --git a/NES.sv b/NES.sv
+--- a/NES.sv
++++ b/NES.sv
+@@ -1175,7 +1175,30 @@ wire [1:0] reticle;
+ wire hold_reset;
+ wire ce_pix;
+ wire HSync,VSync,HBlank,VBlank;
+-wire [7:0] R,G,B;
++wire [7:0] nes_R,nes_G,nes_B;
++`ifdef DE25_NES_DIAGNOSTIC
++// Eight red/green blocks across the upper-left of the active NES image:
++// PLL lock, SDRAM active, ROM seen, loader done, no loader error, loader
++// idle, download reset released, and console reset released.
++wire [7:0] de25_diag_flags;
++assign de25_diag_flags[0] = clock_locked;
++assign de25_diag_flags[1] = de25_ram_active;
++assign de25_diag_flags[2] = rom_loaded;
++assign de25_diag_flags[3] = loader_done;
++assign de25_diag_flags[4] = ~loader_fail;
++assign de25_diag_flags[5] = ~loader_busy;
++assign de25_diag_flags[6] = ~download_reset;
++assign de25_diag_flags[7] = ~reset_nes;
++wire de25_diag_band = (scanline < 9'd16) && (cycle < 9'd256);
++wire de25_diag_good = de25_diag_flags[cycle[7:5]];
++wire [7:0] R = de25_diag_band ? (de25_diag_good ? 8'h00 : 8'hff) : nes_R;
++wire [7:0] G = de25_diag_band ? (de25_diag_good ? 8'hff : 8'h00) : nes_G;
++wire [7:0] B = de25_diag_band ? 8'h00 : nes_B;
++`else
++wire [7:0] R = nes_R;
++wire [7:0] G = nes_G;
++wire [7:0] B = nes_B;
++`endif
+ 
+ wire [1:0] nes_ce_video = corepaused ? videopause_ce : nes_ce;
+ 
+@@ -1183,4 +1206,7 @@ video video
+ (
+ 	.*,
++	.R(nes_R),
++	.G(nes_G),
++	.B(nes_B),
+ 	.clk(clk),
+ 	.reset(reset_nes),

@@ -1,0 +1,78 @@
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -736,7 +736,11 @@ uint32_t fpga_core_read(uint32_t offset)
+ 
+ int fpga_io_init()
+ {
++#ifdef MISTER_DE25
++	map_base = (uint32_t*)shmem_map_physical(FPGA_REG_BASE, FPGA_REG_SIZE);
++#else
+ 	map_base = (uint32_t*)shmem_map(FPGA_REG_BASE, FPGA_REG_SIZE);
++#endif
+ 	if (!map_base) return -1;
+ 
+ 	fpga_gpo_write(0);
+diff --git a/shmem.cpp b/shmem.cpp
+--- a/shmem.cpp
++++ b/shmem.cpp
+@@ -15,16 +15,8 @@
+ 
+ static int memfd = -1;
+ 
+-void *shmem_map(uint32_t address, uint32_t size)
++static void *shmem_map_address(uint32_t address, uint32_t size)
+ {
+-#ifdef MISTER_DE25
+-	// MiSTer cores and Main agree on DE10 DDR offsets, including the control
+-	// page below the normal 512 MiB core window. Agilex 5 LPDDR begins at
+-	// 0x80000000, so translate the complete 1 GiB logical DDR address space.
+-	if (address < 0x40000000)
+-		address += 0x80000000;
+-#endif
+-
+ 	if (memfd < 0)
+ 	{
+ 		memfd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
+@@ -37,6 +29,28 @@ void *shmem_map(uint32_t address, uint32_t size)
+ 	return res;
+ }
+ 
++void *shmem_map(uint32_t address, uint32_t size)
++{
++#ifdef MISTER_DE25
++	// MiSTer cores and Main agree on DE10 DDR offsets, including the control
++	// page below the normal 512 MiB core window. Agilex 5 LPDDR begins at
++	// 0x80000000, so translate the complete 1 GiB logical DDR address space.
++	if (address < 0x40000000)
++		address += 0x80000000;
++#endif
++
++	return shmem_map_address(address, size);
++}
++
++#ifdef MISTER_DE25
++void *shmem_map_physical(uint32_t address, uint32_t size)
++{
++	// HPS peripheral and bridge addresses must not pass through the logical
++	// MiSTer DDR translation performed by shmem_map().
++	return shmem_map_address(address, size);
++}
++#endif
++
+ int shmem_unmap(void* map, uint32_t size)
+ {
+ 	if (munmap(map, size) < 0)
+diff --git a/shmem.h b/shmem.h
+--- a/shmem.h
++++ b/shmem.h
+@@ -5,6 +5,9 @@
+ #define SHMEM_H
+ 
+ void *shmem_map(uint32_t address, uint32_t size);
++#ifdef MISTER_DE25
++void *shmem_map_physical(uint32_t address, uint32_t size);
++#endif
+ int shmem_unmap(void* map, uint32_t size);
+ int shmem_put(uint32_t address, uint32_t size, void *buf);
+ int shmem_get(uint32_t address, uint32_t size, void *buf);

@@ -1,0 +1,30 @@
+From: DE25-Nano port
+Subject: [PATCH] Validate scaler geometry before screenshots
+
+Reject incomplete or corrupt scaler headers before allocating or copying an
+image. This bounds every framebuffer read to the mapped DE25 scaler aperture.
+
+diff --git a/scaler.cpp b/scaler.cpp
+--- a/scaler.cpp
++++ b/scaler.cpp
+@@ -76,6 +76,20 @@ mister_scaler * mister_scaler_init()
+     ms->output_width =buffer[12]<<8 | buffer[13];
+     ms->output_height=buffer[14]<<8 | buffer[15];
+ 
++    uint64_t image_end = (uint64_t)ms->header;
++    if (ms->height > 0)
++        image_end += (uint64_t)(ms->height - 1) * ms->line;
++    image_end += (uint64_t)ms->width * 3;
++    if (ms->header < 16 || ms->width <= 0 || ms->height <= 0 ||
++        ms->line < ms->width * 3 || image_end > (uint64_t)ms->num_bytes)
++    {
++        printf("Invalid scaler header: width=%i height=%i line=%i "
++               "header=%i end=%" PRIu64 "\n",
++               ms->width, ms->height, ms->line, ms->header, image_end);
++        mister_scaler_free(ms);
++        return NULL;
++    }
++
+     printf ("Image: Width=%i Height=%i  Line=%i  Header=%i output_width=%i output_height=%i \n",ms->width,ms->height,ms->line,ms->header,ms->output_width,ms->output_height);
+    /*
+     printf (" 1: %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X   %02X %02X %02X %02X\n",

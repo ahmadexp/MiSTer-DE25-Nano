@@ -1,0 +1,12 @@
+# tier	name	repository	revision	purpose
+0	Menu	https://github.com/MiSTer-devel/Menu_MiSTer.git	3c3634c0105d78f27aeba66b38966c50dbc42c9b	platform boot and OSD
+0	InputTest	https://github.com/MiSTer-devel/InputTest_MiSTer.git	54fb57cf02834e0ddad96b01860b2d6ab707625f	USB and controller validation
+0	MemTest	https://github.com/MiSTer-devel/MemTest_MiSTer.git	86f89561b325d329ab96dfa6097d895e79ded36a	native SDRAM validation
+1	NES	https://github.com/MiSTer-devel/NES_MiSTer.git	2668b7e811019ba94835f26577b0b376827609e6	baseline console core
+1	SNES	https://github.com/MiSTer-devel/SNES_MiSTer.git	ac616cade7df274a491614e95765ba87164798c7	higher-complexity console core
+1	Minimig	https://github.com/MiSTer-devel/Minimig-AGA_MiSTer.git	809b9558ea8ed4984af119ddf004728c59fae200	computer core with DDRAM and storage
+1	TurboGrafx16	https://github.com/MiSTer-devel/TurboGrafx16_MiSTer.git	827d45f45799b8ab3a536510847f2108a92e81bd	console core with CD and backup storage
+1	Apple-I	https://github.com/MiSTer-devel/Apple-I_MiSTer.git	56159e3bbbb6b450853edf18cdf55ea019daab4a	Apple I computer core
+1	SMS	https://github.com/MiSTer-devel/SMS_MiSTer.git	699962383651a9b2126fc090e6f2aa79b6323877	Sega Master System and Game Gear core
+2	AO486	https://github.com/MiSTer-devel/ao486_MiSTer.git	1a43f583b4b8c5544bbfae621049fc2869904565	486-class PC core with GUS SDRAM
+2	PCXT	https://github.com/MiSTer-devel/PCXT_MiSTer.git	97af0d89f3ecd0ad5330c7ad1b27d258f2f4b1c5	IBM PC and XT core

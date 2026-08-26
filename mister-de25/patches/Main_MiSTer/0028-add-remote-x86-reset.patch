@@ -1,0 +1,29 @@
+From: DE25-Nano port
+Subject: [PATCH] Add remote x86 reset and ROM reload command
+
+Allow headless DE25 bring-up to perform the same ao486 or PCXT reset and ROM
+initialization normally triggered by the physical reset shortcut. The command
+uses MiSTer's existing world-writable command FIFO and changes no other target.
+
+diff --git a/input.cpp b/input.cpp
+--- a/input.cpp
++++ b/input.cpp
+@@ -34,5 +34,8 @@
+ #include "scaler.h"
+ #include "file_io.h"
++#ifdef MISTER_DE25
++#include "support/x86/x86.h"
++#endif
+ 
+ #define NUMDEV 30
+ #define UINPUT_NAME "MiSTer virtual input"
+@@ -6245,5 +6248,9 @@ int input_test(int getchar)
+ 					else if (!strcmp(cmd, "de25_status"))
+ 						MakeFile("/tmp/HW_OSD_VISIBLE", fpga_get_osd_status() ? "1" : "0");
++					else if (!strcmp(cmd, "de25_x86_reset"))
++					{
++						if (is_x86() || is_pcxt()) x86_init();
++					}
+ 					#endif
+ 					else if (!strncmp(cmd, "video_mode ", 11)) video_mode_cmd(cmd + 11);
+ 					else if (!strncmp(cmd, "load_core ", 10))

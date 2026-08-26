@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Thu, 13 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Keep DE25 core switch under systemd
+
+The original MiSTer restart path double-forks because the DE10-Nano launches
+Main outside a service manager. On DE25-Nano, systemd owns Main and interprets
+the parent exit as a service failure, potentially starting another instance
+while the detached successor is active. Replace the process in place on this
+platform so systemd continues tracking the selected core.
+---
+ fpga_io.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+index 0fb4efe..1d59b68 100644
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -886,6 +886,13 @@ void app_restart(const char *path, const char *xml, const char *exe)
+ 	const char *appname = exe ? exe : getappname();
+ 	printf("restarting to %s\n", appname);
+ 
++#ifdef MISTER_DE25
++	// systemd owns the DE25 Main process. Preserve its PID across a core
++	// switch so Restart=always cannot launch a competing second instance.
++	execl(appname, appname, path, xml, NULL);
++	printf("Something went wrong. Rebooting...\n");
++	reboot(1);
++#else
+ 	//a cleaner way to re-start
+ 	pid_t child = fork();
+ 	if (child > 0) _exit(0);
+@@ -898,6 +905,7 @@ void app_restart(const char *path, const char *xml, const char *exe)
+ 	printf("Something went wrong. Rebooting...\n");
+ 	reboot(1);
+ 	_exit(1);
++#endif
+ }
+ 
+ void fpga_core_reset(int reset)
+-- 
+2.43.0

@@ -1,0 +1,16 @@
+[Unit]
+Description=MiSTer ARM64 service for DE25-Nano
+Requires=mister-de25-preload.service
+After=mister-de25-preload.service network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/media/fat
+ExecStart=/media/fat/MiSTer
+Restart=always
+RestartSec=2
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

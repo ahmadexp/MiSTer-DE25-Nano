@@ -1,0 +1,49 @@
+diff --git a/memtest.sv b/memtest.sv
+index f88fecb..1145abd 100644
+--- a/memtest.sv
++++ b/memtest.sv
+@@ -423,7 +423,10 @@ de25_sdram_quiesce de25_ram_quiesce
+ 	.sdram_active(ram_active)
+ );
+ assign SDRAM_CKE = ram_active;
+-assign SDRAM_DQ = (ram_active && sdram_dq_oe) ? sdram_dq_out : 16'bZ;
++// Agilex requires the physical bidirectional buffer at the board top level.
++// Export separate input, output, and output-enable signals to that boundary.
++assign de25_sdram_dq_out = sdram_dq_out;
++assign de25_sdram_dq_oe = ram_active && sdram_dq_oe;
+ `else
+ assign SDRAM_CKE = 1'b1;
+ assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'bZ;
+@@ -450,7 +453,11 @@ tester my_memtst
+ 	.passcount(passcount),
+ 	.failcount(failcount),
+ 	.DRAM_CLK(SDRAM_CLK),
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	.DRAM_DQ_IN(de25_sdram_dq_in),
++`else
+ 	.DRAM_DQ_IN(SDRAM_DQ),
++`endif
+ 	.DRAM_DQ_OUT(sdram_dq_out),
+ 	.DRAM_DQ_OE(sdram_dq_oe),
+ 	.DRAM_ADDR(SDRAM_A),
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+index ad59e00..5153997 100644
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -111,9 +111,16 @@ output        DDRAM_WE,
+ //SDRAM interface with lower latency
+ output        SDRAM_CLK,
+ output        SDRAM_CKE,
+ output [12:0] SDRAM_A,
+ output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++// Board-top bidirectional I/O split used by Agilex compatibility shells.
++input  [15:0] de25_sdram_dq_in,
++output [15:0] de25_sdram_dq_out,
++output        de25_sdram_dq_oe,
++`else
+ inout  [15:0] SDRAM_DQ,
++`endif
+ output        SDRAM_DQML,
+ output        SDRAM_DQMH,
+ output        SDRAM_nCS,

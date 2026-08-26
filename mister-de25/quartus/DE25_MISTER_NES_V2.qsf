@@ -1,0 +1,8 @@
+# NES persona on the shared Platform V2 board contract.
+set_global_assignment -name TOP_LEVEL_ENTITY de25_mister_top
+set de25_platform_revision_owns_top_level 1
+source DE25_MISTER_NES.qsf
+unset de25_platform_revision_owns_top_level
+
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files_nes_v2
+source de25_platform_v2.qsf

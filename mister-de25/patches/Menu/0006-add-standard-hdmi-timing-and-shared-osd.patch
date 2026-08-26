@@ -1,0 +1,115 @@
+diff --git a/menu.sv b/menu.sv
+index 3dbdd0f..b311ee4 100644
+--- a/menu.sv
++++ b/menu.sv
+@@ -29,7 +29,7 @@ wire        locked;
+ wire        clk_sys;
+ wire        de25_sdram_clk;
+ wire        de25_sdram_capture_clk;
+-reg         ce_pix;
++reg         ce_pix = 0;
+ wire        forced_scandoubler;
+ wire [127:0] status_bus;
+ wire  [31:0] status = status_bus[31:0];
+@@ -370,9 +370,9 @@ end
+ 
+ localparam LFSR_WIDTH = 64;
+ 
+-reg   [9:0] hc;
+-reg   [9:0] vc;
+-reg   [9:0] vvc;
++reg   [9:0] hc = 0;
++reg   [9:0] vc = 0;
++reg   [9:0] vvc = 0;
+ 
+ reg  [LFSR_WIDTH-1:0] rnd_reg;
+ wire [LFSR_WIDTH-1:0] rnd;
+@@ -387,6 +387,21 @@ lfsr #(.N(LFSR_WIDTH)) random
+ );
+ 
+ always @(posedge CLK_VIDEO) begin
++`ifdef DE25_STANDARD_HDMI_TIMING
++	ce_pix <= 1;
++	if(hc == 799) begin
++		hc <= 0;
++		if(vc == 524) begin
++			vc <= 0;
++			vvc <= vvc + 9'd6;
++		end else begin
++			vc <= vc + 1'd1;
++		end
++	end else begin
++		hc <= hc + 1'd1;
++	end
++	rnd_reg <= rnd;
++`else
+ 	if(forced_scandoubler) ce_pix <= 1;
+ 		else ce_pix <= ~ce_pix;
+ 
+@@ -405,14 +420,28 @@ always @(posedge CLK_VIDEO) begin
+ 
+ 		rnd_reg <= rnd;
+ 	end
++`endif
+ end
+ 
+-reg HBlank;
+-reg HSync;
+-reg VBlank;
+-reg VSync;
++reg HBlank = 0;
++reg HSync = 1;
++reg VBlank = 0;
++reg VSync = 1;
+ 
+ always @(posedge CLK_VIDEO) begin
++`ifdef DE25_STANDARD_HDMI_TIMING
++	if (hc == 640) HBlank <= 1;
++	else if (hc == 0) HBlank <= 0;
++
++	if (hc == 656) HSync <= 0;
++	else if (hc == 752) HSync <= 1;
++
++	if (vc == 480) VBlank <= 1;
++	else if (vc == 0) VBlank <= 0;
++
++	if (vc == 490) VSync <= 0;
++	else if (vc == 492) VSync <= 1;
++`else
+ 	if (hc == 529) HBlank <= 1;
+ 		else if (hc == 0) HBlank <= 0;
+ 
+@@ -436,6 +465,7 @@ always @(posedge CLK_VIDEO) begin
+ 	end
+ 	
+ 	if (hc == 590) HSync <= 0;
++`endif
+ end
+ 
+ reg  [7:0] cos_out;
+diff --git a/sys/osd.v b/sys/osd.v
+index 18b585e..ae40bbc 100644
+--- a/sys/osd.v
++++ b/sys/osd.v
+@@ -22,18 +22,15 @@ module osd
+ );
+ 
+ parameter  OSD_COLOR    =  3'd4;
++parameter  MENU_CORE    =  0;
+ 
+ localparam OSD_WIDTH    = 12'd256;
+ localparam OSD_HEIGHT   = 12'd64;
+ 
+-`ifdef MENU_CORE
+-localparam OSD_HDR      = 12'd24;
+-`else
+-localparam OSD_HDR      = 12'd0;
+-`endif
++localparam OSD_HDR      = MENU_CORE ? 12'd24 : 12'd0;
+ 
+ reg        osd_enable;
+-(* ramstyle="no_rw_check" *) reg  [7:0] osd_buffer[OSD_HDR ? (4096+1024) : 4096];
++(* ramstyle="no_rw_check" *) reg  [7:0] osd_buffer[0:(OSD_HDR ? (4096+1024) : 4096)-1];
+ 
+ reg        info = 0;
+ reg  [8:0] infoh;

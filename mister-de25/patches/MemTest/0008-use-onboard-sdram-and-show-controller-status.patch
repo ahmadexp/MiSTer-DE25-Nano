@@ -1,0 +1,65 @@
+diff --git a/memtest.sv b/memtest.sv
+--- a/memtest.sv
++++ b/memtest.sv
+@@ -449,6 +449,25 @@ always @(posedge clk_ram) begin
+ 
+ wire [31:0] passcount, failcount;
+ `ifdef DE25_AGILEX_PLL_RECONFIG
++// The DE25-Nano has 128 MB of soldered SDR SDRAM, so it has no MiSTer
++// daughterboard-ID resistor for Main to detect. Test the known board capacity
++// directly. Keep the low status byte visible alongside the pass count while
++// hardware validation is in progress:
++//   bit 7 PLL lock, 6 SDRAM active, 5 reset, 4 control reset,
++//   bit 3 reconfiguration busy, 2 done, 1 error, 0 quiesced.
++wire [1:0] de25_test_sdram_sz = 2'd3;
++wire [7:0] de25_test_status = {
++	locked, ram_active, reset, de25_control_reset,
++	de25_reconfig_busy, de25_reconfig_done,
++	de25_reconfig_error, de25_ram_quiesced
++};
++wire [27:0] de25_raw_displayed_passcount =
++	{passcount[27:8], de25_test_status};
++`else
++wire [1:0] de25_test_sdram_sz = sdram_sz;
++wire [27:0] de25_raw_displayed_passcount = passcount[27:0];
++`endif
++`ifdef DE25_AGILEX_PLL_RECONFIG
+ wire sdram_capture_clk = de25_sdram_clk;
+ `else
+ wire sdram_capture_clk = clk_ram;
+@@ -458,7 +477,7 @@ tester my_memtst
+ 	.clk(clk_ram),
+ 	.clk_capture(sdram_capture_clk),
+ 	.rst_n(~reset),
+-	.sz(sdram_sz),
++	.sz(de25_test_sdram_sz),
+ 	.chip(sdram_chip),
+ 	.passcount(passcount),
+ 	.failcount(failcount),
+@@ -509,14 +528,24 @@ vpll vpll
+ 
+ assign CLK_VIDEO = videoclk;
+ 
++// Counter and diagnostic bits originate in the variable SDRAM and 50 MHz
++// domains. Register them twice in the pixel domain so the diagnostic display
++// cannot create an unconstrained or failing cross-clock path.
++reg [27:0] displayed_passcount_meta = 28'd0;
++reg [27:0] displayed_passcount = 28'd0;
++always @(posedge videoclk) begin
++	displayed_passcount_meta <= de25_raw_displayed_passcount;
++	displayed_passcount <= displayed_passcount_meta;
++end
++
+ wire [1:0] b, r, g;
+ vgaout showrez
+ (
+ 	.clk(videoclk),
+ 	.scandoubler(scandoubler),
+-	.rez1({sdram_sz, passcount[27:0]}),
++	.rez1({de25_test_sdram_sz, displayed_passcount}),
+ 	.rez2(failcount),
+-	.rez3((sdram_sz == 3) ? ~sdram_chip : 2'b00),
++	.rez3((de25_test_sdram_sz == 3) ? ~sdram_chip : 2'b00),
+ 	.bg(6'b000001),
+ `ifdef DE25_AGILEX_PLL_RECONFIG
+ 	.freq(16'hF000 | de25_frequency_bcd),

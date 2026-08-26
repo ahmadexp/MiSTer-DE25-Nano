@@ -1,0 +1,1303 @@
+diff --git a/NES.sv b/NES.sv
+index 55337d3..57a54c0 100644
+--- a/NES.sv
++++ b/NES.sv
+@@ -349,6 +349,86 @@ wire clock_locked;
+ wire clk85;
+ wire clk;
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++wire de25_sdram_clk;
++wire de25_sdram_capture_clk;
++wire de25_pll_busy;
++wire de25_pll_done;
++wire de25_pll_error;
++wire de25_ram_quiesced;
++wire de25_ram_active;
++wire de25_sdram_controller_quiesced;
++wire de25_want_pal_async = effective_sys_type == 2'd1;
++(* ASYNC_REG = "TRUE" *) reg [1:0] de25_want_pal_sync = 2'b00;
++wire de25_want_pal = de25_want_pal_sync[1];
++reg  de25_pll_profile_pal = 0;
++reg  de25_pll_applied_pal = 0;
++reg  de25_reconfig_request = 0;
++reg  de25_reconfig_issued = 0;
++reg  de25_reconfig_start = 0;
++
++de25_nes_pll pll
++(
++	.refclk(CLK_50M),
++	.reset(RESET),
++	.pal_profile(de25_pll_profile_pal),
++	.start(de25_reconfig_start),
++	.clk_sdram(clk85),
++	.clk_video(CLK_VIDEO),
++	.clk_master(clk),
++	.clk_sdram_physical(de25_sdram_clk),
++	.clk_sdram_capture(de25_sdram_capture_clk),
++	.locked(clock_locked),
++	.busy(de25_pll_busy),
++	.done(de25_pll_done),
++	.error(de25_pll_error)
++);
++
++de25_sdram_quiesce de25_ram_quiesce
++(
++	.clk_control(CLK_50M),
++	.reset_control(RESET),
++	.clk_sdram(clk85),
++	.pll_locked(clock_locked),
++	.request_control(de25_reconfig_request),
++	.hold_sdram(1'b0),
++	.ready_sdram(de25_sdram_controller_quiesced),
++	.quiesced_control(de25_ram_quiesced),
++	.sdram_active(de25_ram_active)
++);
++
++always @(posedge CLK_50M) begin
++	de25_want_pal_sync <= {de25_want_pal_sync[0], de25_want_pal_async};
++	de25_reconfig_start <= 0;
++
++	if(RESET) begin
++		de25_pll_profile_pal <= 0;
++		de25_pll_applied_pal <= 0;
++		de25_reconfig_request <= 0;
++		de25_reconfig_issued <= 0;
++	end
++	else begin
++		if(!de25_reconfig_request &&
++		   (de25_want_pal != de25_pll_applied_pal)) begin
++			de25_pll_profile_pal <= de25_want_pal;
++			de25_reconfig_request <= 1;
++			de25_reconfig_issued <= 0;
++		end
++
++		if(de25_reconfig_request && de25_ram_quiesced &&
++		   !de25_reconfig_issued && !de25_pll_busy && !de25_pll_error) begin
++			de25_reconfig_start <= 1;
++			de25_reconfig_issued <= 1;
++		end
++
++		if(de25_pll_done) begin
++			de25_pll_applied_pal <= de25_pll_profile_pal;
++			de25_reconfig_request <= 0;
++			de25_reconfig_issued <= 0;
++		end
++	end
++end
++`else
+ pll pll
+ (
+ 	.refclk(CLK_50M),
+@@ -413,6 +493,7 @@ always @(posedge CLK_50M) begin : cfg_block
+ 		endcase
+ 	end
+ end
++`endif
+ 
+ 
+ // reset after download
+@@ -497,9 +578,8 @@ end
+ // 5  IN    P1D0        RX-
+ // 6  IN    P2D0        TX+
+ 
+-assign USER_OUT[4] = 1'b1;
+-assign USER_OUT[5] = 1'b1;
+-assign USER_OUT[6] = 1'b1;
++reg [3:0] user_out_low;
++assign USER_OUT = {3'b111, user_out_low};
+ 
+ reg [4:0] joypad1_data, joypad2_data;
+ 
+@@ -508,10 +588,10 @@ wire joy1_d0 = snac_p2 ? ~USER_IN[6] : joypad_bits2[0];
+ 
+ always_comb begin
+ 	if (raw_serial) begin
+-		USER_OUT[0]  = joypad_out[0];
+-		USER_OUT[1]  = ~joy_swap ? ~joypad_clock[1] : ~joypad_clock[0];
+-		USER_OUT[2]  = snac_3d_glasses ? joypad_out[1] : 1'b1;
+-		USER_OUT[3]  = ~joy_swap ? ~joypad_clock[0] : ~joypad_clock[1];
++		user_out_low[0]  = joypad_out[0];
++		user_out_low[1]  = ~joy_swap ? ~joypad_clock[1] : ~joypad_clock[0];
++		user_out_low[2]  = snac_3d_glasses ? joypad_out[1] : 1'b1;
++		user_out_low[3]  = ~joy_swap ? ~joypad_clock[0] : ~joypad_clock[1];
+ 		joypad1_data = {2'b0, mic, 1'b0, ~joy_swap ? joy0_d0 : ~USER_IN[5]};
+ 		joypad2_data = {serial_d4, snac_3d_glasses ? 1'b1 : ~USER_IN[2], 2'b00, ~joy_swap ? ~USER_IN[5] : joy1_d0};
+ 
+@@ -519,10 +599,7 @@ always_comb begin
+ 		// the consumer Zapper D3/D4 lines on controller 1.
+ 		if (vs_zapper_en) joypad1_data[0] = vs_zapper_data;
+ 	end else begin
+-		USER_OUT[0]  = 1'b1;
+-		USER_OUT[1]  = 1'b1;
+-		USER_OUT[2]  = 1'b1;
+-		USER_OUT[3]  = 1'b1;
++		user_out_low = 4'b1111;
+ 
+ 		joypad1_data = {2'b0, mic, paddle_en & paddle_btn, joypad_bits[0]};
+ 		joypad2_data = joypad_bits2[0];
+@@ -718,7 +795,11 @@ wire reset_nes =
+ 	bk_loading     ||
+ 	bk_loading_req ||
+ 	hold_reset     ||
+-	(old_sys_type != effective_sys_type);
++	(old_sys_type != effective_sys_type)
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	|| de25_reconfig_request || de25_pll_busy || de25_pll_error
++`endif
++	;
+ 
+ reg [1:0] old_sys_type;
+ always @(posedge clk) old_sys_type <= effective_sys_type;
+@@ -895,7 +976,7 @@ spram #(.addr_width(13)) fds_bios
+ );
+ 
+ wire [7:0] nsf_data;
+-spram #(12, 8, "rtl/loopy_NSF.mif") nsfplayrom
++spram #(12, 8, "../upstream/cores/NES/rtl/loopy_NSF.mif") nsfplayrom
+ (
+ 	.clock(clk),
+ 	.address(loader_addr[11:0]),
+@@ -942,7 +1023,21 @@ sdram sdram
+ 
+ 	// system interface
+ 	.clk        ( clk85           ),
+-	.init       ( !clock_locked   ),
++	.init       ( !clock_locked
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	              || de25_reconfig_request
++`endif
++	            ),
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	.clk_capture(de25_sdram_capture_clk),
++	.clk_physical(de25_sdram_clk),
++	.active(de25_ram_active),
++	.quiesce(de25_reconfig_request),
++	.quiesced(de25_sdram_controller_quiesced),
++	.SDRAM_DQ_IN(de25_sdram_dq_in),
++	.SDRAM_DQ_OUT(de25_sdram_dq_out),
++	.SDRAM_DQ_OE(de25_sdram_dq_oe),
++`endif
+ 
+ 	// cpu/chipset interface
+ 	.ch0_addr   (  (downloading | loader_busy) ? loader_addr_mem       : {3'b0, ppu_addr}  ),
+diff --git a/rtl/SOUND/OPLL/OPLL.qip b/rtl/SOUND/OPLL/OPLL.qip
+index 0a0416c..d23027d 100644
+--- a/rtl/SOUND/OPLL/OPLL.qip
++++ b/rtl/SOUND/OPLL/OPLL.qip
+@@ -1,3 +1,4 @@
++set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/vm2413.vhd ]
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/attacktable.vhd ]
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/controller.vhd ]
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/envelopegenerator.vhd ]
+@@ -14,7 +15,6 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/reg
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/sinetable.vhd ]
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/slotcounter.vhd ]
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/temporalmixer.vhd ]
+-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/vm2413.vhd ]
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/voicememory.vhd ]
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) VM2413/voicerom.vhd ]
+ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) eseopll.vhd ]
+diff --git a/rtl/SOUND/OPLL/VM2413/controller.vhd b/rtl/SOUND/OPLL/VM2413/controller.vhd
+index f73665f..feca3fa 100644
+--- a/rtl/SOUND/OPLL/VM2413/controller.vhd
++++ b/rtl/SOUND/OPLL/VM2413/controller.vhd
+@@ -128,7 +128,7 @@ architecture rtl of controller is
+     end component;
+ 
+     -- the array which caches instrument number of each channel.
+-    type inst_array is array (ch_type'range) of integer range 0 to 15;
++    type inst_array is array (ch_type) of integer range 0 to 15;
+     signal inst_cache : inst_array;
+ 
+     type kl_array is array (0 to 15) of std_logic_vector(5 downto 0);
+@@ -161,7 +161,7 @@ architecture rtl of controller is
+ 
+ begin   -- rtl
+ 
+-    --  ���W�X�^�ݒ�l��ێ����邽�߂̃�����
++    --  レジスタ設定値を保持するためのメモリ
+     u_register_memory : RegisterMemory
+     port map (
+         clk     => clk,
+@@ -176,7 +176,7 @@ begin   -- rtl
+         clk, reset, user_voice_wdata, user_voice_wr, user_voice_addr, slot_voice_addr,
+         user_voice_rdata, slot_voice_data );
+ 
+-    --  ���W�X�^�A�h���X���b�` (��P�X�e�[�W)
++    --  レジスタアドレスラッチ (第１ステージ)
+     process( reset, clk )
+     begin
+         if( reset = '1' )then
+@@ -192,7 +192,7 @@ begin   -- rtl
+         end if;
+     end process;
+ 
+-    --  ���݂̃X���b�g�̉��F�f�[�^�ǂݏo���A�h���X���b�` (��P�X�e�[�W)
++    --  現在のスロットの音色データ読み出しアドレスラッチ (第１ステージ)
+     process( reset, clk )
+     begin
+         if( reset = '1' )then
+@@ -201,7 +201,7 @@ begin   -- rtl
+             if clkena='1' then
+                 if( stage = "00" )then
+                     if( rflag(5) = '1' and w_channel >= "0110" )then
+-                        --  ���Y�����[�h�� ch6 �ȍ~
++                        --  リズムモードで ch6 以降
+                         slot_voice_addr <= conv_integer(slot) - 12 + 32;
+                     else
+                         slot_voice_addr <= inst_cache(conv_integer(slot)/2) * 2 + conv_integer(slot) mod 2;
+@@ -342,6 +342,9 @@ begin   -- rtl
+                                     user_voice_tmp.rr := data(3 downto 0);
+                                     user_voice_wr <= '1';
+                                 end if;
++
++                            when others =>
++                                null;
+                         end case;
+ 
+                         user_voice_wdata <= user_voice_tmp;
+@@ -362,16 +365,16 @@ begin   -- rtl
+                         if( conv_integer(addr(3 downto 0) ) = conv_integer(slot) / 2 ) then
+                             regs_tmp := regs_rdata;
+                             case addr( 5 downto 4 ) is
+-                                when "01" => -- 10h�`18h �̏ꍇ�i���� F-Number�j
++                                when "01" => -- 10h～18h の場合（下位 F-Number）
+                                     regs_tmp(7 downto 0) := data;               --  F-Number
+                                     regs_wr <= '1';
+-                                when "10" => -- 20h�`28h �̏ꍇ�iSus, Key, Block, F-Number MSB�j
++                                when "10" => -- 20h～28h の場合（Sus, Key, Block, F-Number MSB）
+                                     regs_tmp(13) := data(5);                    --  Sus
+                                     regs_tmp(12) := data(4);                    --  Key
+                                     regs_tmp(11 downto 9) := data(3 downto 1);  --  Block
+                                     regs_tmp(8) := data(0);                     --  F-Number
+                                     regs_wr <= '1';
+-                                when "11" => -- 30h�`38h �̏ꍇ�iInst, Vol�j
++                                when "11" => -- 30h～38h の場合（Inst, Vol）
+                                     regs_tmp(23 downto 20) := data(7 downto 4); --  Inst
+                                     regs_tmp(19 downto 16) := data(3 downto 0); --  Vol
+                                     regs_wr <='1';
+@@ -510,6 +513,9 @@ begin   -- rtl
+                     end if;
+                 end if;
+ 
++            when others =>
++                null;
++
+             end case;
+ 
+         end if; end if;
+diff --git a/rtl/SOUND/OPLL/VM2413/envelopegenerator.vhd b/rtl/SOUND/OPLL/VM2413/envelopegenerator.vhd
+index 7890de5..3718c16 100644
+--- a/rtl/SOUND/OPLL/VM2413/envelopegenerator.vhd
++++ b/rtl/SOUND/OPLL/VM2413/envelopegenerator.vhd
+@@ -58,7 +58,7 @@ entity envelopegenerator is
+         rks     : in    rks_type;
+         key     : in    std_logic;
+ 
+-        egout   : out   std_logic_vector( 12 downto 0 )     --  ������ 6bit
++        egout   : out   std_logic_vector( 12 downto 0 )     --  小数部 6bit
+     );
+ end envelopegenerator;
+ 
+@@ -81,7 +81,7 @@ architecture rtl of envelopegenerator is
+         port(
+             clk     : in    std_logic;
+             clkena  : in    std_logic;
+-            addr    : in    std_logic_vector( 21 downto 0 );    -- ������ 15bit
++            addr    : in    std_logic_vector( 21 downto 0 );    -- 小数部 15bit
+             data    : out   std_logic_vector( 12 downto 0 )
+         );
+     end component;
+@@ -92,10 +92,10 @@ architecture rtl of envelopegenerator is
+     signal memwr    : std_logic;
+ 
+     signal aridx    : std_logic_vector( 21 downto 0 );
+-    signal ardata   : std_logic_vector( 12 downto 0 );  --  ������ 6bit
++    signal ardata   : std_logic_vector( 12 downto 0 );  --  小数部 6bit
+ begin
+ 
+-    --  Attack �e�[�u��
++    --  Attack テーブル
+     u_attack_table: AttackTable
+     port map (
+         clk     =>  clk,
+@@ -115,7 +115,7 @@ begin
+         rdata   =>  memout
+     );
+ 
+-    --  EnvelopeMemory �̃v���t�F�b�`
++    --  EnvelopeMemory のプリフェッチ
+     process( reset, clk )
+     begin
+         if( reset = '1' )then
+@@ -136,7 +136,7 @@ begin
+     process( reset, clk )
+         variable lastkey    : std_logic_vector(18-1 downto 0);
+         variable rm         : std_logic_vector(4 downto 0);
+-        variable egtmp      : std_logic_vector(db_type'high + 8 downto 0);  --  ������ 6bit
++        variable egtmp      : std_logic_vector(db_type'high + 8 downto 0);  --  小数部 6bit
+         variable amphase    : std_logic_vector(19 downto 0);
+         variable egphase    : egphase_type;
+         variable egstate    : egstate_type;
+@@ -179,7 +179,7 @@ begin
+                     case egstate is
+                         when Attack =>
+                             rm := '0'&ar;
+-                            egtmp := ("00"&tl&"000000") + ("00"&ardata);        -- �J�[�u��`���ď㏸����
++                            egtmp := ("00"&tl&"000000") + ("00"&ardata);        -- カーブを描いて上昇する
+                         when Decay  =>
+                             rm := '0'&dr;
+                             egtmp := ("00"&tl&"000000") + ("00"&egphase(22-1 downto 22-7-6));
+@@ -189,6 +189,8 @@ begin
+                         when Finish =>
+                             egtmp(egtmp'high downto egtmp'high -1) := "00";
+                             egtmp(egtmp'high-2 downto 0) := (others=>'1');
++                        when others =>
++                            null;
+                     end case;
+ 
+                     -- SD and HH
+@@ -199,16 +201,16 @@ begin
+                     -- Amplitude LFO
+                     if am ='1' then
+                         if (amphase(amphase'high) = '0') then
+-                            -- ���̏ꍇ
++                            -- 上りの場合
+                             egtmp := egtmp + ("00000"&(amphase(amphase'high-1 downto amphase'high-4-6)-"0001000000"));
+                         else
+-                            -- ����̏ꍇ
++                            -- 下りの場合
+                             egtmp := egtmp + ("00000"&("1111000000"-amphase(amphase'high-1 downto amphase'high-4-6)));
+                         end if;
+                     end if;
+ 
+                     -- Generate output
+-                    if egtmp(egtmp'high downto egtmp'high-1) = "00" then    -- ���~�b�^
++                    if egtmp(egtmp'high downto egtmp'high-1) = "00" then    -- リミッタ
+                         egout <= egtmp(egout'range);
+                     else
+                         egout <= (others=>'1');
+@@ -234,6 +236,8 @@ begin
+                                 egphase := egphase + dphase(egphase'range);
+                             when Finish =>
+                                 null;
++                            when others =>
++                                null;
+                         end case;
+ 
+                     end if;
+@@ -254,6 +258,8 @@ begin
+                             end if;
+                         when Finish =>
+                             egphase := (others => '1');
++                        when others =>
++                            null;
+                     end case;
+ 
+                     if lastkey(conv_integer(slot)) = '0' and key = '1' then
+@@ -277,4 +283,3 @@ begin
+     end process;
+ 
+ end rtl;
+-
+diff --git a/rtl/SOUND/OPLL/VM2413/voicememory.vhd b/rtl/SOUND/OPLL/VM2413/voicememory.vhd
+index 3e3d37d..fb9d0e5 100644
+--- a/rtl/SOUND/OPLL/VM2413/voicememory.vhd
++++ b/rtl/SOUND/OPLL/VM2413/voicememory.vhd
+@@ -51,7 +51,7 @@ architecture RTL of VoiceMemory is
+ 
+   -- The following array is mapped into a Single-Clock Synchronous RAM with two-read
+   -- addresses by Altera's QuartusII compiler.
+-  type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE'range) of VOICE_VECTOR_TYPE;
++  type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE) of VOICE_VECTOR_TYPE;
+   signal voices : VOICE_ARRAY_TYPE;
+ 
+   component VoiceRom port (
+@@ -107,4 +107,4 @@ begin
+ 
+   end process;
+ 
+-end RTL;
+\ No newline at end of file
++end RTL;
+diff --git a/rtl/SOUND/OPLL/VM2413/voicerom.vhd b/rtl/SOUND/OPLL/VM2413/voicerom.vhd
+index ca87265..325a166 100644
+--- a/rtl/SOUND/OPLL/VM2413/voicerom.vhd
++++ b/rtl/SOUND/OPLL/VM2413/voicerom.vhd
+@@ -43,7 +43,7 @@ end VoiceRom;
+ 
+ architecture RTL of VoiceRom is
+ 
+-  type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE'range) of VOICE_VECTOR_TYPE;
++  type VOICE_ARRAY_TYPE is array (VOICE_ID_TYPE) of VOICE_VECTOR_TYPE;
+   constant voices : VOICE_ARRAY_TYPE := (
+ --VRC7
+ --From nesdev.com
+@@ -194,4 +194,4 @@ begin
+ 
+   end process;
+ 
+-end RTL;
+\ No newline at end of file
++end RTL;
+diff --git a/rtl/cart.sv b/rtl/cart.sv
+index 15deba7..767bfe1 100644
+--- a/rtl/cart.sv
++++ b/rtl/cart.sv
+@@ -2512,7 +2512,7 @@ vrc6_mixed snd_vrc6 (
+ );
+ 
+ 
+-wire [1023:0] me;
++reg [1023:0] me;
+ 
+ always @* begin
+ 	me = 1024'd0;
+diff --git a/rtl/cheatcodes.sv b/rtl/cheatcodes.sv
+index f0485eb..2365b50 100644
+--- a/rtl/cheatcodes.sv
++++ b/rtl/cheatcodes.sv
+@@ -15,8 +15,8 @@ module CODES(
+ 	input  [ADDR_WIDTH - 1:0] addr_in,
+ 	input  [DATA_WIDTH - 1:0] data_in,
+ 	input  [128:0] code,
+-	output genie_ovr,
+-	output [DATA_WIDTH - 1:0] genie_data
++	output reg genie_ovr,
++	output reg [DATA_WIDTH - 1:0] genie_data
+ );
+ 
+ parameter ADDR_WIDTH   = 16; // Not more than 32
+diff --git a/rtl/dpram.vhd b/rtl/dpram.vhd
+index a02b3d2..3916fa2 100644
+--- a/rtl/dpram.vhd
++++ b/rtl/dpram.vhd
+@@ -29,8 +29,26 @@ END spram;
+ 
+ 
+ ARCHITECTURE SYN OF spram IS
++	component spram_sz
++		generic (
++			addr_width    : integer := 8;
++			data_width    : integer := 8;
++			numwords      : integer := 2**8;
++			mem_init_file : string := " ";
++			mem_name      : string := "MEM"
++		);
++		port (
++			clock   : in  STD_LOGIC;
++			address : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0);
++			data    : in  STD_LOGIC_VECTOR (data_width-1 DOWNTO 0) := (others => '0');
++			enable  : in  STD_LOGIC := '1';
++			wren    : in  STD_LOGIC := '0';
++			q       : out STD_LOGIC_VECTOR (data_width-1 DOWNTO 0);
++			cs      : in  std_logic := '1'
++		);
++	end component;
+ BEGIN
+-	spram_sz : work.spram_sz
++		spram_sz_inst : spram_sz
+ 	generic map(addr_width, data_width, 2**addr_width, mem_init_file, mem_name)
+ 	port map(clock,address,data,enable,wren,q,cs);
+ END SYN;
+diff --git a/rtl/mappers/FDS.sv b/rtl/mappers/FDS.sv
+index 4ca1adc..eace928 100644
+--- a/rtl/mappers/FDS.sv
++++ b/rtl/mappers/FDS.sv
+@@ -632,7 +632,7 @@ IIR_filter #(
+ ) fds_filter (
+ 	.clk       (clk),
+ 	.ce        (fds_filter_ce),
+-	.sample_ce (1),
++		.sample_ce (1'b1),
+ 	.input_l   ({audio_exp[11:0], 4'b0000}),
+ 	.output_l  (audio_exp_f)
+ );
+@@ -714,7 +714,7 @@ wire [19:0] wave_pitch = $unsigned(temp3[11:4]) * wave_frequency;
+ // Volume math
+ wire [11:0] mul_out = wave_latch * (vol_pwm_lat[5] ? 6'd32 : vol_pwm_lat);
+ 
+-wire [15:0] level_out;
++reg [15:0] level_out;
+ assign audio_out = level_out[11:0];
+ 
+ always_comb begin
+diff --git a/rtl/mappers/JYCompany.sv b/rtl/mappers/JYCompany.sv
+index ee90c55..d44c605 100644
+--- a/rtl/mappers/JYCompany.sv
++++ b/rtl/mappers/JYCompany.sv
+@@ -102,7 +102,7 @@ wire [21:0] prg_aout;
+ reg [21:0] chr_aout;
+ wire prg_allow;
+ wire chr_allow;
+-wire vram_a10;
++reg vram_a10;
+ reg [7:0] chr_dout, prg_dout;
+ wire vram_ce;
+ wire [15:0] flags_out = {12'h0, 1'b1, 1'b0, prg_bus_write, 1'b0};
+@@ -137,7 +137,7 @@ reg [7:0] accumtest;
+ 
+ reg old_a12;
+ reg irq_enable;
+-wire irq_source;
++reg irq_source;
+ assign irq = irq_pending && irq_enable;
+ reg irq_pending;
+ reg irq_en;
+@@ -336,7 +336,7 @@ always @* begin
+ end
+ 
+ // Compute PRG address to read from.
+-wire [1:0] prg_reg;
++reg [1:0] prg_reg;
+ always @* begin
+ 	casez({prg_6xxx, bank_mode[1:0]})
+ 		3'b000: prg_reg = {2'b11};                       // $8000-$FFFF
+@@ -347,7 +347,7 @@ always @* begin
+ end
+ wire [7:0] bank_val = (!bank_mode[2] && prg_reg == 2'b11) ? 8'hFF : prg_bank[prg_reg];
+ wire [6:0] bank_order = bank_mode[1:0] == 2'b11 ? {bank_val[0], bank_val[1], bank_val[2], bank_val[3], bank_val[4], bank_val[5], bank_val[6]} : bank_val[6:0];
+-wire [5:0] prg_sel;
++reg [5:0] prg_sel;
+ always @* begin
+ 	casez({prg_6xxx, bank_mode[1:0]})
+ 		3'b000: prg_sel = {bank_order[3:0], prg_ain[14:13]}; //
+@@ -370,7 +370,7 @@ end else if (SaveStateBus_load) begin
+ end else if (~paused && chr_read) begin
+ 	chr_latch[chr_ain_o[12]] <= outer_bank[7] && (((chr_ain_o & 14'h2ff8) == 14'h0fd8) ? 1'd0 : ((chr_ain_o & 14'h2ff8) == 14'h0fe8) ? 1'd1 : chr_latch[chr_ain_o[12]]);
+ end
+-wire [2:0] chr_reg;
++reg [2:0] chr_reg;
+ always @* begin
+ 	casez(bank_mode[4:3])
+ 		2'b00: chr_reg = {3'b000};                                   // $0000-$1FFF
+@@ -380,7 +380,7 @@ always @* begin
+ 	endcase
+ end
+ wire [12:0] chr_val = chr_bank[chr_reg][12:0];
+-wire [12:0] chr_sel;
++reg [12:0] chr_sel;
+ always @* begin
+ 	casez({romtables, bank_mode[4:3]})
+ 		3'b000: chr_sel = {chr_val[9:0],  chr_ain[12:10]};    //
+diff --git a/rtl/mappers/MMC5.sv b/rtl/mappers/MMC5.sv
+index 4ee491c..f5c3119 100644
+--- a/rtl/mappers/MMC5.sv
++++ b/rtl/mappers/MMC5.sv
+@@ -43,7 +43,7 @@ module MMC5(
+ 	input         Savestate_MAPRAMRdEn,
+ 	input         Savestate_MAPRAMWrEn,
+ 	input  [7:0]  Savestate_MAPRAMWriteData,
+-	output [7:0]  Savestate_MAPRAMReadData
++	output reg [7:0]  Savestate_MAPRAMReadData
+ );
+ 
+ assign prg_aout_b   = enable ? prg_aout : 22'hZ;
+@@ -68,7 +68,8 @@ reg [7:0] chr_data, prg_dout;
+ wire vram_ce;
+ wire [15:0] flags_out = {12'h0, 1'b1, 1'b0, prg_bus_write, has_chr_dout};
+ wire irq;
+-wire prg_bus_write, has_chr_dout;
++reg prg_bus_write;
++wire has_chr_dout;
+ wire [15:0] audio = audio_in;
+ 
+ reg [1:0] prg_mode, chr_mode;
+diff --git a/rtl/mappers/Namco.sv b/rtl/mappers/Namco.sv
+index 8377814..99b61bf 100644
+--- a/rtl/mappers/Namco.sv
++++ b/rtl/mappers/Namco.sv
+@@ -483,7 +483,7 @@ module namco163_sound(
+ 	input         Savestate_MAPRAMRdEn,    
+ 	input         Savestate_MAPRAMWrEn,    
+ 	input  [7:0]  Savestate_MAPRAMWriteData,
+-	output [7:0]  Savestate_MAPRAMReadData
++	output reg [7:0]  Savestate_MAPRAMReadData
+ );
+ 
+ reg carry;
+diff --git a/rtl/mappers/Sachen.sv b/rtl/mappers/Sachen.sv
+index 76591b8..81f4939 100644
+--- a/rtl/mappers/Sachen.sv
++++ b/rtl/mappers/Sachen.sv
+@@ -47,7 +47,7 @@ assign audio_b      = enable ? {1'b0, audio_in[15:1]} : 16'hZ;
+ wire [21:0] prg_aout, chr_aout;
+ wire prg_allow;
+ wire chr_allow;
+-wire vram_a10;
++reg vram_a10;
+ wire vram_ce;
+ wire [15:0] flags_out = {12'd0, 1'b1, 1'b0, prg_bus_write, 1'b0};
+ 
+@@ -113,8 +113,8 @@ assign SS_MAP1_BACK[26:24] = mirroring;
+ assign SS_MAP1_BACK[63:27] = 37'b0; // free to be used
+ 
+ // The CHR bank to load. Each increment here is 1kb. So valid values are 0..255.
+-wire [2:0] chr_bank;
+-wire [2:0] chr_banko;
++reg [2:0] chr_bank;
++reg [2:0] chr_banko;
+ reg [8:0] chrsel;
+ always @* begin
+ 	casez({mirroring[0], mapper137 ? chr_ain[11:10] : chr_ain[12:11]})
+diff --git a/rtl/mappers/Sunsoft.sv b/rtl/mappers/Sunsoft.sv
+index 771b6e4..3edb15f 100644
+--- a/rtl/mappers/Sunsoft.sv
++++ b/rtl/mappers/Sunsoft.sv
+@@ -394,7 +394,7 @@ end else if (ce) begin
+ 
+ end
+ 
+-wire output_a, output_b, output_c;
++reg output_a, output_b, output_c;
+ 
+ always_comb begin
+ 	case ({tone_dis_a, noise_dis_a})
+@@ -529,7 +529,7 @@ assign audio_b      = enable ? {1'b0, audio_in[15:1]} : 16'hZ;
+ wire [21:0] prg_aout, chr_aout;
+ wire prg_allow;
+ wire chr_allow;
+-wire vram_a10;
++reg vram_a10;
+ wire vram_ce;
+ reg irq;
+ reg [15:0] flags_out = {12'h0, 1'b1, 3'b0};
+@@ -709,9 +709,9 @@ assign audio_b      = enable ? {1'b0, audio_in[15:1]} : 16'hZ;
+ 
+ wire [21:0] prg_aout, chr_aout;
+ wire prg_allow;
+-wire ram_enable;
++reg ram_enable;
+ wire chr_allow;
+-wire vram_a10;
++reg vram_a10;
+ wire vram_ce;
+ reg [15:0] flags_out = {12'h0, 1'b1, 3'b0};
+ 
+@@ -808,4 +808,4 @@ eReg_SavestateV #(SSREG_INDEX_MAP1, 64'h0000000000000000) iREG_SAVESTATE_MAP1 (c
+ 
+ assign SaveStateBus_Dout = enable ? SaveStateBus_Dout_active : 64'h0000000000000000;
+ 
+-endmodule
+\ No newline at end of file
++endmodule
+diff --git a/rtl/mappers/VRC.sv b/rtl/mappers/VRC.sv
+index b0a0ebc..44f36ec 100644
+--- a/rtl/mappers/VRC.sv
++++ b/rtl/mappers/VRC.sv
+@@ -46,7 +46,7 @@ assign audio_b      = enable ? {1'b0, audio_in[15:1]} : 16'hZ;
+ wire [21:0] prg_aout, chr_aout;
+ wire prg_allow;
+ wire chr_allow;
+-wire vram_a10;
++reg vram_a10;
+ wire vram_ce;
+ reg [15:0] flags_out = {12'h0, 1'b1, 3'b0};
+ 
+@@ -305,7 +305,7 @@ assign audio_b      = enable ? {1'b0, audio_in[15:1]} : 16'hZ;
+ wire [21:0] prg_aout, chr_aout;
+ wire prg_allow;
+ wire chr_allow;
+-wire vram_a10;
++reg vram_a10;
+ wire vram_ce;
+ wire irq;
+ reg [15:0] flags_out = {12'h0, 1'b1, 3'b0};
+@@ -1327,7 +1327,7 @@ module VRC5(
+ 	input         Savestate_MAPRAMRdEn,    
+ 	input         Savestate_MAPRAMWrEn,    
+ 	input  [7:0]  Savestate_MAPRAMWriteData,
+-	output [7:0]  Savestate_MAPRAMReadData
++	output reg [7:0]  Savestate_MAPRAMReadData
+ );
+ 
+ assign prg_aout_b   = enable ? prg_aout : 22'hZ;
+@@ -1347,7 +1347,7 @@ wire [7:0] prg_dout;
+ wire prg_allow;
+ wire chr_allow;
+ wire [7:0] chr_dout;
+-wire vram_a10;
++reg vram_a10;
+ wire vram_ce;
+ wire irq;
+ wire [15:0] flags_out = {12'h0, 1'b1, 1'b0, prg_bus_write, has_chr_dout};
+@@ -1362,7 +1362,7 @@ reg ppu_bkg;
+ reg [2:0] attributes;
+ reg [6:0] JIS_col;
+ reg [6:0] JIS_row;
+-wire [6:0] prg_tmp;
++reg [6:0] prg_tmp;
+ wire overdump = (flags[13:11] == 3'd5); // 256KB chr is an overdump; use alternate mapping
+ 
+ // Block RAM, otherwise we need to time multiplex..
+@@ -1556,4 +1556,3 @@ eReg_SavestateV #(SSREG_INDEX_MAP2, 64'h0000000000000000) iREG_SAVESTATE_MAP2 (c
+ assign SaveStateBus_Dout = enable ? SaveStateBus_Dout_active : 64'h0000000000000000;
+ 
+ endmodule
+-
+diff --git a/rtl/mappers/misc.sv b/rtl/mappers/misc.sv
+index 50bb5a9..6b11c72 100644
+--- a/rtl/mappers/misc.sv
++++ b/rtl/mappers/misc.sv
+@@ -1781,7 +1781,7 @@ wire [1:0] reg_b = flags[7:0] == 162 ? 2'd2 : 2'd1;
+ reg [7:0] state[4];
+ 
+ // register 0x5000 to 0x5FFF
+-wire [7:0] prg_bank;
++reg [7:0] prg_bank;
+ 
+ always_comb begin
+ 	case ({state[3][2], 1'b0, state[3][0]})
+@@ -2628,7 +2628,7 @@ assign audio_b      = enable ? {audio_in[15:0]} : 16'hZ;
+ assign exp_audioe   = enable ? (nsf_reg[3][5:0]==6'd0) ? ({2'b00,midi_reg[5'd7][3],3'b000}) : nsf_reg[3][5:0] : 6'h00;
+ 
+ wire [21:0] prg_aout, chr_aout;
+-wire [7:0] prg_dout;
++reg [7:0] prg_dout;
+ wire prg_allow;
+ wire chr_allow;
+ wire vram_a10;
+@@ -2766,7 +2766,7 @@ always @(posedge clk) begin
+ 	end
+ end
+ 
+-wire [9:0] prg_bank;
++reg [9:0] prg_bank;
+ always begin
+ 	casez({prg_ain[15:12], exp_audioe[2]})
+ 		5'b00???: prg_bank = 10'h0;//{10'b11_1110_0000};
+@@ -2862,7 +2862,7 @@ wire [4:0] ms_freq = mmc5_reg[4'h8][0] ? 5'h1 : 5'h0;  // 'h4010/5010 = sample f
+ wire [4:0] freq = nois ? n_freq : samp ? s_freq : ms_freq;
+ wire use_freq = nois | samp | m5samp;
+ 
+-wire [4:0] voi_tab_idx;
++reg [4:0] voi_tab_idx;
+ always begin
+ 	casez({n163_max,exp_audioe,ppu_line}) //6,5
+ 		12'b???????_000??: voi_tab_idx = 5'd0;  //Info;
+@@ -2940,7 +2940,7 @@ wire use78 = use_v6saw || use_vrc7;
+ wire use1615 = use_n163;
+ wire [11:0] period_use = use1615? period1615 : use78 ? period78 : period[find_idx];
+ 
+-wire [17:0] find_bits;
++reg [17:0] find_bits;
+ 	logic [10:0] find_note_lut[80];  //not used; done in asm
+ 	assign find_note_lut = '{
+ 		11'h7f1,11'h77f,11'h713,11'h6ad,11'h64d,11'h5f3,11'h59d,11'h54c,
+@@ -3246,7 +3246,8 @@ assign audio_b      = enable ? audio : 16'hZ;
+ wire [21:0] prg_aout, chr_aout;
+ reg [7:0] prg_dout;
+ wire prg_allow, chr_allow;
+-wire vram_ce, vram_a10;
++wire vram_ce;
++reg vram_a10;
+ wire [15:0] audio = audio_in;
+ wire [15:0] flags_out = {14'h0, prg_bus_write, 1'h0};
+ wire prg_bus_write;
+diff --git a/rtl/ppu.sv b/rtl/ppu.sv
+index cc7ad64..22af4f6 100644
+--- a/rtl/ppu.sv
++++ b/rtl/ppu.sv
+@@ -201,11 +201,11 @@ reg is_even_frame = 0; // 1 indicates even frame.
+ assign evenframe = is_even_frame;
+ 
+ // Dendy is 291 to 310
+-wire [8:0] vblank_start_sl;
+-wire [8:0] vblank_end_sl;
+-wire [8:0] vsync_start_sl;
++reg [8:0] vblank_start_sl;
++reg [8:0] vblank_end_sl;
++reg [8:0] vsync_start_sl;
+ wire [8:0] last_sl;
+-wire skip_en;
++reg skip_en;
+ reg [3:0] rendering_sr;
+ 
+ always_comb begin
+@@ -489,7 +489,7 @@ module OAMEval(
+ 	input         Savestate_OAMRdEn,
+ 	input         Savestate_OAMWrEn,
+ 	input  [7:0]  Savestate_OAMWriteData,
+-	output [7:0]  Savestate_OAMReadData
++	output reg [7:0]  Savestate_OAMReadData
+ );
+ 
+ wire [63:0] SS_OAMEVAL;
+@@ -963,7 +963,7 @@ wire [3:0] y_f = temp_y[3:0] ^ {flip_y, flip_y, flip_y, flip_y};
+ assign load = {load_pix1, load_pix2, load_x, load_attr};
+ assign load_in = {pix1_latch, pix2_latch, load_temp, load_temp[1:0], load_temp[5]};
+ 
+-wire [7:0] load_temp;
++reg [7:0] load_temp;
+ always_comb begin
+ 	case (count)
+ 		0: load_temp = temp_y;
+@@ -1195,7 +1195,7 @@ module debug_dots(
+ 	input w2006,
+ 	input r2007,
+ 	input w2007,
+-	output [5:0] new_color
++	output reg [5:0] new_color
+ );
+ 
+ always_comb begin
+@@ -1309,7 +1309,7 @@ module PPU(
+ 	input         write,            // write
+ 	output reg    nmi,              // one while inside vblank
+ 	output        vram_r,           // read from vram active
+-	output        vram_r_ex,        // use extra sprite address
++	output reg    vram_r_ex,        // use extra sprite address
+ 	output        vram_w,           // write to vram active
+ 	output [13:0] vram_addr,        // vram address
+ 	output [13:0] vram_a_ex,        // vram address for extra sprites
+@@ -1430,7 +1430,7 @@ wire is_vbe_sl;
+ 
+ wire clear_signal = is_pre_render_line;
+ 
+-wire [13:0] vram_a;
++reg [13:0] vram_a;
+ reg [7:0] vram_a_byte;
+ 
+ ClockGen clock(
+diff --git a/rtl/sdram.sv b/rtl/sdram.sv
+index c4d96e4..3d288f1 100644
+--- a/rtl/sdram.sv
++++ b/rtl/sdram.sv
+@@ -23,7 +23,13 @@ module sdram
+ (
+ 
+ 	// interface to the MT48LC16M16 chip
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	input      [15:0] SDRAM_DQ_IN,// data read from the SDRAM pins
++	output reg [15:0] SDRAM_DQ_OUT,// data driven during a write
++	output reg        SDRAM_DQ_OE,// output enable for SDRAM_DQ_OUT
++`else
+ 	inout  reg [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
++`endif
+ 	output reg [12:0] SDRAM_A,    // 13 bit multiplexed address bus
+ 	output reg        SDRAM_DQML, // byte mask
+ 	output reg        SDRAM_DQMH, // byte mask
+@@ -38,6 +44,13 @@ module sdram
+ 	// cpu/chipset interface
+ 	input             init,			// init signal after FPGA config to initialize RAM
+ 	input             clk,			// sdram is accessed at up to 128MHz
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	input             clk_capture,
++	input             clk_physical,
++	input             active,
++	input             quiesce,
++	output            quiesced,
++`endif
+ 
+ 	input      [24:0] ch0_addr,
+ 	input             ch0_rd,
+@@ -67,7 +80,12 @@ module sdram
+ );
+ 
+ assign SDRAM_nCS = 0;
++`ifdef DE25_AGILEX_PLL_RECONFIG
++assign SDRAM_CKE = active;
++assign SDRAM_CLK = clk_physical;
++`else
+ assign SDRAM_CKE = 1;
++`endif
+ assign {SDRAM_DQMH,SDRAM_DQML} = SDRAM_A[12:11];
+ 
+ localparam RASCAS_DELAY   = 3'd1; // tRCD=20ns -> 2 cycles@85MHz
+@@ -86,28 +104,47 @@ localparam STATE_CONT  = STATE_START+RASCAS_DELAY;
+ localparam STATE_READY = STATE_CONT+CAS_LATENCY+2'd2;
+ localparam STATE_LAST  = STATE_READY;      // last state in cycle
+ 
+-reg  [2:0] state;
++reg  [2:0] state = STATE_IDLE;
+ reg [22:0] a;
+ reg  [1:0] bank;
+ reg [15:0] data;
+-reg        we;
++reg        we = 0;
+ reg        ram_req=0;
++reg        old_ref = 0;
++reg  [2:0] old_rd = 0;
++reg  [2:0] old_wr = 0;
++reg [24:1] last_a[3] = '{'1,'1,'1};
++reg [15:0] last_data[3];
++
++localparam MODE_NORMAL = 2'b00;
++localparam MODE_RESET  = 2'b01;
++localparam MODE_LDM    = 2'b10;
++localparam MODE_PRE    = 2'b11;
++reg [1:0] mode = MODE_RESET;
++reg [4:0] reset = 5'h1f;
++(* ASYNC_REG = "TRUE" *) reg [1:0] init_sync = 2'b11;
+ 
+ wire [2:0] rd,wr;
++`ifdef DE25_AGILEX_PLL_RECONFIG
++(* ASYNC_REG = "TRUE" *) reg [1:0] quiesce_sync = 2'b00;
++always @(posedge clk) quiesce_sync <= {quiesce_sync[0], quiesce};
++assign quiesced = quiesce_sync[1] && state == STATE_IDLE &&
++                  mode == MODE_NORMAL;
++`endif
+ 
+ assign rd = {ch2_rd, ch1_rd, ch0_rd};
+ assign wr = {ch2_wr, ch1_wr, ch0_wr};
+ 
+ // access manager
+ always @(posedge clk) begin
+-	reg old_ref;
+-	reg  [2:0] old_rd,old_wr;//,rd,wr;
+-	reg [24:1] last_a[3] = '{'1,'1,'1};
+-
+ 	old_rd <= old_rd & rd;
+ 	old_wr <= old_wr & wr;
+ 
+-	if(state == STATE_IDLE && mode == MODE_NORMAL) begin
++	if(state == STATE_IDLE && mode == MODE_NORMAL
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	   && !quiesce_sync[1]
++`endif
++	) begin
+ 		ram_req <= 0;
+ 		we <= 0;
+ 		ch0_busy <= 0;
+@@ -165,19 +202,13 @@ always @(posedge clk) begin
+ 	end
+ end
+ 
+-localparam MODE_NORMAL = 2'b00;
+-localparam MODE_RESET  = 2'b01;
+-localparam MODE_LDM    = 2'b10;
+-localparam MODE_PRE    = 2'b11;
+-
+ // initialization 
+-reg [1:0] mode;
+-reg [4:0] reset=5'h1f;
+ always @(posedge clk) begin
+ 	reg init_old=0;
+-	init_old <= init;
++	init_sync <= {init_sync[0], init};
++	init_old <= init_sync[1];
+ 
+-	if(init_old & ~init) reset <= 5'h1f;
++	if(init_old & ~init_sync[1]) reset <= 5'h1f;
+ 	else if(state == STATE_LAST) begin
+ 		if(reset != 0) begin
+ 			reset <= reset - 5'd1;
+@@ -200,47 +231,100 @@ localparam CMD_LOAD_MODE       = 3'b000;
+ 
+ wire [1:0] dqm = {we & ~a[0], we & a[0]};
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++reg [15:0] data_capture = '0;
++reg        read_capture_toggle = 1'b0;
++reg  [1:0] read_capture_pipe = 2'b00;
++reg        read_capture_seen = 1'b0;
++(* ASYNC_REG = "TRUE" *) reg [1:0] capture_init_sync = 2'b11;
++
++// READ is launched on clk, captured by the SDRAM on the phase-shifted
++// physical clock, and returns after CAS latency 2. Delaying the request
++// through two synchronizer stages samples DQ on the third capture edge, the
++// last valid edge before
++// STATE_READY consumes the held word.
++always @(posedge clk_capture) begin
++	capture_init_sync <= {capture_init_sync[0], init};
++	read_capture_pipe <= {read_capture_pipe[0], read_capture_toggle};
++	if(read_capture_pipe[1] != read_capture_seen) begin
++		read_capture_seen <= read_capture_pipe[1];
++		data_capture <= SDRAM_DQ_IN;
++	end
++
++	if(capture_init_sync[1]) begin
++		data_capture <= '0;
++		read_capture_pipe <= 2'b00;
++		read_capture_seen <= 1'b0;
++	end
++end
++`endif
++
++`ifdef DE25_AGILEX_PLL_RECONFIG
++wire [15:0] de25_data_reg = data_capture;
++`else
++reg  [15:0] data_reg;
++wire [15:0] de25_data_reg = data_reg;
++`endif
++
+ // SDRAM state machines
+ always @(posedge clk) begin
+-	reg [15:0] last_data[3];
+-	reg [15:0] data_reg;
+-
+ 	if(state == STATE_START) SDRAM_BA <= (mode == MODE_NORMAL) ? bank : 2'b00;
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	SDRAM_DQ_OUT <= '0;
++	SDRAM_DQ_OE <= 0;
++`else
+ 	SDRAM_DQ <= 'Z;
+-	casex({ram_req,we,mode,state})
+-		{2'b1X, MODE_NORMAL, STATE_START}: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_ACTIVE;
+-		{2'b11, MODE_NORMAL, STATE_CONT }: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE, SDRAM_DQ} <= {CMD_WRITE, data};
+-		{2'b10, MODE_NORMAL, STATE_CONT }: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_READ;
+-		{2'b0X, MODE_NORMAL, STATE_START}: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_AUTO_REFRESH;
+-
+-		// init
+-		{2'bXX,    MODE_LDM, STATE_START}: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_LOAD_MODE;
+-		{2'bXX,    MODE_PRE, STATE_START}: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_PRECHARGE;
+-
+-		                          default: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_NOP;
+-	endcase
+-
+-	casex({ram_req,mode,state})
+-		{1'b1,  MODE_NORMAL, STATE_START}: SDRAM_A <= a[13:1];
+-		{1'b1,  MODE_NORMAL, STATE_CONT }: SDRAM_A <= {dqm, 2'b10, a[22:14]};
+-
+-		// init
+-		{1'bX,     MODE_LDM, STATE_START}: SDRAM_A <= MODE;
+-		{1'bX,     MODE_PRE, STATE_START}: SDRAM_A <= 13'b0010000000000;
++`endif
++	{SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_NOP;
++	if(state == STATE_START) begin
++		if(mode == MODE_NORMAL)
++			{SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= ram_req ? CMD_ACTIVE : CMD_AUTO_REFRESH;
++		else if(mode == MODE_LDM)
++			{SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_LOAD_MODE;
++		else if(mode == MODE_PRE)
++			{SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_PRECHARGE;
++	end
++	else if(state == STATE_CONT && mode == MODE_NORMAL && ram_req)
++		{SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= we ? CMD_WRITE : CMD_READ;
++
++	if(ram_req && mode == MODE_NORMAL && state == STATE_CONT) begin
++		if(we) begin
++`ifdef DE25_AGILEX_PLL_RECONFIG
++			SDRAM_DQ_OUT <= data;
++			SDRAM_DQ_OE <= active;
++`else
++			SDRAM_DQ <= data;
++`endif
++		end
++`ifdef DE25_AGILEX_PLL_RECONFIG
++		else read_capture_toggle <= ~read_capture_toggle;
++`endif
++	end
+ 
+-		                          default: SDRAM_A <= 13'b0000000000000;
+-	endcase
++	SDRAM_A <= 13'b0000000000000;
++	if(state == STATE_START) begin
++		if(mode == MODE_NORMAL && ram_req)
++			SDRAM_A <= a[13:1];
++		else if(mode == MODE_LDM)
++			SDRAM_A <= MODE;
++		else if(mode == MODE_PRE)
++			SDRAM_A <= 13'b0010000000000;
++	end
++	else if(state == STATE_CONT && mode == MODE_NORMAL && ram_req)
++		SDRAM_A <= {dqm, 2'b10, a[22:14]};
+ 
++`ifndef DE25_AGILEX_PLL_RECONFIG
+ 	data_reg <= SDRAM_DQ;
++`endif
+ 
+ 	if(state == STATE_READY) begin
+ 		if(ch0_busy) begin
+ 			if(ram_req) begin
+ 				if(we) ch0_dout <= data[7:0];
+ 				else begin
+-					ch0_dout <= a[0] ? data_reg[15:8] : data_reg[7:0];
+-					last_data[0] <= data_reg;
++					ch0_dout <= a[0] ? de25_data_reg[15:8] : de25_data_reg[7:0];
++					last_data[0] <= de25_data_reg;
+ 				end
+ 			end
+ 			else ch0_dout <= a[0] ? last_data[0][15:8] : last_data[0][7:0];
+@@ -249,8 +333,8 @@ always @(posedge clk) begin
+ 			if(ram_req) begin
+ 				if(we) ch1_dout <= data[7:0];
+ 				else begin
+-					ch1_dout <= a[0] ? data_reg[15:8] : data_reg[7:0];
+-					last_data[1] <= data_reg;
++					ch1_dout <= a[0] ? de25_data_reg[15:8] : de25_data_reg[7:0];
++					last_data[1] <= de25_data_reg;
+ 				end
+ 			end
+ 			else ch1_dout <= a[0] ? last_data[1][15:8] : last_data[1][7:0];
+@@ -259,8 +343,8 @@ always @(posedge clk) begin
+ 			if(ram_req) begin
+ 				if(we) ch2_dout <= data[7:0];
+ 				else begin
+-					ch2_dout <= a[0] ? data_reg[15:8] : data_reg[7:0];
+-					last_data[2] <= data_reg;
++					ch2_dout <= a[0] ? de25_data_reg[15:8] : de25_data_reg[7:0];
++					last_data[2] <= de25_data_reg;
+ 				end
+ 			end
+ 			else ch2_dout <= a[0] ? last_data[2][15:8] : last_data[2][7:0];
+@@ -275,7 +359,7 @@ end
+ 
+ assign ss_out = {ch1_dout, ch0_dout};
+ 
+-
++`ifndef DE25_AGILEX_PLL_RECONFIG
+ altddio_out
+ #(
+ 	.extend_oe_disable("OFF"),
+@@ -300,5 +384,6 @@ sdramclk_ddr
+ 	.sclr(1'b0),
+ 	.sset(1'b0)
+ );
++`endif
+ 
+ endmodule
+diff --git a/rtl/video.sv b/rtl/video.sv
+index e254059..7b604c2 100644
+--- a/rtl/video.sv
++++ b/rtl/video.sv
+@@ -133,7 +133,7 @@ wire [23:0] pal_sonycxa_lut[64] = '{
+ 
+ wire [23:0] mem_data;
+ 
+-spram #(.addr_width(6), .data_width(24), .mem_name("pal"), .mem_init_file("rtl/tao.mif")) pal_ram
++spram #(.addr_width(6), .data_width(24), .mem_name("pal"), .mem_init_file("../upstream/cores/NES/rtl/tao.mif")) pal_ram
+ (
+ 	.clock(clk),
+ 	.address(load_color ? load_color_index : color_ef),
+@@ -177,9 +177,10 @@ reg  hblank, vblank;
+ reg  [8:0] h, v;
+ wire [8:0] hc = disengaged ? h : count_h;
+ wire [8:0] vc = disengaged ? v : count_v;
+-wire [8:0] vblank_start, vblank_end, hblank_start, hblank_end, hsync_start, hsync_end;
+-wire [8:0] vblank_start_sl, vblank_end_sl, vsync_start_sl;
+-wire hblank_period;
++reg [8:0] vblank_start, vblank_end;
++wire [8:0] hblank_start, hblank_end, hsync_start, hsync_end;
++reg [8:0] vblank_start_sl, vblank_end_sl, vsync_start_sl;
++reg hblank_period;
+ 
+ always_comb begin
+ 	case (sys_type)
+diff --git a/sys/emu_ports.vh b/sys/emu_ports.vh
+index ad59e00..1975972 100644
+--- a/sys/emu_ports.vh
++++ b/sys/emu_ports.vh
+@@ -111,10 +111,16 @@ output        DDRAM_WE,
+ //SDRAM interface with lower latency
+ output        SDRAM_CLK,
+ output        SDRAM_CKE,
+-output [12:0] SDRAM_A,
+-output  [1:0] SDRAM_BA,
+-inout  [15:0] SDRAM_DQ,
+-output        SDRAM_DQML,
++output [12:0] SDRAM_A,
++output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++input  [15:0] de25_sdram_dq_in,
++output [15:0] de25_sdram_dq_out,
++output        de25_sdram_dq_oe,
++`else
++inout  [15:0] SDRAM_DQ,
++`endif
++output        SDRAM_DQML,
+ output        SDRAM_DQMH,
+ output        SDRAM_nCS,
+ output        SDRAM_nCAS,
+diff --git a/sys/hps_io.sv b/sys/hps_io.sv
+index 1df2e02..469beab 100644
+--- a/sys/hps_io.sv
++++ b/sys/hps_io.sv
+@@ -263,6 +263,17 @@ reg [MAX_W:0] byte_cnt;
+ reg   [3:0] sdn_ack;
+ wire [15:0] disk = 16'd1 << io_din[11:8];
+ 
++// Quartus Pro requires these signals to be declared in the scope where the
++// command handler uses them, rather than inside the generate branch below.
++reg  [7:0] kbd_data;
++reg        kbd_we;
++wire [8:0] kbd_data_host;
++reg        kbd_rd;
++reg  [7:0] mouse_data;
++reg        mouse_we;
++wire [8:0] mouse_data_host;
++reg        mouse_rd;
++
+ always@(posedge clk_sys) begin : uio_block
+ 	reg [15:0] cmd;
+ 	reg  [2:0] b_wr;
+@@ -559,11 +570,6 @@ generate
+ 			end
+ 		end
+ 
+-		reg  [7:0] kbd_data;
+-		reg        kbd_we;
+-		wire [8:0] kbd_data_host;
+-		reg        kbd_rd;
+-
+ 		ps2_device keyboard
+ 		(
+ 			.clk_sys(clk_sys),
+@@ -582,11 +588,6 @@ generate
+ 			.rd(kbd_rd)
+ 		);
+ 
+-		reg  [7:0] mouse_data;
+-		reg        mouse_we;
+-		wire [8:0] mouse_data_host;
+-		reg        mouse_rd;
+-
+ 		ps2_device mouse
+ 		(
+ 			.clk_sys(clk_sys),
+diff --git a/sys/hq2x.sv b/sys/hq2x.sv
+index f5fcc71..deef1fc 100644
+--- a/sys/hq2x.sv
++++ b/sys/hq2x.sv
+@@ -306,7 +306,7 @@ module Blend
+ 	input  [23:0] D,
+ 	input  [23:0] F,
+ 	input  [23:0] H,
+-	output [23:0] Result
++	output reg [23:0] Result
+ );
+ 
+ 	localparam BLEND1 = 7'b110_10_00; // (A * 12 + B * 4        ) >> 4
+diff --git a/sys/iir_filter.v b/sys/iir_filter.v
+index b8bcf4f..38900b1 100644
+--- a/sys/iir_filter.v
++++ b/sys/iir_filter.v
+@@ -175,7 +175,7 @@ begin
+ end
+ endfunction
+ 
+-(* ramstyle = "logic" *) reg [39:0] intreg[2];
++(* ramstyle = "logic" *) reg [39:0] intreg[0:1];
+ always @(posedge clk, posedge reset) begin
+ 	if(reset) {intreg[0],intreg[1]} <= 80'd0;
+ 	else if(ce) intreg[ch] <= x_mul(x) - y_mul[60:21] + z;
+diff --git a/sys/video_mixer.sv b/sys/video_mixer.sv
+index e53e1c0..6323dbc 100644
+--- a/sys/video_mixer.sv
++++ b/sys/video_mixer.sv
+@@ -88,17 +88,12 @@ always @(posedge CLK_VIDEO) begin
+ 	frz  <= frz1;
+ end
+ 
+-generate
+-	if(GAMMA && HALF_DEPTH) begin
+-		wire [7:0] R_in  = frz ? 8'd0 : {R,R};
+-		wire [7:0] G_in  = frz ? 8'd0 : {G,G};
+-		wire [7:0] B_in  = frz ? 8'd0 : {B,B};
+-	end else begin
+-		wire [DWIDTH:0] R_in = frz ? 1'd0 : R;
+-		wire [DWIDTH:0] G_in = frz ? 1'd0 : G;
+-		wire [DWIDTH:0] B_in = frz ? 1'd0 : B;
+-	end
+-endgenerate
++wire [DWIDTH_SD:0] R_in = frz ? 1'd0 :
++	((GAMMA && HALF_DEPTH) ? {R,R} : R);
++wire [DWIDTH_SD:0] G_in = frz ? 1'd0 :
++	((GAMMA && HALF_DEPTH) ? {G,G} : G);
++wire [DWIDTH_SD:0] B_in = frz ? 1'd0 :
++	((GAMMA && HALF_DEPTH) ? {B,B} : B);
+ 
+ wire hs_g, vs_g;
+ wire hb_g, vb_g;

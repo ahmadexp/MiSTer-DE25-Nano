@@ -1,0 +1,71 @@
+diff --git a/NES.sv b/NES.sv
+--- a/NES.sv
++++ b/NES.sv
+@@ -1191,13 +1191,67 @@ always @(posedge clk) begin
+ 		de25_ppu_active <= 1'b1;
+ end
++`ifdef DE25_NES_PIPELINE_DIAGNOSTIC
++// Latched pipeline flags isolate CHR delivery from later pixel generation.
++// From MSB to LSB: PPU read seen, PPU address activity, PPU data activity,
++// pixel enable seen, active-video seen, visible PPU color activity. Earlier
++// builds established that reset, raster timing, PRG loading, and CPU reads
++// are active.
++reg [21:0] de25_last_ppu_addr = 22'd0;
++reg  [7:0] de25_last_ppu_din = 8'd0;
++reg  [5:0] de25_last_color = 6'd0;
++reg        de25_ppu_read_seen = 1'b0;
++reg        de25_ppu_addr_active = 1'b0;
++reg        de25_ppu_data_active = 1'b0;
++reg        de25_ce_pix_seen = 1'b0;
++reg        de25_vga_de_seen = 1'b0;
++reg        de25_color_active = 1'b0;
++always @(posedge clk) begin
++	if(reset_nes) begin
++		de25_last_ppu_addr <= ppu_addr;
++		de25_last_ppu_din <= ppu_din;
++		de25_last_color <= color;
++		de25_ppu_read_seen <= 1'b0;
++		de25_ppu_addr_active <= 1'b0;
++		de25_ppu_data_active <= 1'b0;
++		de25_ce_pix_seen <= 1'b0;
++		de25_vga_de_seen <= 1'b0;
++		de25_color_active <= 1'b0;
++	end else begin
++		if(ppu_read)
++			de25_ppu_read_seen <= 1'b1;
++		if(ppu_read && ppu_addr != de25_last_ppu_addr)
++			de25_ppu_addr_active <= 1'b1;
++		if(ppu_din != de25_last_ppu_din)
++			de25_ppu_data_active <= 1'b1;
++		if(ce_pix)
++			de25_ce_pix_seen <= 1'b1;
++		if(vga_de)
++			de25_vga_de_seen <= 1'b1;
++		if(!nes_hblank && !nes_vblank && color != de25_last_color)
++			de25_color_active <= 1'b1;
++		de25_last_ppu_addr <= ppu_addr;
++		de25_last_ppu_din <= ppu_din;
++		de25_last_color <= color;
++	end
++end
++assign de25_gpi_diagnostic = {
++	de25_ppu_read_seen,
++	de25_ppu_addr_active,
++	de25_ppu_data_active,
++	de25_ce_pix_seen,
++	de25_vga_de_seen,
++	de25_color_active
++};
++`else
+ assign de25_gpi_diagnostic = {
+ 	de25_ppu_active,
+ 	~reset_nes,
+ 	~loader_fail,
+ 	rom_loaded,
+ 	de25_ram_active,
+ 	clock_locked
+ };
++`endif
+ `endif
+ wire [7:0] nes_R,nes_G,nes_B;
+ `ifdef DE25_NES_DIAGNOSTIC

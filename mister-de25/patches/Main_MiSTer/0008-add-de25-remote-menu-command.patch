@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Thu, 13 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Add DE25 remote menu command
+
+Allow board bring-up and headless maintenance to inject the same F12 release
+event as the physical OSD key through the existing MiSTer command FIFO. Keep
+the command DE25-only so other MiSTer targets retain their current interface.
+---
+ input.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/input.cpp b/input.cpp
+index d2f70a8..7479499 100644
+--- a/input.cpp
++++ b/input.cpp
+@@ -6234,5 +6234,8 @@ int input_test(int getchar)
+ 					printf("MiSTer_cmd: %s\n", cmd);
+ 					if (!strncmp(cmd, "fb_cmd", 6)) video_cmd(cmd);
++					#ifdef MISTER_DE25
++					else if (!strcmp(cmd, "menu")) menu_key_set(KEY_F12 | UPSTROKE);
++					#endif
+ 					else if (!strncmp(cmd, "video_mode ", 11)) video_mode_cmd(cmd + 11);
+ 					else if (!strncmp(cmd, "load_core ", 10))
+ 					{
+-- 
+2.43.0

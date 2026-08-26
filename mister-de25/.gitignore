@@ -1,0 +1,14 @@
+/upstream/
+/build/
+/quartus/*.hex
+/quartus/*.mif
+/quartus/output_files*/
+/quartus/db/
+/quartus/incremental_db/
+/artifacts/**/*.rpt
+/artifacts/**/*.sof
+/artifacts/**/*.rbf
+/artifacts/*.img
+/artifacts/*.img.*
+/artifacts/.audit*/
+/scripts/__pycache__/

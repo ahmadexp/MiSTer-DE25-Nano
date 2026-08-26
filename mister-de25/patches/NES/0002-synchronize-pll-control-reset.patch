@@ -1,0 +1,36 @@
+diff --git a/NES.sv b/NES.sv
+--- a/NES.sv
++++ b/NES.sv
+@@ -355,5 +355,6 @@ wire de25_pll_busy;
+ wire de25_pll_done;
+ wire de25_pll_error;
++wire de25_control_reset;
+ wire de25_ram_quiesced;
+ wire de25_ram_active;
+ wire de25_sdram_controller_quiesced;
+@@ -381,6 +382,7 @@ de25_nes_pll pll
+ 	.busy(de25_pll_busy),
+ 	.done(de25_pll_done),
+-	.error(de25_pll_error)
++	.error(de25_pll_error),
++	.control_reset(de25_control_reset)
+ );
+ 
+ de25_sdram_quiesce de25_ram_quiesce
+@@ -389,6 +391,6 @@ de25_sdram_quiesce de25_ram_quiesce
+ (
+ 	.clk_control(CLK_50M),
+-	.reset_control(RESET),
++	.reset_control(de25_control_reset),
+ 	.clk_sdram(clk85),
+ 	.pll_locked(clock_locked),
+ 	.request_control(de25_reconfig_request),
+@@ -401,7 +403,7 @@ always @(posedge CLK_50M) begin
+ 	de25_want_pal_sync <= {de25_want_pal_sync[0], de25_want_pal_async};
+ 	de25_reconfig_start <= 0;
+ 
+-	if(RESET) begin
++	if(de25_control_reset) begin
+ 		de25_pll_profile_pal <= 0;
+ 		de25_pll_applied_pal <= 0;
+ 		de25_reconfig_request <= 0;

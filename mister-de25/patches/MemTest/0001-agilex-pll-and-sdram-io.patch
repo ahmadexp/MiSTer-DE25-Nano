@@ -1,0 +1,316 @@
+diff --git a/memtest.sv b/memtest.sv
+index 144ef74..f88fecb 100644
+--- a/memtest.sv
++++ b/memtest.sv
+@@ -89,7 +89,41 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
+ 
+ ///////////////////////////////////////////////////////////////////
+ wire clk_ram, locked;
+-
++reg recfg = 0;
++reg pll_reset = 0;
++`ifdef DE25_AGILEX_PLL_RECONFIG
++// Start at the timing-signed-off 80 MHz profile. The A key still explicitly starts
++// the full high-to-low stress sweep from profile zero.
++reg [5:0] pos = 36;
++`else
++reg [5:0] pos = 0;
++`endif
++
++`ifdef DE25_AGILEX_PLL_RECONFIG
++wire [11:0] de25_frequency_bcd;
++wire de25_reconfig_busy;
++wire de25_reconfig_done;
++wire de25_reconfig_error;
++wire de25_ram_quiesced;
++wire de25_sdram_clk;
++reg  de25_reconfig_start = 0;
++reg  de25_reconfig_issued = 0;
++
++de25_memtest_pll de25_pll
++(
++	.refclk(CLK_50M),
++	.reset(RESET),
++	.profile_index(pos),
++	.start(de25_reconfig_start),
++	.outclk(clk_ram),
++	.sdram_clk(de25_sdram_clk),
++	.locked(locked),
++	.frequency_bcd(de25_frequency_bcd),
++	.busy(de25_reconfig_busy),
++	.done(de25_reconfig_done),
++	.error(de25_reconfig_error)
++);
++`else
+ pll pll
+ (
+ 	.*,
+@@ -113,9 +147,7 @@ pll_cfg pll_cfg
+ 	.mgmt_read(0),
+ 	.mgmt_readdata()
+ );
+-
+-reg recfg = 0;
+-reg pll_reset = 0;
++`endif
+ 
+ wire [31:0] cfg_param[256] =
+ '{ //      M         K          C
+@@ -185,7 +217,6 @@ wire [31:0] cfg_param[256] =
+ 	 'h45, 'h00404, 'h1999999A, 'h20504
+ };
+ 
+-reg   [5:0] pos  = 0;
+ reg  [15:0] mins = 0;
+ reg  [15:0] secs = 0;
+ reg         auto = 0;
+@@ -196,6 +227,22 @@ always @(posedge CLK_50M) begin
+ 	reg        old_stb = 0;
+ 	reg [15:0] old_joy = 0;
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	de25_reconfig_start <= 0;
++	if(RESET) begin
++		de25_reconfig_issued <= 0;
++	end else begin
++		if(!recfg) de25_reconfig_issued <= 0;
++		// The SDRAM clock must remain stable while a command is active. Wait
++		// for a round-trip acknowledgement from clk_ram before changing it.
++		if(recfg && de25_ram_quiesced &&
++		   !de25_reconfig_issued && !de25_reconfig_busy) begin
++			de25_reconfig_start <= 1;
++			de25_reconfig_issued <= 1;
++		end
++	end
++	if(de25_reconfig_done || de25_reconfig_error) recfg <= 0;
++`else
+ 	mgmt_write <= 0;
+ 
+ 	if(((locked && !mgmt_waitrequest) || pll_reset) && recfg) begin
+@@ -265,6 +312,7 @@ always @(posedge CLK_50M) begin
+ 			endcase
+ 		end
+ 	end
++`endif
+ 
+ 	if(recfg) begin
+ 		{min, mins} <= 0;
+@@ -333,26 +381,63 @@ always @(posedge CLK_50M) begin
+ 	
+ 	if(status[0] | buttons[1]) begin
+ 		recfg <= 1;
++	`ifdef DE25_AGILEX_PLL_RECONFIG
++		pos <= 36;
++		auto <= 0;
++	`else
+ 		pos <= 0;
+ 		auto <= 1;
++	`endif
+ 		sdram_chip <= 0;
+ 	end
+ end
+ 
+ 
+ ///////////////////////////////////////////////////////////////////
+-assign SDRAM_CKE = 1;
+-
++wire [15:0] sdram_dq_out;
++wire        sdram_dq_oe;
++
++// RESET, recfg, and locked originate outside the variable clk_ram domain.
++// Keep their asynchronous timing confined to first synchronizer stages.
++wire ram_reconfig_request = recfg | ~locked;
++(* ASYNC_REG = "TRUE" *) reg [1:0] ram_reconfig_sync = 2'b11;
++(* ASYNC_REG = "TRUE" *) reg [1:0] ram_reset_sync = 2'b11;
+ reg reset = 0;
++
++always @(posedge clk_ram) begin
++	ram_reconfig_sync <= {ram_reconfig_sync[0], ram_reconfig_request};
++	ram_reset_sync    <= {ram_reset_sync[0], RESET};
++end
++
++`ifdef DE25_AGILEX_PLL_RECONFIG
++wire ram_active;
++de25_sdram_quiesce de25_ram_quiesce
++(
++	.clk_control(CLK_50M),
++	.reset_control(RESET),
++	.clk_sdram(clk_ram),
++	.pll_locked(locked),
++	.request_control(recfg),
++	.hold_sdram(reset),
++	.quiesced_control(de25_ram_quiesced),
++	.sdram_active(ram_active)
++);
++assign SDRAM_CKE = ram_active;
++assign SDRAM_DQ = (ram_active && sdram_dq_oe) ? sdram_dq_out : 16'bZ;
++`else
++assign SDRAM_CKE = 1'b1;
++assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'bZ;
++`endif
++
+ always @(posedge clk_ram) begin
+ 	integer timeout;
+ 
+ 	if(timeout) timeout <= timeout - 1;
+ 	reset <= |timeout;
+ 
+-	if((recfg || ~locked) && (timeout < 1000000)) timeout <= 1000000;
++	if(ram_reconfig_sync[1] && (timeout < 1000000)) timeout <= 1000000;
+ 
+-	if(RESET) timeout <= 100000000;
++	if(ram_reset_sync[1]) timeout <= 100000000;
+ end
+ 
+ wire [31:0] passcount, failcount;
+@@ -365,7 +450,9 @@ tester my_memtst
+ 	.passcount(passcount),
+ 	.failcount(failcount),
+ 	.DRAM_CLK(SDRAM_CLK),
+-	.DRAM_DQ(SDRAM_DQ),
++	.DRAM_DQ_IN(SDRAM_DQ),
++	.DRAM_DQ_OUT(sdram_dq_out),
++	.DRAM_DQ_OE(sdram_dq_oe),
+ 	.DRAM_ADDR(SDRAM_A),
+ 	.DRAM_LDQM(SDRAM_DQML),
+ 	.DRAM_UDQM(SDRAM_DQMH),
+@@ -377,16 +464,31 @@ tester my_memtst
+ 	.DRAM_BA_1(SDRAM_BA[1])
+ );
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++// The second IOPLL output balances the SDRAM input-setup and read-access
++// margins around the controller edge. It is reconfigured with clk_ram.
++assign SDRAM_CLK = de25_sdram_clk;
++`endif
++
+ 
+ ///////////////////////////////////////////////////////////////////
+ wire videoclk;
+ 
++`ifdef DE25_AGILEX_PLL_RECONFIG
++de25_memtest_video_pll de25_vpll
++(
++	.refclk(CLK_50M),
++	.reset(RESET),
++	.outclk(videoclk)
++);
++`else
+ vpll vpll
+ (
+ 	.refclk(CLK_50M),
+ 	.rst(0),
+ 	.outclk_0(videoclk)
+ );
++`endif
+ 
+ assign CLK_VIDEO = videoclk;
+ 
+@@ -399,7 +501,11 @@ vgaout showrez
+ 	.rez2(failcount),
+ 	.rez3((sdram_sz == 3) ? ~sdram_chip : 2'b00),
+ 	.bg(6'b000001),
++`ifdef DE25_AGILEX_PLL_RECONFIG
++	.freq(16'hF000 | de25_frequency_bcd),
++`else
+ 	.freq(16'hF000 | cfg_param[{pos, 2'd0}][11:0]),
++`endif
+ 	.elapsed(mins),
+ 	.mark(8'h80 >> {~auto, secs[2:0]}),
+ 	.ce(CE_PIXEL),
+diff --git a/rtl/sdram.v b/rtl/sdram.v
+index 7499458..f4995f6 100644
+--- a/rtl/sdram.v
++++ b/rtl/sdram.v
+@@ -61,7 +61,9 @@ module sdram
+ 	output            DRAM_CS_N,
+ 	output            DRAM_BA_0,
+ 	output            DRAM_BA_1,
+-	inout  reg [15:0] DRAM_DQ,
++	input      [15:0] DRAM_DQ_IN,
++	output reg [15:0] DRAM_DQ_OUT,
++	output reg        DRAM_DQ_OE,
+ 	output     [12:0] DRAM_ADDR
+ );
+ 
+@@ -127,13 +129,16 @@ always @ (posedge clk) begin
+ 	st    <= st + 1'd1;
+ 	state <= st;
+ 
+-	DRAM_DQ <= 16'bZ;
++	DRAM_DQ_OE <= 1'b0;
+ 
+ 	wr <= wr2;
+ 	wdat_req <= wr2 & ready2;
+-	if(wdat_req) DRAM_DQ <= wdat;
++	if(wdat_req) begin
++		DRAM_DQ_OUT <= wdat;
++		DRAM_DQ_OE  <= 1'b1;
++	end
+ 
+-	rdat3   <= DRAM_DQ;
++	rdat3   <= DRAM_DQ_IN;
+ 	rdat2   <= rdat3;
+ 	rdat    <= rdat2;
+ 	cmd2    <= CMD_NOP;
+@@ -247,29 +252,10 @@ always @ (posedge clk) begin
+ 	done <= done2;
+ end
+ 
+-altddio_out
+-#(
+-	.extend_oe_disable("OFF"),
+-	.intended_device_family("Cyclone V"),
+-	.invert_output("OFF"),
+-	.lpm_hint("UNUSED"),
+-	.lpm_type("altddio_out"),
+-	.oe_reg("UNREGISTERED"),
+-	.power_up_high("OFF"),
+-	.width(1)
+-)
+-sdramclk_ddr
+-(
+-	.datain_h(1'b0),
+-	.datain_l(1'b1),
+-	.outclock(clk),
+-	.dataout(DRAM_CLK),
+-	.aclr(1'b0),
+-	.aset(1'b0),
+-	.oe(1'b1),
+-	.outclocken(1'b1),
+-	.sclr(1'b0),
+-	.sset(1'b0)
+-);
++`ifndef DE25_AGILEX_PLL_RECONFIG
++// The original Cyclone V altddio_out emitted 0 during clk's high half and 1
++// during its low half. The DE25 top boundary drives its dedicated C1 clock.
++assign DRAM_CLK = ~clk;
++`endif
+ 
+ endmodule
+diff --git a/rtl/tester.v b/rtl/tester.v
+index a95eeb4..6561f1a 100644
+--- a/rtl/tester.v
++++ b/rtl/tester.v
+@@ -18,7 +18,9 @@ module tester
+ 	output reg [31:0] failcount,
+ 
+ 	output        DRAM_CLK,
+-	inout  [15:0] DRAM_DQ,
++	input  [15:0] DRAM_DQ_IN,
++	output [15:0] DRAM_DQ_OUT,
++	output        DRAM_DQ_OE,
+ 	output [12:0] DRAM_ADDR,
+ 	output        DRAM_LDQM,DRAM_UDQM,
+ 	output        DRAM_WE_N,
+@@ -60,7 +62,9 @@ sdram my_dram
+ 	.rdat(dram_rdat),
+ 	.wdat(rnd_out),
+ 	.DRAM_CLK(DRAM_CLK),
+-	.DRAM_DQ(DRAM_DQ),
++	.DRAM_DQ_IN(DRAM_DQ_IN),
++	.DRAM_DQ_OUT(DRAM_DQ_OUT),
++	.DRAM_DQ_OE(DRAM_DQ_OE),
+ 	.DRAM_ADDR(DRAM_ADDR),
+ 	.DRAM_CS_N(DRAM_CS_N),
+ 	.DRAM_RAS_N(DRAM_RAS_N),

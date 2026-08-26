@@ -1,0 +1,47 @@
+From: DE25-Nano Port <de25-nano@example.invalid>
+Subject: [PATCH] Disable unsupported DE25 HPS frame buffer
+
+The current DE25 shell sends native core video directly to HDMI. It does not
+implement MiSTer's optional HPS frame-buffer command or DDR aperture, and its
+512 MiB LPDDR cannot back the original frame-buffer address.
+
+Leave the optional frame buffer disabled on DE25 and ignore menu-background
+requests that require it. Core video and the hardware OSD remain available.
+
+diff --git a/video.cpp b/video.cpp
+--- a/video.cpp
++++ b/video.cpp
+@@ -2389,6 +2389,13 @@ static int store_custom_video_mode(char* vcfg, vmode_custom_t *v)
+ 
+ static void fb_init()
+ {
++#ifdef MISTER_DE25
++	// The current DE25 shell sends core video directly to HDMI and does not
++	// implement MiSTer's HPS frame-buffer command or its DDR aperture. Keep the
++	// optional HPS frame buffer disabled until that hardware path is available.
++	printf("DE25: HPS frame buffer is unavailable in this shell.\n");
++	return;
++#else
+ 	if (!fb_base)
+ 	{
+ 		fb_base = (volatile uint32_t*)shmem_map(FB_ADDR, FB_SIZE * 4 * 3);
+@@ -2398,6 +2406,7 @@ static void fb_init()
+ 		}
+ 	}
+ 	spi_uio_cmd16(UIO_SET_FBUF, 0);
++#endif
+ }
+ 
+ // Structure to hold DAC configuration
+@@ -3835,6 +3842,11 @@ void video_menu_bg(int n, int idle)
+ 	static Imlib_Image bg1 = 0, bg2 = 0;
+ 	static Imlib_Image curtain = 0;
+ 
++#ifdef MISTER_DE25
++	// video_menu_bg() writes directly into the optional HPS frame buffer.
++	if (!fb_base) return;
++#endif
++
+ 	static int cached_idle = 0;
+ 	bg_has_picture = 0;
+ 

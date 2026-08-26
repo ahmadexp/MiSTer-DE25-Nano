@@ -1,0 +1,1935 @@
+***************************************************************
+Quartus is a registered trademark of Altera Corporation in the
+US and other countries.  Portions of the Quartus Prime software
+code, and other portions of the code included in this download
+or on this DVD, are licensed to Altera Corporation and are the
+copyrighted property of third parties. For license details,
+refer to the Altera Software License Subscription Agreements 
+on the Quartus Prime software download page.
+***************************************************************
+
+2026.08.12.08:23:57 Warning: Both --quartus-project and --new-quartus-project switches are not used. A new Quartus project named inspect_memtest_pll_profiles will be created using the tcl script filename: /tmp/tmp.cfqs4ZM4lV/inspect_memtest_pll_profiles.qpf.
+2026.08.12.08:23:57 Info: Doing: qsys-script --script=inspect_memtest_pll_profiles.tcl
+2026.08.12.08:24:01 Info: create_system inspect_memtest_pll_profiles
+2026.08.12.08:24:01 Info: set_project_property DEVICE_FAMILY Agilex 5
+2026.08.12.08:24:01 Info: set_project_property DEVICE A5EB013BB23BE4SCS
+2026.08.12.08:24:01 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 167
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 167
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2494.01197605
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:02 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:02 Info: send_message Info MEMTEST_PROFILE requested=167 actual=167.0 actual1=167.0 phase1=2470.1 m=167 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=5 c0_lo=5 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=5 c1_lo=5 c1_odd=0 c1_bypass=0 c1_preset=5 c1_phase=1
+2026.08.12.08:24:02 Info: Info: MEMTEST_PROFILE requested=167 actual=167.0 actual1=167.0 phase1=2470.1 m=167 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=5 c0_lo=5 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=5 c1_lo=5 c1_odd=0 c1_bypass=0 c1_preset=5 c1_phase=1
+2026.08.12.08:24:02 Info: remove_instance iopll_0
+2026.08.12.08:24:02 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 160
+2026.08.12.08:24:02 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 160
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2625.0
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:03 Info: send_message Info MEMTEST_PROFILE requested=160 actual=160.0 actual1=160.0 phase1=2622.8 m=224 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=7 c0_lo=7 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=7 c1_lo=7 c1_odd=0 c1_bypass=0 c1_preset=6 c1_phase=7
+2026.08.12.08:24:03 Info: Info: MEMTEST_PROFILE requested=160 actual=160.0 actual1=160.0 phase1=2622.8 m=224 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=7 c0_lo=7 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=7 c1_lo=7 c1_odd=0 c1_bypass=0 c1_preset=6 c1_phase=7
+2026.08.12.08:24:03 Info: remove_instance iopll_0
+2026.08.12.08:24:03 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 150
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 150
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2833.33333333
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:03 Info: send_message Info MEMTEST_PROFILE requested=150 actual=150.0 actual1=150.0 phase1=2833.3 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:03 Info: Info: MEMTEST_PROFILE requested=150 actual=150.0 actual1=150.0 phase1=2833.3 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:03 Info: remove_instance iopll_0
+2026.08.12.08:24:03 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 149
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 149
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2855.70469799
+2026.08.12.08:24:03 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:03 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:03 Info: send_message Info MEMTEST_PROFILE requested=149 actual=149.0 actual1=149.0 phase1=2852.3 m=298 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:03 Info: Info: MEMTEST_PROFILE requested=149 actual=149.0 actual1=149.0 phase1=2852.3 m=298 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:03 Info: remove_instance iopll_0
+2026.08.12.08:24:03 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 148
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 148
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2878.37837838
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:04 Info: send_message Info MEMTEST_PROFILE requested=148 actual=148.0 actual1=148.0 phase1=2871.6 m=296 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:04 Info: Info: MEMTEST_PROFILE requested=148 actual=148.0 actual1=148.0 phase1=2871.6 m=296 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:04 Info: remove_instance iopll_0
+2026.08.12.08:24:04 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 147
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 147
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2901.36054422
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:04 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:04 Info: send_message Info MEMTEST_PROFILE requested=147 actual=147.0 actual1=147.0 phase1=2891.2 m=294 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:04 Info: Info: MEMTEST_PROFILE requested=147 actual=147.0 actual1=147.0 phase1=2891.2 m=294 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:04 Info: remove_instance iopll_0
+2026.08.12.08:24:04 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:04 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 146
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 146
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2924.65753425
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:05 Info: send_message Info MEMTEST_PROFILE requested=146 actual=146.0 actual1=146.0 phase1=2911.0 m=292 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:05 Info: Info: MEMTEST_PROFILE requested=146 actual=146.0 actual1=146.0 phase1=2911.0 m=292 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:05 Info: remove_instance iopll_0
+2026.08.12.08:24:05 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 145
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 145
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2948.27586207
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:05 Info: send_message Info MEMTEST_PROFILE requested=145 actual=145.0 actual1=145.0 phase1=2945.4 m=174 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=6 c0_lo=6 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=6 c1_lo=6 c1_odd=0 c1_bypass=0 c1_preset=6 c1_phase=1
+2026.08.12.08:24:05 Info: Info: MEMTEST_PROFILE requested=145 actual=145.0 actual1=145.0 phase1=2945.4 m=174 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=6 c0_lo=6 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=6 c1_lo=6 c1_odd=0 c1_bypass=0 c1_preset=6 c1_phase=1
+2026.08.12.08:24:05 Info: remove_instance iopll_0
+2026.08.12.08:24:05 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 144
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 144
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2972.22222222
+2026.08.12.08:24:05 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:05 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:05 Info: send_message Info MEMTEST_PROFILE requested=144 actual=144.0 actual1=144.0 phase1=2951.4 m=288 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:05 Info: Info: MEMTEST_PROFILE requested=144 actual=144.0 actual1=144.0 phase1=2951.4 m=288 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=4
+2026.08.12.08:24:05 Info: remove_instance iopll_0
+2026.08.12.08:24:05 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 143
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 143
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 2996.5034965
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:06 Info: send_message Info MEMTEST_PROFILE requested=143 actual=143.0 actual1=143.0 phase1=3015.7 m=286 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:06 Info: Info: MEMTEST_PROFILE requested=143 actual=143.0 actual1=143.0 phase1=3015.7 m=286 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:06 Info: remove_instance iopll_0
+2026.08.12.08:24:06 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 142
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 142
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3021.12676056
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:06 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:06 Info: send_message Info MEMTEST_PROFILE requested=142 actual=142.0 actual1=142.0 phase1=3037.0 m=284 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:06 Info: Info: MEMTEST_PROFILE requested=142 actual=142.0 actual1=142.0 phase1=3037.0 m=284 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:06 Info: remove_instance iopll_0
+2026.08.12.08:24:06 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:06 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 141
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 141
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3046.09929078
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:07 Info: send_message Info MEMTEST_PROFILE requested=141 actual=141.0 actual1=141.0 phase1=3058.5 m=282 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:07 Info: Info: MEMTEST_PROFILE requested=141 actual=141.0 actual1=141.0 phase1=3058.5 m=282 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:07 Info: remove_instance iopll_0
+2026.08.12.08:24:07 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 140
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 140
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3071.42857143
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:07 Info: send_message Info MEMTEST_PROFILE requested=140 actual=140.0 actual1=140.0 phase1=3069.2 m=224 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=8 c0_lo=8 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=8 c1_lo=8 c1_odd=0 c1_bypass=0 c1_preset=7 c1_phase=7
+2026.08.12.08:24:07 Info: Info: MEMTEST_PROFILE requested=140 actual=140.0 actual1=140.0 phase1=3069.2 m=224 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=8 c0_lo=8 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=8 c1_lo=8 c1_odd=0 c1_bypass=0 c1_preset=7 c1_phase=7
+2026.08.12.08:24:07 Info: remove_instance iopll_0
+2026.08.12.08:24:07 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 139
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 139
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3097.12230216
+2026.08.12.08:24:07 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:07 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:07 Info: send_message Info MEMTEST_PROFILE requested=139 actual=139.0 actual1=139.0 phase1=3102.5 m=278 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:07 Info: Info: MEMTEST_PROFILE requested=139 actual=139.0 actual1=139.0 phase1=3102.5 m=278 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:07 Info: remove_instance iopll_0
+2026.08.12.08:24:07 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 138
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 138
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3123.1884058
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:08 Info: send_message Info MEMTEST_PROFILE requested=138 actual=138.0 actual1=138.0 phase1=3125.0 m=276 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:08 Info: Info: MEMTEST_PROFILE requested=138 actual=138.0 actual1=138.0 phase1=3125.0 m=276 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:08 Info: remove_instance iopll_0
+2026.08.12.08:24:08 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 137
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 137
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3149.6350365
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:08 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:08 Info: send_message Info MEMTEST_PROFILE requested=137 actual=137.0 actual1=137.0 phase1=3147.8 m=274 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:08 Info: Info: MEMTEST_PROFILE requested=137 actual=137.0 actual1=137.0 phase1=3147.8 m=274 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:08 Info: remove_instance iopll_0
+2026.08.12.08:24:08 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:08 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 136
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 136
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3176.47058824
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:09 Info: send_message Info MEMTEST_PROFILE requested=136 actual=136.0 actual1=136.0 phase1=3171.0 m=272 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:09 Info: Info: MEMTEST_PROFILE requested=136 actual=136.0 actual1=136.0 phase1=3171.0 m=272 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:09 Info: remove_instance iopll_0
+2026.08.12.08:24:09 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 135
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 135
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3203.7037037
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:09 Info: send_message Info MEMTEST_PROFILE requested=135 actual=135.0 actual1=135.0 phase1=3198.7 m=297 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=11 c0_lo=11 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=11 c1_lo=11 c1_odd=0 c1_bypass=0 c1_preset=10 c1_phase=4
+2026.08.12.08:24:09 Info: Info: MEMTEST_PROFILE requested=135 actual=135.0 actual1=135.0 phase1=3198.7 m=297 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=11 c0_lo=11 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=11 c1_lo=11 c1_odd=0 c1_bypass=0 c1_preset=10 c1_phase=4
+2026.08.12.08:24:09 Info: remove_instance iopll_0
+2026.08.12.08:24:09 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 134
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 134
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3231.34328358
+2026.08.12.08:24:09 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:09 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:09 Info: send_message Info MEMTEST_PROFILE requested=134 actual=134.0 actual1=134.0 phase1=3233.8 m=201 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=8 c0_lo=7 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=8 c1_lo=7 c1_odd=1 c1_bypass=0 c1_preset=7 c1_phase=4
+2026.08.12.08:24:09 Info: Info: MEMTEST_PROFILE requested=134 actual=134.0 actual1=134.0 phase1=3233.8 m=201 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=8 c0_lo=7 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=8 c1_lo=7 c1_odd=1 c1_bypass=0 c1_preset=7 c1_phase=4
+2026.08.12.08:24:09 Info: remove_instance iopll_0
+2026.08.12.08:24:09 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 133
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 133
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3259.39849624
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:10 Info: send_message Info MEMTEST_PROFILE requested=133 actual=133.0 actual1=133.0 phase1=3242.5 m=266 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:10 Info: Info: MEMTEST_PROFILE requested=133 actual=133.0 actual1=133.0 phase1=3242.5 m=266 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=5
+2026.08.12.08:24:10 Info: remove_instance iopll_0
+2026.08.12.08:24:10 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 132
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 132
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3287.87878788
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:10 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:10 Info: send_message Info MEMTEST_PROFILE requested=132 actual=132.0 actual1=132.0 phase1=3282.8 m=198 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=8 c0_lo=7 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=8 c1_lo=7 c1_odd=1 c1_bypass=0 c1_preset=7 c1_phase=4
+2026.08.12.08:24:10 Info: Info: MEMTEST_PROFILE requested=132 actual=132.0 actual1=132.0 phase1=3282.8 m=198 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=8 c0_lo=7 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=8 c1_lo=7 c1_odd=1 c1_bypass=0 c1_preset=7 c1_phase=4
+2026.08.12.08:24:10 Info: remove_instance iopll_0
+2026.08.12.08:24:10 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:10 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 131
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 131
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3316.79389313
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:11 Info: send_message Info MEMTEST_PROFILE requested=131 actual=131.0 actual1=131.0 phase1=3339.7 m=262 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:11 Info: Info: MEMTEST_PROFILE requested=131 actual=131.0 actual1=131.0 phase1=3339.7 m=262 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:11 Info: remove_instance iopll_0
+2026.08.12.08:24:11 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 130
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 130
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3346.15384615
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:11 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:11 Info: send_message Info MEMTEST_PROFILE requested=130 actual=130.0 actual1=130.0 phase1=3344.5 m=299 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=12 c0_lo=11 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=12 c1_lo=11 c1_odd=1 c1_bypass=0 c1_preset=11 c1_phase=0
+2026.08.12.08:24:11 Info: Info: MEMTEST_PROFILE requested=130 actual=130.0 actual1=130.0 phase1=3344.5 m=299 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=12 c0_lo=11 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=12 c1_lo=11 c1_odd=1 c1_bypass=0 c1_preset=11 c1_phase=0
+2026.08.12.08:24:11 Info: remove_instance iopll_0
+2026.08.12.08:24:11 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 129
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 129
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3375.96899225
+2026.08.12.08:24:11 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:12 Info: send_message Info MEMTEST_PROFILE requested=129 actual=129.0 actual1=129.0 phase1=3391.5 m=258 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:12 Info: Info: MEMTEST_PROFILE requested=129 actual=129.0 actual1=129.0 phase1=3391.5 m=258 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:12 Info: remove_instance iopll_0
+2026.08.12.08:24:12 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 128
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 128
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3406.25
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:12 Info: send_message Info MEMTEST_PROFILE requested=128 actual=128.0 actual1=128.0 phase1=3398.4 m=64 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=11 c1_phase=7
+2026.08.12.08:24:12 Info: Info: MEMTEST_PROFILE requested=128 actual=128.0 actual1=128.0 phase1=3398.4 m=64 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=11 c1_phase=7
+2026.08.12.08:24:12 Info: remove_instance iopll_0
+2026.08.12.08:24:12 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 127
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 127
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3437.00787402
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:12 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:12 Info: send_message Info MEMTEST_PROFILE requested=127 actual=127.0 actual1=127.0 phase1=3444.9 m=254 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:12 Info: Info: MEMTEST_PROFILE requested=127 actual=127.0 actual1=127.0 phase1=3444.9 m=254 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:12 Info: remove_instance iopll_0
+2026.08.12.08:24:12 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:12 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 126
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 126
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3468.25396825
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:13 Info: send_message Info MEMTEST_PROFILE requested=126 actual=126.0 actual1=126.0 phase1=3472.2 m=252 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:13 Info: Info: MEMTEST_PROFILE requested=126 actual=126.0 actual1=126.0 phase1=3472.2 m=252 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:13 Info: remove_instance iopll_0
+2026.08.12.08:24:13 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 125
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 125
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3500.0
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:13 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:13 Info: send_message Info MEMTEST_PROFILE requested=125 actual=125.0 actual1=125.0 phase1=3500.0 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=12 c0_lo=12 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=12 c1_lo=12 c1_odd=0 c1_bypass=0 c1_preset=11 c1_phase=4
+2026.08.12.08:24:13 Info: Info: MEMTEST_PROFILE requested=125 actual=125.0 actual1=125.0 phase1=3500.0 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=12 c0_lo=12 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=12 c1_lo=12 c1_odd=0 c1_bypass=0 c1_preset=11 c1_phase=4
+2026.08.12.08:24:13 Info: remove_instance iopll_0
+2026.08.12.08:24:13 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 124
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 124
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3532.25806452
+2026.08.12.08:24:13 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:14 Info: send_message Info MEMTEST_PROFILE requested=124 actual=124.0 actual1=124.0 phase1=3528.2 m=248 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:14 Info: Info: MEMTEST_PROFILE requested=124 actual=124.0 actual1=124.0 phase1=3528.2 m=248 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:14 Info: remove_instance iopll_0
+2026.08.12.08:24:14 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 123
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 123
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3565.04065041
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:14 Info: send_message Info MEMTEST_PROFILE requested=123 actual=123.0 actual1=123.0 phase1=3556.9 m=246 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:14 Info: Info: MEMTEST_PROFILE requested=123 actual=123.0 actual1=123.0 phase1=3556.9 m=246 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=10 c0_lo=10 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=10 c1_lo=10 c1_odd=0 c1_bypass=0 c1_preset=9 c1_phase=6
+2026.08.12.08:24:14 Info: remove_instance iopll_0
+2026.08.12.08:24:14 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 122
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 122
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3598.36065574
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:14 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:14 Info: send_message Info MEMTEST_PROFILE requested=122 actual=122.0 actual1=122.0 phase1=3606.6 m=61 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=0
+2026.08.12.08:24:14 Info: Info: MEMTEST_PROFILE requested=122 actual=122.0 actual1=122.0 phase1=3606.6 m=61 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=0
+2026.08.12.08:24:14 Info: remove_instance iopll_0
+2026.08.12.08:24:14 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:14 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 121
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 121
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3632.23140496
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:15 Info: send_message Info MEMTEST_PROFILE requested=121 actual=121.0 actual1=121.0 phase1=3636.4 m=121 n_hi=1 n_lo=1 n_odd=0 n_bypass=0 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=0
+2026.08.12.08:24:15 Info: Info: MEMTEST_PROFILE requested=121 actual=121.0 actual1=121.0 phase1=3636.4 m=121 n_hi=1 n_lo=1 n_odd=0 n_bypass=0 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=0
+2026.08.12.08:24:15 Info: remove_instance iopll_0
+2026.08.12.08:24:15 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 120
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 120
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 3666.66666667
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:15 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:15 Info: send_message Info MEMTEST_PROFILE requested=120 actual=120.0 actual1=120.0 phase1=3666.7 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=0
+2026.08.12.08:24:15 Info: Info: MEMTEST_PROFILE requested=120 actual=120.0 actual1=120.0 phase1=3666.7 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=0
+2026.08.12.08:24:15 Info: remove_instance iopll_0
+2026.08.12.08:24:15 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 110
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 110
+2026.08.12.08:24:15 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 4045.45454545
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:16 Info: send_message Info MEMTEST_PROFILE requested=110 actual=110.0 actual1=110.0 phase1=4045.5 m=55 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=1
+2026.08.12.08:24:16 Info: Info: MEMTEST_PROFILE requested=110 actual=110.0 actual1=110.0 phase1=4045.5 m=55 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=1
+2026.08.12.08:24:16 Info: remove_instance iopll_0
+2026.08.12.08:24:16 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 100
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 100
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 4500.0
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:16 Info: send_message Info MEMTEST_PROFILE requested=100 actual=100.0 actual1=100.0 phase1=4500.0 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=15 c0_lo=15 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=15 c1_lo=15 c1_odd=0 c1_bypass=0 c1_preset=14 c1_phase=4
+2026.08.12.08:24:16 Info: Info: MEMTEST_PROFILE requested=100 actual=100.0 actual1=100.0 phase1=4500.0 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=15 c0_lo=15 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=15 c1_lo=15 c1_odd=0 c1_bypass=0 c1_preset=14 c1_phase=4
+2026.08.12.08:24:16 Info: remove_instance iopll_0
+2026.08.12.08:24:16 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 90
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 90
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 5055.55555556
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:16 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:16 Info: send_message Info MEMTEST_PROFILE requested=90 actual=90.0 actual1=90.0 phase1=5055.6 m=45 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=3
+2026.08.12.08:24:16 Info: Info: MEMTEST_PROFILE requested=90 actual=90.0 actual1=90.0 phase1=5055.6 m=45 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=3
+2026.08.12.08:24:16 Info: remove_instance iopll_0
+2026.08.12.08:24:16 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:16 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 80
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 80
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 5750.0
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:17 Info: send_message Info MEMTEST_PROFILE requested=80 actual=80.0 actual1=80.0 phase1=5750.0 m=40 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=4
+2026.08.12.08:24:17 Info: Info: MEMTEST_PROFILE requested=80 actual=80.0 actual1=80.0 phase1=5750.0 m=40 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=4
+2026.08.12.08:24:17 Info: remove_instance iopll_0
+2026.08.12.08:24:17 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 70
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 70
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 6642.85714286
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:17 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:17 Info: send_message Info MEMTEST_PROFILE requested=70 actual=70.0 actual1=70.0 phase1=6642.9 m=35 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=5
+2026.08.12.08:24:17 Info: Info: MEMTEST_PROFILE requested=70 actual=70.0 actual1=70.0 phase1=6642.9 m=35 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=13 c0_lo=12 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=13 c1_lo=12 c1_odd=1 c1_bypass=0 c1_preset=12 c1_phase=5
+2026.08.12.08:24:17 Info: remove_instance iopll_0
+2026.08.12.08:24:17 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 69
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 69
+2026.08.12.08:24:17 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 6746.37681159
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:18 Info: send_message Info MEMTEST_PROFILE requested=69 actual=69.0 actual1=69.0 phase1=6748.2 m=276 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=5
+2026.08.12.08:24:18 Info: Info: MEMTEST_PROFILE requested=69 actual=69.0 actual1=69.0 phase1=6748.2 m=276 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=5
+2026.08.12.08:24:18 Info: remove_instance iopll_0
+2026.08.12.08:24:18 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 68
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 68
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 6852.94117647
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:18 Info: send_message Info MEMTEST_PROFILE requested=68 actual=68.0 actual1=68.0 phase1=6847.4 m=272 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=5
+2026.08.12.08:24:18 Info: Info: MEMTEST_PROFILE requested=68 actual=68.0 actual1=68.0 phase1=6847.4 m=272 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=5
+2026.08.12.08:24:18 Info: remove_instance iopll_0
+2026.08.12.08:24:18 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 67
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 67
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 6962.68656716
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:18 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:18 Info: send_message Info MEMTEST_PROFILE requested=67 actual=67.0 actual1=67.0 phase1=6965.2 m=201 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=15 c0_lo=15 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=15 c1_lo=15 c1_odd=0 c1_bypass=0 c1_preset=15 c1_phase=0
+2026.08.12.08:24:18 Info: Info: MEMTEST_PROFILE requested=67 actual=67.0 actual1=67.0 phase1=6965.2 m=201 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=15 c0_lo=15 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=15 c1_lo=15 c1_odd=0 c1_bypass=0 c1_preset=15 c1_phase=0
+2026.08.12.08:24:18 Info: remove_instance iopll_0
+2026.08.12.08:24:18 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:18 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 66
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 66
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7075.75757576
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:19 Info: send_message Info MEMTEST_PROFILE requested=66 actual=66.0 actual1=66.0 phase1=7070.7 m=297 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=23 c0_lo=22 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=23 c1_lo=22 c1_odd=1 c1_bypass=0 c1_preset=22 c1_phase=0
+2026.08.12.08:24:19 Info: Info: MEMTEST_PROFILE requested=66 actual=66.0 actual1=66.0 phase1=7070.7 m=297 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=23 c0_lo=22 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=23 c1_lo=22 c1_odd=1 c1_bypass=0 c1_preset=22 c1_phase=0
+2026.08.12.08:24:19 Info: remove_instance iopll_0
+2026.08.12.08:24:19 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 65
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 65
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7192.30769231
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:19 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:19 Info: send_message Info MEMTEST_PROFILE requested=65 actual=65.0 actual1=65.0 phase1=7190.6 m=299 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=23 c0_lo=23 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=23 c1_lo=23 c1_odd=0 c1_bypass=0 c1_preset=22 c1_phase=4
+2026.08.12.08:24:19 Info: Info: MEMTEST_PROFILE requested=65 actual=65.0 actual1=65.0 phase1=7190.6 m=299 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=23 c0_lo=23 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=23 c1_lo=23 c1_odd=0 c1_bypass=0 c1_preset=22 c1_phase=4
+2026.08.12.08:24:19 Info: remove_instance iopll_0
+2026.08.12.08:24:19 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 64
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 64
+2026.08.12.08:24:19 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7312.5
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:20 Info: send_message Info MEMTEST_PROFILE requested=64 actual=64.0 actual1=64.0 phase1=7310.3 m=224 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=18 c0_lo=17 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=18 c1_lo=17 c1_odd=1 c1_bypass=0 c1_preset=17 c1_phase=3
+2026.08.12.08:24:20 Info: Info: MEMTEST_PROFILE requested=64 actual=64.0 actual1=64.0 phase1=7310.3 m=224 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=18 c0_lo=17 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=18 c1_lo=17 c1_odd=1 c1_bypass=0 c1_preset=17 c1_phase=3
+2026.08.12.08:24:20 Info: remove_instance iopll_0
+2026.08.12.08:24:20 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 63
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 63
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7436.50793651
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:20 Info: send_message Info MEMTEST_PROFILE requested=63 actual=63.0 actual1=63.0 phase1=7440.5 m=252 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=6
+2026.08.12.08:24:20 Info: Info: MEMTEST_PROFILE requested=63 actual=63.0 actual1=63.0 phase1=7440.5 m=252 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=6
+2026.08.12.08:24:20 Info: remove_instance iopll_0
+2026.08.12.08:24:20 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 62.5
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 62.5
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7500.0
+2026.08.12.08:24:20 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:20 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:20 Info: send_message Info MEMTEST_PROFILE requested=62.5 actual=62.5 actual1=62.5 phase1=7500.0 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=24 c0_lo=24 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=24 c1_lo=24 c1_odd=0 c1_bypass=0 c1_preset=23 c1_phase=4
+2026.08.12.08:24:20 Info: Info: MEMTEST_PROFILE requested=62.5 actual=62.5 actual1=62.5 phase1=7500.0 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=24 c0_lo=24 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=24 c1_lo=24 c1_odd=0 c1_bypass=0 c1_preset=23 c1_phase=4
+2026.08.12.08:24:20 Info: remove_instance iopll_0
+2026.08.12.08:24:20 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 62
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 62
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7564.51612903
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:21 Info: send_message Info MEMTEST_PROFILE requested=62 actual=62.0 actual1=62.0 phase1=7560.5 m=248 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=6
+2026.08.12.08:24:21 Info: Info: MEMTEST_PROFILE requested=62 actual=62.0 actual1=62.0 phase1=7560.5 m=248 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=6
+2026.08.12.08:24:21 Info: remove_instance iopll_0
+2026.08.12.08:24:21 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 61
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 61
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7696.72131148
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:21 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:21 Info: send_message Info MEMTEST_PROFILE requested=61 actual=61.0 actual1=61.0 phase1=7704.9 m=61 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=25 c0_lo=25 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=25 c1_lo=25 c1_odd=0 c1_bypass=0 c1_preset=24 c1_phase=4
+2026.08.12.08:24:21 Info: Info: MEMTEST_PROFILE requested=61 actual=61.0 actual1=61.0 phase1=7704.9 m=61 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=25 c0_lo=25 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=25 c1_lo=25 c1_odd=0 c1_bypass=0 c1_preset=24 c1_phase=4
+2026.08.12.08:24:21 Info: remove_instance iopll_0
+2026.08.12.08:24:21 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 60
+2026.08.12.08:24:21 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 60
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7833.33333333
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:22 Info: send_message Info MEMTEST_PROFILE requested=60 actual=60.0 actual1=60.0 phase1=7833.3 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=25 c0_lo=25 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=25 c1_lo=25 c1_odd=0 c1_bypass=0 c1_preset=24 c1_phase=4
+2026.08.12.08:24:22 Info: Info: MEMTEST_PROFILE requested=60 actual=60.0 actual1=60.0 phase1=7833.3 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=25 c0_lo=25 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=25 c1_lo=25 c1_odd=0 c1_bypass=0 c1_preset=24 c1_phase=4
+2026.08.12.08:24:22 Info: remove_instance iopll_0
+2026.08.12.08:24:22 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 59
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 59
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 7974.57627119
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:22 Info: send_message Info MEMTEST_PROFILE requested=59 actual=59.0 actual1=59.0 phase1=7980.2 m=177 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=15 c0_lo=15 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=15 c1_lo=15 c1_odd=0 c1_bypass=0 c1_preset=15 c1_phase=1
+2026.08.12.08:24:22 Info: Info: MEMTEST_PROFILE requested=59 actual=59.0 actual1=59.0 phase1=7980.2 m=177 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=15 c0_lo=15 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=15 c1_lo=15 c1_odd=0 c1_bypass=0 c1_preset=15 c1_phase=1
+2026.08.12.08:24:22 Info: remove_instance iopll_0
+2026.08.12.08:24:22 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 58
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 58
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 8120.68965517
+2026.08.12.08:24:22 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:22 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:22 Info: send_message Info MEMTEST_PROFILE requested=58 actual=58.0 actual1=58.0 phase1=8117.8 m=174 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=15 c0_lo=15 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=15 c1_lo=15 c1_odd=0 c1_bypass=0 c1_preset=15 c1_phase=1
+2026.08.12.08:24:22 Info: Info: MEMTEST_PROFILE requested=58 actual=58.0 actual1=58.0 phase1=8117.8 m=174 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=15 c0_lo=15 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=15 c1_lo=15 c1_odd=0 c1_bypass=0 c1_preset=15 c1_phase=1
+2026.08.12.08:24:22 Info: remove_instance iopll_0
+2026.08.12.08:24:22 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 57
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 57
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 8271.92982456
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:23 Info: send_message Info MEMTEST_PROFILE requested=57 actual=57.0 actual1=57.0 phase1=8278.5 m=228 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=7
+2026.08.12.08:24:23 Info: Info: MEMTEST_PROFILE requested=57 actual=57.0 actual1=57.0 phase1=8278.5 m=228 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=7
+2026.08.12.08:24:23 Info: remove_instance iopll_0
+2026.08.12.08:24:23 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 56
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 56
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 8428.57142857
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:23 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:23 Info: send_message Info MEMTEST_PROFILE requested=56 actual=56.0 actual1=56.0 phase1=8426.3 m=224 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=7
+2026.08.12.08:24:23 Info: Info: MEMTEST_PROFILE requested=56 actual=56.0 actual1=56.0 phase1=8426.3 m=224 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=20 c0_lo=20 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=20 c1_lo=20 c1_odd=0 c1_bypass=0 c1_preset=19 c1_phase=7
+2026.08.12.08:24:23 Info: remove_instance iopll_0
+2026.08.12.08:24:23 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:23 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 55
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 55
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 8590.90909091
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:24 Info: send_message Info MEMTEST_PROFILE requested=55 actual=55.0 actual1=55.0 phase1=8590.9 m=55 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=25 c0_lo=25 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=25 c1_lo=25 c1_odd=0 c1_bypass=0 c1_preset=24 c1_phase=5
+2026.08.12.08:24:24 Info: Info: MEMTEST_PROFILE requested=55 actual=55.0 actual1=55.0 phase1=8590.9 m=55 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=25 c0_lo=25 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=25 c1_lo=25 c1_odd=0 c1_bypass=0 c1_preset=24 c1_phase=5
+2026.08.12.08:24:24 Info: remove_instance iopll_0
+2026.08.12.08:24:24 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 54
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 54
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 8759.25925926
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:24 Info: send_message Info MEMTEST_PROFILE requested=54 actual=54.0 actual1=54.0 phase1=8754.2 m=297 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=28 c0_lo=27 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=28 c1_lo=27 c1_odd=1 c1_bypass=0 c1_preset=27 c1_phase=0
+2026.08.12.08:24:24 Info: Info: MEMTEST_PROFILE requested=54 actual=54.0 actual1=54.0 phase1=8754.2 m=297 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=28 c0_lo=27 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=28 c1_lo=27 c1_odd=1 c1_bypass=0 c1_preset=27 c1_phase=0
+2026.08.12.08:24:24 Info: remove_instance iopll_0
+2026.08.12.08:24:24 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 53
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 53
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 8933.96226415
+2026.08.12.08:24:24 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:24 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:24 Info: send_message Info MEMTEST_PROFILE requested=53 actual=53.0 actual1=53.0 phase1=8923.0 m=318 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=3
+2026.08.12.08:24:24 Info: Info: MEMTEST_PROFILE requested=53 actual=53.0 actual1=53.0 phase1=8923.0 m=318 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=3
+2026.08.12.08:24:24 Info: remove_instance iopll_0
+2026.08.12.08:24:24 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 52
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 52
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 9115.38461538
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:25 Info: send_message Info MEMTEST_PROFILE requested=52 actual=52.0 actual1=52.0 phase1=9134.6 m=312 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=4
+2026.08.12.08:24:25 Info: Info: MEMTEST_PROFILE requested=52 actual=52.0 actual1=52.0 phase1=9134.6 m=312 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=4
+2026.08.12.08:24:25 Info: remove_instance iopll_0
+2026.08.12.08:24:25 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 51
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 51
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 9303.92156863
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:25 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:25 Info: send_message Info MEMTEST_PROFILE requested=51 actual=51.0 actual1=51.0 phase1=9313.7 m=306 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=4
+2026.08.12.08:24:25 Info: Info: MEMTEST_PROFILE requested=51 actual=51.0 actual1=51.0 phase1=9313.7 m=306 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=4
+2026.08.12.08:24:25 Info: remove_instance iopll_0
+2026.08.12.08:24:25 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:25 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 50
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 50
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 9500.0
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:26 Info: send_message Info MEMTEST_PROFILE requested=50 actual=50.0 actual1=50.0 phase1=9500.0 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=4
+2026.08.12.08:24:26 Info: Info: MEMTEST_PROFILE requested=50 actual=50.0 actual1=50.0 phase1=9500.0 m=60 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=4
+2026.08.12.08:24:26 Info: remove_instance iopll_0
+2026.08.12.08:24:26 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 49
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 49
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 9704.08163265
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:26 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:26 Info: send_message Info MEMTEST_PROFILE requested=49 actual=49.0 actual1=49.0 phase1=9693.9 m=294 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=4
+2026.08.12.08:24:26 Info: Info: MEMTEST_PROFILE requested=49 actual=49.0 actual1=49.0 phase1=9693.9 m=294 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=4
+2026.08.12.08:24:26 Info: remove_instance iopll_0
+2026.08.12.08:24:26 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 48
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 48
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 9916.66666667
+2026.08.12.08:24:26 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:27 Info: send_message Info MEMTEST_PROFILE requested=48 actual=48.0 actual1=48.0 phase1=9935.9 m=312 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=33 c0_lo=32 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=33 c1_lo=32 c1_odd=1 c1_bypass=0 c1_preset=32 c1_phase=0
+2026.08.12.08:24:27 Info: Info: MEMTEST_PROFILE requested=48 actual=48.0 actual1=48.0 phase1=9935.9 m=312 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=33 c0_lo=32 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=33 c1_lo=32 c1_odd=1 c1_bypass=0 c1_preset=32 c1_phase=0
+2026.08.12.08:24:27 Info: remove_instance iopll_0
+2026.08.12.08:24:27 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 47
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 47
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 10138.2978723
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:27 Info: send_message Info MEMTEST_PROFILE requested=47 actual=47.0 actual1=47.0 phase1=10150.7 m=282 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=5
+2026.08.12.08:24:27 Info: Info: MEMTEST_PROFILE requested=47 actual=47.0 actual1=47.0 phase1=10150.7 m=282 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=30 c0_lo=30 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=30 c1_lo=30 c1_odd=0 c1_bypass=0 c1_preset=29 c1_phase=5
+2026.08.12.08:24:27 Info: remove_instance iopll_0
+2026.08.12.08:24:27 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 46
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 46
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 10369.5652174
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:27 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:27 Info: send_message Info MEMTEST_PROFILE requested=46 actual=46.0 actual1=46.0 phase1=10367.9 m=299 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=33 c0_lo=32 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=33 c1_lo=32 c1_odd=1 c1_bypass=0 c1_preset=32 c1_phase=0
+2026.08.12.08:24:27 Info: Info: MEMTEST_PROFILE requested=46 actual=46.0 actual1=46.0 phase1=10367.9 m=299 n_hi=3 n_lo=2 n_odd=1 n_bypass=0 c0_hi=33 c0_lo=32 c0_odd=1 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=33 c1_lo=32 c1_odd=1 c1_bypass=0 c1_preset=32 c1_phase=0
+2026.08.12.08:24:27 Info: remove_instance iopll_0
+2026.08.12.08:24:27 Info: add_instance iopll_0 altera_iopll 21.0.0
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_reference_clock_frequency 50.0
+2026.08.12.08:24:27 Info: set_instance_parameter_value iopll_0 gui_number_of_clocks 2
+2026.08.12.08:24:28 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency0 45
+2026.08.12.08:24:28 Info: set_instance_parameter_value iopll_0 gui_output_clock_frequency1 45
+2026.08.12.08:24:28 Info: set_instance_parameter_value iopll_0 gui_phase_shift1 10611.1111111
+2026.08.12.08:24:28 Info: set_instance_parameter_value iopll_0 gui_en_hvio_reconf true
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency0
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 multiply_factor
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 n_cnt_hi_div
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 n_cnt_lo_div
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 n_cnt_odd_div_duty_en
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 n_cnt_bypass_en
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div0
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div0
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en0
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en0
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_prst0
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst0
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_hi_div1
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_lo_div1
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_odd_div_duty_en1
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_bypass_en1
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_prst1
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 c_cnt_ph_mux_prst1
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 gui_actual_output_clock_frequency1
+2026.08.12.08:24:28 Info: get_instance_parameter_value iopll_0 gui_actual_phase_shift1
+2026.08.12.08:24:28 Info: send_message Info MEMTEST_PROFILE requested=45 actual=45.0 actual1=45.0 phase1=10611.1 m=45 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=25 c0_lo=25 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=25 c1_lo=25 c1_odd=0 c1_bypass=0 c1_preset=24 c1_phase=7
+2026.08.12.08:24:28 Info: Info: MEMTEST_PROFILE requested=45 actual=45.0 actual1=45.0 phase1=10611.1 m=45 n_hi=256 n_lo=256 n_odd=0 n_bypass=1 c0_hi=25 c0_lo=25 c0_odd=0 c0_bypass=0 c0_preset=1 c0_phase=0 c1_hi=25 c1_lo=25 c1_odd=0 c1_bypass=0 c1_preset=24 c1_phase=7
+2026.08.12.08:24:28 Info: remove_instance iopll_0

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano port
+Date: Wed, 19 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Reassert sixteen-row OSD for every full menu
+
+Older OSD implementations clear their high-resolution latch on each disable
+transaction. Main can later enable a partially updated screen without writing
+line 8, leaving only the upper eight rows visible. Reassert the geometry from
+Main's requested row count immediately before every enable transaction.
+
+diff --git a/osd.cpp b/osd.cpp
+--- a/osd.cpp
++++ b/osd.cpp
+@@ -502,6 +502,11 @@ void OsdEnable(unsigned char mode)
+ {
+ 	user_io_osd_key_enable(mode & DISABLE_KEYBOARD);
+ 	mode &= (DISABLE_KEYBOARD | OSD_MSG);
++	// Reassert high-resolution geometry whenever the active UI owns more than
++	// eight rows. The FPGA clears its height latch on disable, and an in-core
++	// menu may be enabled before its lower rows are redrawn. Derive the command
++	// from Main's requested size rather than from the loaded core persona.
++	if (osd_size > 8) spi_osd_cmd(OSD_CMD_WRITE | 8);
+ 	spi_osd_cmd(OSD_CMD_ENABLE | mode);
+ }
+ 
+-- 
+2.43.0

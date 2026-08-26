@@ -1,0 +1,2702 @@
+diff --git a/Saturn.sv b/Saturn.sv
+index 91564f2..a53197c 100644
+--- a/Saturn.sv
++++ b/Saturn.sv
+@@ -128,11 +128,17 @@ module emu
+ 
+ 	//SDRAM interface with lower latency
+ 	output        SDRAM_CLK,
+-	output        SDRAM_CKE,
+-	output [12:0] SDRAM_A,
+-	output  [1:0] SDRAM_BA,
+-	inout  [15:0] SDRAM_DQ,
+-	output        SDRAM_DQML,
++	output        SDRAM_CKE,
++	output [12:0] SDRAM_A,
++	output  [1:0] SDRAM_BA,
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input  [15:0] de25_sdram_dq_in,
++	output [15:0] de25_sdram_dq_out,
++	output        de25_sdram_dq_oe,
++`else
++	inout  [15:0] SDRAM_DQ,
++`endif
++	output        SDRAM_DQML,
+ 	output        SDRAM_DQMH,
+ 	output        SDRAM_nCS,
+ 	output        SDRAM_nCAS,
+@@ -166,7 +172,7 @@ module emu
+ 	// 2..6 - USR2..USR6
+ 	// Set USER_OUT to 1 to read from USER_IN.
+ 	input   [6:0] USER_IN,
+-	output  [6:0] USER_OUT,
++	output reg [6:0] USER_OUT,
+ 
+ 	input         OSD_STATUS
+ );
+@@ -194,7 +200,7 @@ module emu
+ 	assign HDMI_BOB_DEINT = status[29];
+ 	
+ 	wire [1:0] ar = status[63:62];
+-	wire [7:0] arx,ary;
++	logic [7:0] arx,ary;
+ 
+ 	
+ 	always_comb begin
+@@ -412,10 +418,40 @@ module emu
+ 	
+ 	wire [ 35:0] EXT_BUS;
+ 	
+-	wire [ 21:0] gamma_bus;
+-	wire [ 15:0] sdram_sz;
+-	
+-	hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
++	wire [ 21:0] gamma_bus;
++	wire [ 15:0] sdram_sz;
++
++	// Declare cross-module control and clock nets before their first port use.
++	// Quartus 25 otherwise creates one-bit implicit nets and ignores the later
++	// explicit declarations.
++	wire        clk_sys, clk_ram, clk_sdram, locked;
++	wire [63:0] reconfig_to_pll;
++	wire [63:0] reconfig_from_pll;
++	reg         new_vmode;
++	wire        PAL;
++	wire        analog_hs, analog_vs;
++
++	reg  [ 7:0] SCRN_EN = 8'b11111111;
++	reg  [ 2:0] SND_EN = 3'b111;
++	reg         DBG_PAUSE = 0;
++	reg         DBG_BREAK = 0;
++	reg         DBG_RUN = 0;
++	reg  [ 7:0] DBG_EXT = '0;
++
++	wire        lg_p1_ena;
++	wire        lg_p1_sensor;
++	wire        lg_p1_a;
++	wire        lg_p1_b;
++	wire        lg_p1_c;
++	wire        lg_p1_start;
++	wire        lg_p2_ena;
++	wire        lg_p2_sensor;
++	wire        lg_p2_a;
++	wire        lg_p2_b;
++	wire        lg_p2_c;
++	wire        lg_p2_start;
++
++	hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
+ 	(
+ 		.clk_sys(clk_sys),
+ 		.HPS_BUS(HPS_BUS),
+@@ -533,21 +569,19 @@ module emu
+ //	end
+ 
+ 	///////////////////////////////////////////////////
+-	wire clk_sys, clk_ram, locked;
+-	pll pll
++	pll pll
+ 	(
+ 		.refclk(CLK_50M),
+ 		.rst(0),
+-		.outclk_0(clk_sys),
+-		.outclk_1(clk_ram),
++		.outclk_0(clk_sys),
++		.outclk_1(clk_ram),
++		.outclk_sdram(clk_sdram),
+ 		.reconfig_to_pll(reconfig_to_pll),
+ 		.reconfig_from_pll(reconfig_from_pll), 
+ 		.locked(locked)
+ 	);
+ 	
+-	wire [63:0] reconfig_to_pll;
+-	wire [63:0] reconfig_from_pll;
+-	wire        cfg_waitrequest;
++	wire        cfg_waitrequest;
+ 	reg         cfg_write;
+ 	reg   [5:0] cfg_address;
+ 	reg  [31:0] cfg_data;
+@@ -839,7 +873,7 @@ module emu
+ 	);
+ 	
+ 	wire SCSP_CE;		//SCSP clock 22.5792MHz
+-	wire SCSP_DIV;
++	logic SCSP_DIV;
+ 	always @(posedge clk_sys) 
+ 		if (SCSP_2X_CE) SCSP_DIV <= ~SCSP_DIV;
+ 		
+@@ -1217,14 +1251,8 @@ module emu
+ 	);
+ 	
+ 	
+-`ifndef DEBUG
+-	wire lg_p1_ena = (status[18:15]==4'd1);
+-	
+-	wire       lg_p1_sensor;
+-	wire       lg_p1_a;
+-	wire       lg_p1_b;
+-	wire       lg_p1_c;
+-	wire       lg_p1_start;
++`ifndef DEBUG
++	assign lg_p1_ena = (status[18:15]==4'd1);
+ 
+ 	wire       gun_p1_xy_mode    = status[46];
+ 	wire       gun_p1_btn_mode   = status[47];
+@@ -1275,13 +1303,7 @@ module emu
+ 	);
+ 
+ 
+-	wire lg_p2_ena = (status[45:42]==4'd1);
+-	
+-	wire       lg_p2_sensor;
+-	wire       lg_p2_a;
+-	wire       lg_p2_b;
+-	wire       lg_p2_c;
+-	wire       lg_p2_start;
++	assign lg_p2_ena = (status[45:42]==4'd1);
+ 
+ 	wire       gun_p2_xy_mode    = status[57];
+ 	wire       gun_p2_btn_mode   = status[58];
+@@ -1330,19 +1352,23 @@ module emu
+ 		.BTN_C(lg_p2_c),
+ 		.BTN_START(lg_p2_start)		// (used as the Start button signal, to HPS2PAD).
+ 	);
+-`else
+-	wire lg_p1_ena = 0;
+-	wire lg_p1_a = 0;
+-	wire lg_p1_start = 0;
+-	wire lg_p1_sensor = 0;
+-	wire [2:0] lg_p1_target = '0;
+-	wire [1:0] gun_p1_cross_size = '0;
+-		
+-	wire lg_p2_ena = 0;
+-	wire lg_p2_a = 0;
+-	wire lg_p2_start = 0;
+-	wire lg_p2_sensor = 0;	
+-	wire [2:0] lg_p2_target = '0;
++`else
++	assign lg_p1_ena = 0;
++	assign lg_p1_a = 0;
++	assign lg_p1_b = 0;
++	assign lg_p1_c = 0;
++	assign lg_p1_start = 0;
++	assign lg_p1_sensor = 0;
++	wire [2:0] lg_p1_target = '0;
++	wire [1:0] gun_p1_cross_size = '0;
++
++	assign lg_p2_ena = 0;
++	assign lg_p2_a = 0;
++	assign lg_p2_b = 0;
++	assign lg_p2_c = 0;
++	assign lg_p2_start = 0;
++	assign lg_p2_sensor = 0;
++	wire [2:0] lg_p2_target = '0;
+ 	wire [1:0] gun_p2_cross_size = '0;
+ `endif
+ 
+@@ -1380,13 +1406,19 @@ module emu
+ `endif
+ 
+ 	//SDRAM1
+-	sdram1 sdram1
+-	(
+-		.SDRAM_CLK(SDRAM_CLK),
+-		.SDRAM_A(SDRAM_A),
+-		.SDRAM_BA(SDRAM_BA),
+-		.SDRAM_DQ(SDRAM_DQ),
+-		.SDRAM_DQML(SDRAM_DQML),
++	sdram1 sdram1
++	(
++		.SDRAM_CLK(SDRAM_CLK),
++		.SDRAM_A(SDRAM_A),
++		.SDRAM_BA(SDRAM_BA),
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++		.SDRAM_DQ_IN(de25_sdram_dq_in),
++		.SDRAM_DQ_OUT(de25_sdram_dq_out),
++		.SDRAM_DQ_OE(de25_sdram_dq_oe),
++`else
++		.SDRAM_DQ(SDRAM_DQ),
++`endif
++		.SDRAM_DQML(SDRAM_DQML),
+ 		.SDRAM_DQMH(SDRAM_DQMH),
+ 		.SDRAM_nCS(SDRAM_nCS),
+ 		.SDRAM_nWE(SDRAM_nWE),
+@@ -1394,7 +1426,8 @@ module emu
+ 		.SDRAM_nCAS(SDRAM_nCAS),
+ 		.SDRAM_CKE(SDRAM_CKE),
+ 		
+-		.clk(clk_ram),
++		.clk(clk_ram),
++		.clk_physical(clk_sdram),
+ 		.init(rst_ram),
+ 		.sync(DCE_R),
+ 	
+@@ -1447,10 +1480,32 @@ module emu
+ 									              {2'b00,bios_sel,MEM_A[18:1]};
+ `endif
+ 	
+-	wire [15:0] cdram_do,raml_do,vdp1vram_do,vdp1fb_do,cdbuf_do,cart_do,eeprom_do,bsram_do,rax_do;
+-	wire [31:0] ramh_do;
+-	wire        cdram_busy,raml_busy,ramh_busy,vdp1vram_busy,vdp1fb_busy,cdbuf_busy,cart_busy,eeprom_busy,bios_busy,bsram_busy,rax_busy;
+-	ddram ddram
++	wire [15:0] cdram_do,raml_do,vdp1vram_do,vdp1fb_do,cdbuf_do,cart_do,eeprom_do,bsram_do,rax_do;
++	wire [31:0] ramh_do;
++	wire        cdram_busy,raml_busy,ramh_busy,vdp1vram_busy,vdp1fb_busy,cdbuf_busy,cart_busy,eeprom_busy,bios_busy,bsram_busy,rax_busy;
++
++`ifndef SATURN_FULL_FB
++`ifndef DEBUG
++	bit  [18:1] VDP1_A;
++	bit  [15:0] VDP1_D;
++	bit  [ 1:0] VDP1_WE;
++	bit         VDP1_RD;
++`else
++	wire [24:1] VDP1_A = '0;
++	wire [15:0] VDP1_D = '0;
++	wire [ 1:0] VDP1_WE = '0;
++	wire        VDP1_RD = 0;
++`endif
++`endif
++
++`ifndef STV_BUILD
++	reg         bk_loading = 0;
++	reg  [ 8:1] tmpram_addr;
++	reg         tmpram_req;
++	wire [15:0] tmpram_dout;
++`endif
++
++	ddram ddram
+ 	(
+ 		.*,
+ 		.clk(clk_ram),
+@@ -1709,13 +1764,9 @@ module emu
+ 	assign VDP1_FB0_Q = !FB0_EXT_SEL ? FB0_Q : FB0_EXT_Q;
+ 	assign VDP1_FB1_Q = !FB1_EXT_SEL ? FB1_Q : FB1_EXT_Q;
+ 
+-`ifndef SATURN_FULL_FB
+-`ifndef DEBUG
+-	bit [18:1] VDP1_A;
+-	bit [15:0] VDP1_D;
+-	bit [ 1:0] VDP1_WE;
+-	bit        VDP1_RD;
+-	bit        VDP1_FB0_BUSY;
++`ifndef SATURN_FULL_FB
++`ifndef DEBUG
++	bit        VDP1_FB0_BUSY;
+ 	bit        VDP1_FB1_BUSY;
+ 	always @(posedge clk_ram) begin
+ 		reg vram_rd_old,fb0_rd_old,fb1_rd_old;
+@@ -1811,13 +1862,8 @@ module emu
+ 		end
+ 	end
+ 	assign VDP1_FB_RDY = ~(VDP1_FB0_BUSY | VDP1_FB1_BUSY);
+-`else
+-	wire [24:1] VDP1_A = '0;
+-	wire [15:0] VDP1_D = '0;
+-	wire [ 1:0] VDP1_WE = '0;
+-	wire        VDP1_RD = 0;
+-	
+-	assign FB0_EXT_Q = '0;
++`else
++	assign FB0_EXT_Q = '0;
+ 	assign FB1_EXT_Q = '0;
+ 	assign VDP1_FB_RDY = 1;
+ `endif
+@@ -1850,8 +1896,7 @@ module emu
+ 	end
+ 
+ 	wire bk_save_a  = autosave & OSD_STATUS;
+-	reg  bk_loading = 0;
+-	reg  bk_state   = 0;
++	reg  bk_state   = 0;
+ 	//reg  bk_reload  = 0;
+ 	wire [11:0] last_block = {bk_cart,11'h07F};
+ 
+@@ -1929,8 +1974,7 @@ module emu
+ 		end
+ 	end
+ 
+-	wire [15:0] tmpram_dout;
+-	wire [15:0] tmpram_din = {bsram_do[7:0],bsram_do[15:8]};
++	wire [15:0] tmpram_din = {bsram_do[7:0],bsram_do[15:8]};
+ 	wire        tmpram_busy = bsram_busy;
+ 
+ 	wire [15:0] tmpram_sd_buff_q;
+@@ -1949,10 +1993,8 @@ module emu
+ 		.q_b(tmpram_sd_buff_q)
+ 	);
+ 
+-	reg  [8:1] tmpram_addr;
+-	reg tmpram_tx_start;
+-	reg tmpram_tx_finish;
+-	reg tmpram_req;
++	reg tmpram_tx_start;
++	reg tmpram_tx_finish;
+ 	always @(posedge clk_sys) begin
+ 		reg state;
+ 		
+@@ -2007,10 +2049,9 @@ module emu
+ 
+ 	
+ /////////////////////////  Video  /////////////////////////////
+-	wire PAL = (area_code >= 4'hA);//status[7];
+-	
+-	reg new_vmode;
+-	always @(posedge clk_sys) begin
++	assign PAL = (area_code >= 4'hA);//status[7];
++
++	always @(posedge clk_sys) begin
+ 		reg old_pal;
+ 		int to;
+ 		
+@@ -2137,8 +2178,7 @@ module emu
+ 		.VBlank(cofi_vbl) 
+ 	);
+ 
+-//adjust analog H/V
+-	wire analog_hs, analog_vs;
++//adjust analog H/V
+ 	
+ `ifdef STV_BUILD
+ 	wire [4:0] hoffset = status[75] ? status[69:65] : 5'd0;
+@@ -2162,15 +2202,7 @@ module emu
+ 	assign analog_vs = cofi_vs;
+ `endif
+ 	
+-	//debug
+-	reg  [ 7: 0] SCRN_EN = 8'b11111111;
+-	reg  [ 2: 0] SND_EN = 3'b111;
+-	reg          DBG_PAUSE = 0;
+-	reg          DBG_BREAK = 0;
+-	reg          DBG_RUN = 0;
+-	
+-	reg  [ 7: 0] DBG_EXT = '0;
+-	
++	//debug
+ `ifdef DEBUG
+ 	
+ 	wire         pressed = ps2_key[9];
+diff --git a/rtl/SH/SH7604/WDT.sv b/rtl/SH/SH7604/WDT.sv
+index fc0d4d3..33f9702 100644
+--- a/rtl/SH/SH7604/WDT.sv
++++ b/rtl/SH/SH7604/WDT.sv
+@@ -33,7 +33,7 @@ module SH7604_WDT
+ 	output            IBUS_ACT,
+ 	
+ 	output            ITI_IRQ,
+-	output            OVF,
++	output reg        OVF,
+ 	output            PRES,
+ 	output            MRES
+ );
+@@ -44,6 +44,15 @@ module SH7604_WDT
+ 	WTCSR_t     WTCSR;
+ 	RSTCSR_t    RSTCSR;
+ 	bit         WRES;
++	bit         SBY_TME;
++	bit         NMI_OLD;
++	logic       REG_SEL;
++	bit  [ 7:0] OPEN_BUS;
++	bit         IBUS_REQ_OLD;
++	bit         TM_EN;
++	bit         OVF_SET;
++	bit  [ 7:0] REG_DO;
++	bit  [ 1:0] BUSY;
+ 	
+ 	//Clock selector
+ 	bit         WT_CE;
+@@ -88,10 +97,7 @@ module SH7604_WDT
+ 	assign PRES = WRES & ~RSTCSR.RSTS;
+ 	assign MRES = WRES &  RSTCSR.RSTS;
+ 	
+-	bit          SBY_TME;
+ 	always @(posedge CLK or negedge RST_N) begin
+-		bit          NMI_OLD;
+-		
+ 		if (!RST_N) begin
+ 			SBY_TME <= 0;
+ 			// synopsys translate_off
+@@ -114,13 +120,8 @@ module SH7604_WDT
+ 	end	
+ 	
+ 	//Registers
+-	wire REG_SEL = (IBUS_A >= 32'hFFFFFE80 && IBUS_A <= 32'hFFFFFE8F);
+-	bit  [ 7: 0] OPEN_BUS;
+-	bit          IBUS_REQ_OLD;
++	assign REG_SEL = (IBUS_A >= 32'hFFFFFE80 && IBUS_A <= 32'hFFFFFE8F);
+ 	always @(posedge CLK or negedge RST_N) begin
+-		bit          TM_EN;
+-		bit          OVF_SET;
+-		
+ 		if (!RST_N) begin
+ 			// synopsys translate_off
+ 			WTCNT  <= WTCNT_INIT;
+@@ -204,8 +205,6 @@ module SH7604_WDT
+ 	
+ 	assign ITI_IRQ = WTCSR.OVF;
+ 	
+-	bit  [ 7: 0] REG_DO;
+-	bit  [ 1: 0] BUSY;
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+ 			REG_DO <= '0;
+diff --git a/rtl/Saturn/CART.sv b/rtl/Saturn/CART.sv
+index 9c8a642..73c9c13 100644
+--- a/rtl/Saturn/CART.sv
++++ b/rtl/Saturn/CART.sv
+@@ -23,11 +23,11 @@ module CART (
+ 	output            AWAIT_N,
+ 	output            ARQT_N,
+ 	
+-	output     [25:1] MEM_A,
++	output reg [25:1] MEM_A,
+ 	input      [15:0] MEM_DI,
+-	output     [15:0] MEM_DO,
+-	output     [ 1:0] MEM_WE,
+-	output            MEM_RD,
++	output reg [15:0] MEM_DO,
++	output reg [ 1:0] MEM_WE,
++	output reg        MEM_RD,
+ 	input             MEM_RDY
+ );
+ 
+diff --git a/rtl/Saturn/CD/YGR019.sv b/rtl/Saturn/CD/YGR019.sv
+index da7c136..5d8d4a7 100644
+--- a/rtl/Saturn/CD/YGR019.sv
++++ b/rtl/Saturn/CD/YGR019.sv
+@@ -41,8 +41,8 @@ module YGR019 (
+ 	input              CD_CK,
+ 	input              CD_AUDIO,
+ 	
+-	output     [15: 0] CD_SL,
+-	output     [15: 0] CD_SR,
++	output reg [15: 0] CD_SL,
++	output reg [15: 0] CD_SR,
+ 	
+ 	input              FAST
+ 	
+diff --git a/rtl/Saturn/SCSP/SCSP.sv b/rtl/Saturn/SCSP/SCSP.sv
+index 402dcb6..9166482 100644
+--- a/rtl/Saturn/SCSP/SCSP.sv
++++ b/rtl/Saturn/SCSP/SCSP.sv
+@@ -12,7 +12,7 @@ module SCSP (
+ 	input              CE_R,
+ 	input              CE_F,
+ 	input      [15: 0] DI,
+-	output     [15: 0] DO,
++	output reg [15: 0] DO,
+ 	input              CS_N,
+ 	input              AD_N,
+ 	input              DTEN_N,
+@@ -24,7 +24,7 @@ module SCSP (
+ 	output reg         SCCE_F,
+ 	input      [23: 1] SCA,
+ 	input      [15: 0] SCDI,
+-	output     [15: 0] SCDO,
++	output reg [15: 0] SCDO,
+ 	input              SCRW_N,
+ 	input              SCAS_N,
+ 	input              SCLDS_N,
+@@ -315,7 +315,7 @@ module SCSP (
+ 				OP2.RST <= RST;
+ 				OP2.KON <= KEY_RAM_Q[0];
+ 				OP2.KOFF <= KEY_RAM_Q[1];
+-				OP2.PHASE = PHASE;
++				OP2.PHASE <= PHASE;
+ 				OP2.MSK <= OP1_SCR5.MSK;
+ 				OP2.ND <= NOISE[7:0];
+ 
+@@ -897,11 +897,8 @@ module SCSP (
+ 
+ 	//Operation 6: Level calculation
+ 	SCR3_t       OP6_SCR3;
++	wire [ 9: 0] OP6_LEVEL = LevelAddTL(OP6.LEVEL, OP6_SCR3.TL);
+ 	always @(posedge CLK or negedge RST_N) begin
+-		bit [ 9: 0] LEVEL;
+-		
+-		LEVEL = LevelAddTL(OP6.LEVEL, OP6_SCR3.TL);
+-		
+ 		if (!RST_N) begin
+ 			OP7 <= OP7_RESET;
+ 			// synopsys translate_off
+@@ -920,7 +917,7 @@ module SCSP (
+ 				OP7.RST <= OP6.RST;
+ 				OP7.KON <= OP6.KON;
+ 				OP7.KOFF <= OP6.KOFF;
+-				OP7.SD <= OP6_SCR3.SDIR ? OP6.WD : VolCalc(OP6.WD, LEVEL);
++				OP7.SD <= OP6_SCR3.SDIR ? OP6.WD : VolCalc(OP6.WD, OP6_LEVEL);
+ 				OP7.STWINH <= OP6_SCR3.STWINH;
+ 			end
+ 		end
+@@ -2186,7 +2183,7 @@ module SCSP_KEY_RAM
+ 		altdpram_component.byte_size = 8,
+ 		altdpram_component.indata_aclr = "OFF",
+ 		altdpram_component.indata_reg = "INCLOCK",
+-		altdpram_component.intended_device_family = "Cyclone V",
++		altdpram_component.intended_device_family = "Agilex 5",
+ 		altdpram_component.lpm_type = "altdpram",
+ 		altdpram_component.outdata_aclr = "OFF",
+ 		altdpram_component.outdata_reg = "UNREGISTERED",
+@@ -2347,7 +2344,7 @@ module SCSP_PHASE_RAM (
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 32,
+ 		altsyncram_component.numwords_b = 32,
+@@ -2355,7 +2352,7 @@ module SCSP_PHASE_RAM (
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = 5,
+ 		altsyncram_component.widthad_b = 5,
+@@ -2453,7 +2450,7 @@ module SCSP_LFO_RAM (
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 32,
+ 		altsyncram_component.numwords_b = 32,
+@@ -2461,7 +2458,7 @@ module SCSP_LFO_RAM (
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = 5,
+ 		altsyncram_component.widthad_b = 5,
+@@ -2559,7 +2556,7 @@ module SCSP_SO_RAM (
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 32,
+ 		altsyncram_component.numwords_b = 32,
+@@ -2567,7 +2564,7 @@ module SCSP_SO_RAM (
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = 5,
+ 		altsyncram_component.widthad_b = 5,
+@@ -2665,7 +2662,7 @@ module SCSP_EVOL_RAM (
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 32,
+ 		altsyncram_component.numwords_b = 32,
+@@ -2673,7 +2670,7 @@ module SCSP_EVOL_RAM (
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = 5,
+ 		altsyncram_component.widthad_b = 5,
+@@ -2720,7 +2717,7 @@ module SCSP_STACK_RAM
+ 		altdpram_component.byte_size = 8,
+ 		altdpram_component.indata_aclr = "OFF",
+ 		altdpram_component.indata_reg = "INCLOCK",
+-		altdpram_component.intended_device_family = "Cyclone V",
++		altdpram_component.intended_device_family = "Agilex 5",
+ 		altdpram_component.lpm_type = "altdpram",
+ 		altdpram_component.outdata_aclr = "OFF",
+ 		altdpram_component.outdata_reg = "UNREGISTERED",
+@@ -2903,7 +2900,7 @@ module SCSP_RAM_8X2
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 2**addr_width,
+ 		altsyncram_component.numwords_b = 2**addr_width,
+@@ -2911,7 +2908,7 @@ module SCSP_RAM_8X2
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = addr_width,
+ 		altsyncram_component.widthad_b = addr_width,
+@@ -3037,7 +3034,7 @@ module SCSP_RAM_8X4
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 2**addr_width,
+ 		altsyncram_component.numwords_b = 2**addr_width,
+@@ -3045,7 +3042,7 @@ module SCSP_RAM_8X4
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = addr_width,
+ 		altsyncram_component.widthad_b = addr_width,
+@@ -3117,7 +3114,7 @@ module SCSP_MPRO_RAM
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 128,
+ 		altsyncram_component.numwords_b = 128,
+@@ -3125,7 +3122,7 @@ module SCSP_MPRO_RAM
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = 7,
+ 		altsyncram_component.widthad_b = 7,
+@@ -3138,4 +3135,3 @@ module SCSP_MPRO_RAM
+ `endif
+ 	
+ endmodule
+-
+diff --git a/rtl/Saturn/SCSP/SCSP_pkg.sv b/rtl/Saturn/SCSP/SCSP_pkg.sv
+index 3c62805..b99b85e 100644
+--- a/rtl/Saturn/SCSP/SCSP_pkg.sv
++++ b/rtl/Saturn/SCSP/SCSP_pkg.sv
+@@ -557,7 +557,7 @@ package SCSP_PKG;
+ 		return !SUM[10] ? SUM[9:0] : 10'h3FF;
+ 	endfunction
+ 	
+-	function bit [9:0] LevelAddTL(bit [9:0] LEVEL, bit [7:0] TL);
++	function automatic bit [9:0] LevelAddTL(bit [9:0] LEVEL, bit [7:0] TL);
+ 		bit [10:0] SUM;
+ 		
+ 		SUM = {1'b0,LEVEL} + {1'b0,TL,2'b00};
+diff --git a/rtl/Saturn/SCU/RAM.sv b/rtl/Saturn/SCU/RAM.sv
+index 4b15e50..1e5e935 100644
+--- a/rtl/Saturn/SCU/RAM.sv
++++ b/rtl/Saturn/SCU/RAM.sv
+@@ -66,7 +66,7 @@ module DSP_PRG_RAM
+ 	defparam
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_output_a = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_hint = "ENABLE_RUNTIME_MOD=NO",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 2**addr_width,
+@@ -74,8 +74,8 @@ module DSP_PRG_RAM
+ 		altsyncram_component.outdata_aclr_a = "NONE",
+ 		altsyncram_component.outdata_reg_a = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
+-		altsyncram_component.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
++		altsyncram_component.ram_block_type = "AUTO",
++		altsyncram_component.read_during_write_mode_port_a = "DONT_CARE",
+ 		altsyncram_component.widthad_a = addr_width,
+ 		altsyncram_component.width_a = data_width,
+ 		altsyncram_component.width_byteena_a = 1,
+@@ -154,7 +154,7 @@ module DSP_DATA_RAM
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 2**addr_width,
+ 		altsyncram_component.numwords_b = 2**addr_width,
+@@ -162,7 +162,7 @@ module DSP_DATA_RAM
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.widthad_a = addr_width,
+ 		altsyncram_component.widthad_b = addr_width,
+ 		altsyncram_component.width_a = data_width,
+@@ -221,7 +221,7 @@ module SCU_CBUS_CACHE
+ 	defparam
+ 		altdpram_component.indata_aclr = "OFF",
+ 		altdpram_component.indata_reg = "INCLOCK",
+-		altdpram_component.intended_device_family = "Cyclone V",
++		altdpram_component.intended_device_family = "Agilex 5",
+ 		altdpram_component.lpm_type = "altdpram",
+ 		altdpram_component.outdata_aclr = "OFF",
+ 		altdpram_component.outdata_reg = "UNREGISTERED",
+diff --git a/rtl/Saturn/SCU/SCU.sv b/rtl/Saturn/SCU/SCU.sv
+index 999825f..eadc7be 100644
+--- a/rtl/Saturn/SCU/SCU.sv
++++ b/rtl/Saturn/SCU/SCU.sv
+@@ -390,6 +390,15 @@ module SCU
+ 	
+ 	bit  [31:0] ABUS_BUF;
+ 	bit  [31:0] BBUS_BUF;
++
++	// Quartus 25 does not retroactively apply the explicit type to signals
++	// referenced by the main state machine before their declaration.
++	bit  [ 7: 2] REG_A;
++	bit  [31: 0] REG_WDI;
++	bit  [ 3: 0] REG_WREN;
++	bit  [31: 0] REG_DO;
++	bit          REG_WWAIT,REG_WWAIT1,REG_WWAIT2,REG_RWAIT;
++	bit  [ 2: 0] REG_WAIT_DELAY;
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		bit  [24:0] ABUS_CA_INNER,BBUS_CA_INNER;
+ 		bit  [31:0] ABUS_CDI_INNER,BBUS_CDI_INNER;
+@@ -2940,12 +2949,6 @@ module SCU
+ 	
+ 	
+ 	//Registers
+-	bit [ 7: 2] REG_A;
+-	bit [31: 0] REG_WDI;
+-	bit [ 3: 0] REG_WREN;
+-	bit [31: 0] REG_DO;
+-	bit         REG_WWAIT,REG_WWAIT1,REG_WWAIT2,REG_RWAIT;
+-	bit [ 2: 0] REG_WAIT_DELAY;
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+ 			T0C <= '0;
+diff --git a/rtl/Saturn/SMPC/SMPC.sv b/rtl/Saturn/SMPC/SMPC.sv
+index b8d86a0..2265ea1 100644
+--- a/rtl/Saturn/SMPC/SMPC.sv
++++ b/rtl/Saturn/SMPC/SMPC.sv
+@@ -2,23 +2,23 @@
+ `define SIM
+ // synopsys translate_on
+ 
+-module SMPC 
++module SMPC
+ #(parameter rom_file = "smpc.mif")
+ (
+ 	input              CLK,
+ 	input              RST_N,
+ 	input              EN,
+-	
++
+ 	input              CE,
+ 	input              CE32K,
+ 	input              RESET_N,
+-	
++
+ 	input      [ 6: 1] A,
+ 	input      [ 7: 0] DBI,
+ 	output reg [ 7: 0] DBO,
+ 	input              CS_N,
+ 	input              RW_N,
+-	
++
+ 	output             D0,
+ 	input              D1,
+ 	input              D2,
+@@ -31,41 +31,41 @@ module SMPC
+ 	output             D9,
+ 	output             D10,
+ 	input              D13_INT0,
+-	
++
+ 	input              R01_INT2,
+-	
++
+ 	output     [ 6: 0] PIOA_O,
+ 	input      [ 6: 0] PIOA_I,
+ 	output     [ 6: 0] PIOA_D,
+-	
++
+ 	output     [ 6: 0] PIOB_O,
+ 	input      [ 6: 0] PIOB_I,
+ 	output     [ 6: 0] PIOB_D,
+-	
++
+ 	input      [ 3: 0] R5,
+-	
++
+ 	output             R60_D,
+ 	output             R60_O,
+ 	input              R60_I,
+-	
++
+ 	output             R61_D,
+ 	output             R61_O,
+ 	input              R61_I,
+-	
++
+ 	input              R62_I,
+ 	input              R63_I,
+-	
++
+ 	input              R70_I,
+ 	input              R71_I,
+ 	output             R72_O,
+ 	output             R73_O,
+-	
++
+ 	output             EXL_N,
+-	
++
+ 	input      [64: 0] EXT_RTC,
+-	
++
+ 	input      [ 7: 0] DBG_EXT
+-	
++
+ `ifdef DEBUG
+ 	                   ,
+ 	output reg [ 7: 0] DBG_IREG[7],
+@@ -76,7 +76,7 @@ module SMPC
+ );
+ 
+ 	import SMPC_PKG::*;
+-	
++
+ 	//Mapped registers
+ 	INTC0_t      INTC0;
+ 	INTC1_t      INTC1;
+@@ -106,18 +106,18 @@ module SMPC
+ 	DCRx_t       DCR5;
+ 	DCRx_t       DCR6;
+ 	DCRx_t       DCR7;
+-	
++
+ 	bit  [ 7: 0] TCA,TCC;
+ 	bit          TA_OVF,TC_OVF;
+ 	bit          TC_UPD;
+-	
++
+ 	//Port registers
+ 	bit  [15: 0] D_O;
+ 	bit  [15: 0] D_I;
+ 	bit  [15: 0] D_D;
+ 	bit  [ 3: 0] R0_O,R1_O,R2_O,R3_O,R4_O,R5_O,R6_O,R7_O;
+ 	bit  [ 3: 0] R0_I,R1_I,R2_I,R3_I,R4_I,R5_I,R6_I,R7_I;
+-	
++
+ 	//SMPC interface registers
+ 	bit  [ 7: 0] SR;
+ 	bit          SF;
+@@ -127,27 +127,27 @@ module SMPC
+ 	bit          EXLE1,EXLE2;
+ 	bit          COMREG_INT;
+ //	bit          VB_INT;
+-	
++
+ 	//HMCS400 CPU
+ 	bit          SBY,STOP;
+ 	bit          INT_PEND;
+ 	bit  [ 2: 0] INT_VEC;
+ 	bit          INT_ACP,INT_RET;
+-	
++
+ 	bit  [13: 0] ROM_A;
+ 	bit  [ 9: 0] ROM_DI;
+-	
++
+ 	bit  [ 9: 0] BUS_A;
+ 	bit  [ 3: 0] BUS_DI;
+ 	bit  [ 3: 0] BUS_DO;
+ 	bit          BUS_WE,BUS_RE;
+ 	bit          IO_WR,IO_RD;
+ 	bit          IO_P;
+-	
++
+ 	bit          SBY_REQ,STOP_REQ;
+-	
++
+ 	bit  [ 3: 0] CYC;
+-	always @(posedge CLK or negedge RST_N) begin		
++	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+ 			CYC <= 4'h1;
+ 		end
+@@ -160,11 +160,11 @@ module SMPC
+ 		end
+ 	end
+ 	wire EXEC = EN & ~SBY & ~STOP;
+-	
+-	
+-	always_comb begin		
++
++
++	always_comb begin
+ 		bit         INT0_PEND,INT1_PEND,INT2_PEND,INT3_PEND,TAI_PEND,TBI_PEND,TCI_PEND;
+-		
++
+ 		INT0_PEND = INTC0.IF0 & ~INTC0.IM0;
+ 		INT1_PEND = INTC1.IF1 & ~INTC1.IM1;
+ 		INT2_PEND = RF2.IF2   & ~RF2.IM2;
+@@ -172,9 +172,9 @@ module SMPC
+ 		TAI_PEND  = INTC1.IFTA & ~INTC1.IMTA;
+ 		TBI_PEND  = INTC2.IFTB & ~INTC2.IMTB;
+ 		TCI_PEND  = INTC2.IFTC & ~INTC2.IMTC;
+-		
++
+ 		INT_PEND = (INT0_PEND | INT1_PEND | INT2_PEND | INT2_PEND | TAI_PEND | TBI_PEND | TCI_PEND);
+-		
++
+ 		if      (INT0_PEND)             INT_VEC = 3'h1;
+ 		else if (INT1_PEND)             INT_VEC = 3'h2;
+ 		else if (TAI_PEND)              INT_VEC = 3'h3;
+@@ -182,55 +182,55 @@ module SMPC
+ 		else if (TCI_PEND || INT3_PEND) INT_VEC = 3'h5;
+ 		else                            INT_VEC = '0;
+ 	end
+-	
++
+ 	HMCS400_CORE CORE
+ 	(
+ 		.CLK(CLK),
+ 		.RST_N(RST_N),
+ 		.CE(CE),
+-		
++
+ 		.RESET(~RESET_N),
+ 		.CYC(CYC),
+ 		.EXEC(EXEC),
+-		
++
+ 		.INT_PEND(INTC0.IE & INT_PEND),
+ 		.INT_VEC(INT_VEC),
+ 		.INT_ACP(INT_ACP),
+ 		.INT_RET(INT_RET),
+-		
++
+ 		.ROM_A(ROM_A),
+ 		.ROM_DI(ROM_DI),
+-		
++
+ 		.BUS_A(BUS_A),
+ 		.BUS_DI(BUS_DI),
+ 		.BUS_DO(BUS_DO),
+ 		.BUS_WE(BUS_WE),
+ 		.BUS_RE(BUS_RE),
+-		
++
+ 		.IO_WR(IO_WR),
+ 		.IO_RD(IO_RD),
+ 		.IO_P(IO_P),
+-		
++
+ 		.STOP_REQ(STOP_REQ),
+ 		.SBY_REQ(SBY_REQ)
+ 	);
+-	
++
+ 	bit  [ 9: 0] ROM_Q;
+ 	HMCS400_ROM #(rom_file) ROM(CLK, ROM_A[10:0], ROM_Q);
+ 	assign ROM_DI = ROM_A >= 14'h0681 && ROM_A <= 14'h068E ? {ROM_Q[9:4],RTC_INIT[ROM_A[3:0]]} : //replace init rtc data by extern data
+ 	                ROM_A >= 14'h0FF0 && ROM_A <= 14'h0FFF ? {2'b01,IREG_Q} : ROM_Q;
+-	
++
+ 	wire         MR_SEL = (BUS_A >= 10'h040 && BUS_A <= 10'h04F);
+ 	wire         MR_WE = MR_SEL && BUS_WE & EXEC;
+ 	bit  [ 3: 0] MR_Q;
+ 	HMCS400_MR MR(CLK, BUS_A[3:0], BUS_DO, MR_WE & CYC[3] & CE, MR_Q);
+ 	wire ERAM_SEL = (BUS_A >= 10'h260 && BUS_A <= 10'h26F);
+-	
++
+ 	//8 nible for app variable + 4byte SMEM
+ 	bit  [ 3: 0] ERAM_Q;
+ 	SMPC_ERAM ERAM(CLK, BUS_A[3:0], BUS_DO, (ERAM_SEL & BUS_WE & EXEC & CYC[3] & CE), ERAM_Q);
+-	
+-	always @(posedge CLK or negedge RST_N) begin				
++
++	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+ 			{SBY,STOP} <= '0;
+ 		end
+@@ -251,14 +251,14 @@ module SMPC
+ 			end
+ 		end
+ 	end
+-	
+-	
++
++
+ 	//Mapped registers
+ 	wire MREG_SEL = (BUS_A <= 10'h03F);
+-	always @(posedge CLK or negedge RST_N) begin			
++	always @(posedge CLK or negedge RST_N) begin
+ 		bit          INT0_N,INT1_N,INT2,INT3;
+ 		bit          INT0_OLD,INT1_OLD,INT2_OLD,INT3_OLD;
+-		
++
+ 		if (!RST_N) begin
+ 			INTC0 <= INTC0_INIT;
+ 			INTC1 <= INTC1_INIT;
+@@ -327,15 +327,15 @@ module SMPC
+ 			INT1_N = PMRB.INT1 ? R0_I[0] : 1'b1;
+ 			INT2 = PMRB.INT2 ? R0_I[1] : 1'b0;
+ 			INT3 = PMRB.INT3 ? R0_I[2] : 1'b0;
+-			
++
+ 			if (CYC[0]) begin
+ 				if (TA_OVF) INTC1.IFTA <= 1;
+ 				if (TC_OVF) INTC2.IFTC <= 1;
+ 			end
+-			
++
+ 			if (CYC[1]) begin
+ 				{INT0_OLD,INT1_OLD,INT2_OLD,INT3_OLD} <= {INT0_N,INT1_N,INT2,INT3};
+-				
++
+ 				if (INT0_OLD && !INT0_N) INTC0.IF0 <= 1;
+ 				if (INT1_OLD && !INT1_N) INTC1.IF1 <= 1;
+ 				case (ESR1.INT2E)
+@@ -351,7 +351,7 @@ module SMPC
+ 					2'b11: if ((INT3_OLD && !INT3) | (!INT3_OLD && INT3)) RF2.IF3 <= 1;
+ 				endcase
+ 			end
+-			
++
+ 			if (CYC[2]) begin
+ 				if (MREG_SEL && BUS_RE) begin
+ 					case (BUS_A[5:0])
+@@ -359,7 +359,7 @@ module SMPC
+ 					endcase
+ 				end
+ 			end
+-			
++
+ 			TC_UPD <= 0;
+ 			if (CYC[3]) begin
+ 				if (MREG_SEL && BUS_WE) begin
+@@ -402,13 +402,13 @@ module SMPC
+ 					INTC0.IE <= 1;
+ 				end
+ 			end
+-			
+-			
++
++
+ 		end
+ 	end
+-	
++
+ 	bit  [ 3: 0] REG_DO;
+-	always_comb begin	
++	always_comb begin
+ 		case (BUS_A[5:0])
+ 			6'h00: REG_DO <= INTC0;
+ 			6'h01: REG_DO <= INTC1;
+@@ -424,11 +424,11 @@ module SMPC
+ 			default: REG_DO <= '0;
+ 		endcase
+ 	end
+-	
++
+ 	//Port
+ 	assign D_D = {DCD3,DCD2,DCD1,DCD0};
+ 	assign D_I = {2'b11,D13_INT0,9'b111111111,D3,D2,D1,1'b1};
+-	
++
+ 	assign R0_I = {2'b11,R01_INT2,~COMREG_INT};//check R02/INT3
+ 	assign R1_I = PIOA_I[3:0];
+ 	assign R2_I = {PIOA_I[6:4],1'b0};
+@@ -437,21 +437,21 @@ module SMPC
+ 	assign R5_I = R5;
+ 	assign R6_I = {R63_I,R62_I,R61_I,R60_I};
+ 	assign R7_I = {2'b00,R71_I,R70_I};
+-	
+-	always @(posedge CLK or negedge RST_N) begin				
++
++	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+ 			D_O <= '0;
+ 			{R0_O,R1_O,R2_O,R3_O,R4_O,R5_O,R6_O,R7_O} <= '0;
+ 		end
+ 		else if (!RESET_N) begin
+-			
++
+ 		end
+ 		else if (EN && CE) begin
+ 			if (CYC[3]) begin
+ 				if (IO_WR && !IO_P) begin
+ 					D_O[BUS_A[3:0]] <= BUS_DO[0];
+ 				end
+-				
++
+ 				if (IO_WR && IO_P) begin
+ 					case (BUS_A[3:0])
+ 						4'h0: R0_O <= BUS_DO;
+@@ -467,13 +467,13 @@ module SMPC
+ 			end
+ 		end
+ 	end
+-	
++
+ 	bit  [ 3: 0] IO_DO;
+-	always_comb begin	
++	always_comb begin
+ 		bit [ 3: 0] N;
+-	
++
+ 		N = BUS_A[3:0];
+-		if (!IO_P) 
++		if (!IO_P)
+ 			IO_DO <= {4{ (D_I[N]&~D_D[N]) | (D_O[N]&D_D[N]) }};
+ 		else
+ 			case (N)
+@@ -488,18 +488,18 @@ module SMPC
+ 				default: IO_DO <= '1;
+ 			endcase
+ 	end
+-	
++
+ 	assign {D10,D9,D8,D7,D6,D5,D4,D0} = {D_O[10:4],D_O[0]} | ~{D_D[10:4],D_D[0]};
+ 	assign {R61_D,R60_D} = DCR6[1:0];
+ 	assign {R61_O,R60_O} = R6_O[1:0] | ~DCR6[1:0];
+ 	assign {R73_O,R72_O} = R7_O[3:2] /*| ~DCR7[3:2]*/;
+-	
++
+ 	assign PIOA_O = IOSEL1 ? PDR1_O : {R2_O[3:1],R1_O};
+ 	assign PIOA_D = IOSEL1 ? DDR1   : {DCR2[3:1],DCR1};
+ 	assign PIOB_O = IOSEL2 ? PDR2_O : {R4_O[3:1],R3_O};
+ 	assign PIOB_D = IOSEL2 ? DDR2   : {DCR4[3:1],DCR3};
+ 	assign EXL_N = (~EXLE1 | PIOA_I[6]) & (~EXLE2 | PIOB_I[6]);
+-	
++
+ 	//Timers
+ 	bit  [10: 0] PSS;
+ 	always @(posedge CLK or negedge RST_N) begin
+@@ -515,7 +515,7 @@ module SMPC
+ 			end
+ 		end
+ 	end
+-	
++
+ 	bit  [ 7: 0] PSW;
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+@@ -529,10 +529,10 @@ module SMPC
+ 			if (TMA[3:1] == 3'b111) PSW <= '0;
+ 		end
+ 	end
+-	
++
+ 	bit          TA_CLK,TC_CLK;
+-	always_comb begin	
+-		if (!TMA[3]) 
++	always_comb begin
++		if (!TMA[3])
+ 			case (TMA[2:0])
+ 				3'h0: TA_CLK <= &PSS[10:0] & CYC[3];
+ 				3'h1: TA_CLK <= &PSS[9:0] & CYC[3];
+@@ -554,7 +554,7 @@ module SMPC
+ 				3'h6: TA_CLK <= 0;
+ 				3'h7: TA_CLK <= 0;
+ 			endcase
+-			
++
+ 		case (TMC1[2:0])
+ 			3'h0: TC_CLK <= &PSS[10:0] & CYC[3];
+ 			3'h1: TC_CLK <= &PSS[9:0] & CYC[3];
+@@ -566,32 +566,32 @@ module SMPC
+ 			3'h7: TC_CLK <= &PSS[0:0] & CYC[3];
+ 		endcase
+ 	end
+-	
++
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+ 			{TCA,TCC} <= '0;
+-			{TA_OVF,TC_OVF} <= '0; 
++			{TA_OVF,TC_OVF} <= '0;
+ 		end
+ 		else if (!RESET_N) begin
+ 			{TCA,TCC} <= '0;
+-			{TA_OVF,TC_OVF} <= '0; 
++			{TA_OVF,TC_OVF} <= '0;
+ 		end
+ 		else if (EN && CE) begin
+ 			if (CYC[0]) begin
+-				TA_OVF <= 0; 
++				TA_OVF <= 0;
+ 			end
+-			
++
+ 			if (TA_CLK) begin
+ 				TCA <= TCA + 8'd1;
+-				if (TCA == 8'hFF) TA_OVF <= 1; 
++				if (TCA == 8'hFF) TA_OVF <= 1;
+ 			end
+ 			if (TMA[3:1] == 3'b111) TCA <= '0;
+-			
++
+ 			if (TC_CLK) begin
+ 				TCC <= TCC + 8'd1;
+ 				if (TCC == 8'hFF) begin
+ 					if (TMC1[3]) TCC <= {TWCU,TWCL};
+-					TC_OVF <= 1; 
++					TC_OVF <= 1;
+ 				end
+ 			end
+ 			if (TC_UPD) begin
+@@ -599,13 +599,14 @@ module SMPC
+ 			end
+ 		end
+ 	end
+-	
++
+ 	//SMPC registers
+ 	wire SREG_SEL = (BUS_A >= 10'h360 && BUS_A <= 10'h36F);
+ 	wire OREG_SEL = (BUS_A >= 10'h320 && BUS_A <= 10'h35F);
+-	
++
+ 	wire IREG_SEL = ({A,1'b1} <= 7'h0D || {A,1'b1} == 7'h1F);
+ 	bit  [ 7: 0] IREG_Q;
++	bit          RW_N_OLD;
+ 	SMPC_IREG IREG
+ 	(
+ 		.CLK(CLK),
+@@ -615,7 +616,7 @@ module SMPC
+ 		.RADDR(ROM_A[2:0]),
+ 		.Q(IREG_Q)
+ 	);
+-	
++
+ 	wire [ 1: 0] OREG_WE = {~BUS_A[0],BUS_A[0]};
+ 	bit  [ 7: 0] OREG_Q;
+ 	SMPC_OREG OREG
+@@ -627,12 +628,11 @@ module SMPC
+ 		.RADDR(A[5:1]),
+ 		.Q(OREG_Q)
+ 	);
+-	
+-	bit         RW_N_OLD;
++
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		bit         CS_N_OLD,COMREG_PEND;
+ 		bit [ 7: 0] IO_BUF;
+-		
++
+ 		if (!RST_N) begin
+ 			SF <= 0;
+ 			{PDR1_O,PDR2_O} <= '0;
+@@ -646,7 +646,7 @@ module SMPC
+ `endif
+ 		end
+ 		else if (!RESET_N) begin
+-			 
++
+ 		end
+ 		else if (EN) begin
+ 			//Inner access
+@@ -659,7 +659,7 @@ module SMPC
+ 							4'b0010: SF <= 0;
+ 						endcase
+ 					end
+-					
++
+ 					if (COMREG_PEND && !COMREG_INT) begin
+ 						COMREG_INT <= 1;
+ 						COMREG_PEND <= 0;
+@@ -667,9 +667,9 @@ module SMPC
+ 					else if (INTC1.IF1 && COMREG_INT) begin//??
+ 						COMREG_INT <= 0;
+ 					end
+-					
++
+ //					VB_INT <= R01_INT2;
+-					
++
+ `ifdef DEBUG
+ 					if (BUS_A >= 10'h040 && BUS_A <= 10'h04F && BUS_WE) begin
+ 						casex (BUS_A[3:0])
+@@ -678,13 +678,13 @@ module SMPC
+ 					end
+ 					DBG_CMD_TIME <= DBG_CMD_TIME + 1'd1;
+ 					if ((INT_ACP && INT_VEC == 3'h2) || !EXEC) DBG_CMD_TIME <= '0;
+-					
++
+ 					DBG_CMD_WAIT <= DBG_CMD_WAIT + 1'd1;
+ 					if (!COMREG_INT) DBG_CMD_WAIT <= '0;
+ `endif
+ 				end
+ 			end
+-			
++
+ 			//Extern access
+ 			RW_N_OLD <= RW_N;
+ 			CS_N_OLD <= CS_N;
+@@ -701,8 +701,8 @@ module SMPC
+ 					default:;
+ 				endcase
+ 				IO_BUF <= DBI;
+-			end 
+-			
++			end
++
+ 			if (!CS_N && CS_N_OLD && RW_N) begin
+ 				if ({A,1'b1} >= 7'h21 && {A,1'b1} <= 7'h5F) begin
+ 					DBO <= OREG_Q;
+@@ -716,7 +716,7 @@ module SMPC
+ 					endcase
+ 				end
+ 			end
+-			
++
+ `ifdef DEBUG
+ 			if (!RW_N && RW_N_OLD && !CS_N) begin
+ 				case ({A,1'b1})
+@@ -730,21 +730,21 @@ module SMPC
+ 					7'h1F: DBG_COMREG <= DBI;
+ 					default:;
+ 				endcase
+-			end 
++			end
+ `endif
+ 		end
+ 	end
+-	
+-	assign BUS_DI = IO_RD    ? IO_DO : 
+-	                MREG_SEL ? REG_DO : 
++
++	assign BUS_DI = IO_RD    ? IO_DO :
++	                MREG_SEL ? REG_DO :
+ 						 ERAM_SEL ? (BUS_A[3:0] != 4'h5 ? ERAM_Q : (ERAM_Q | 4'h8)) : //STE always set
+ 						 MR_SEL   ? MR_Q :
+ 						            '0;
+-	
++
+ 	bit  [ 3: 0] RTC_INIT[16];
+ 	always @(posedge CLK) begin
+ 		bit         EXT_RTC64_OLD = 0;
+-		
++
+ 		if (!RESET_N) begin
+ 			{RTC_INIT[2],RTC_INIT[1]} <= 8'h59;
+ 			{RTC_INIT[4],RTC_INIT[3]} <= 8'h59;
+@@ -767,10 +767,10 @@ module SMPC
+ 			end
+ 		end
+ 	end
+-	
++
+ endmodule
+ 
+-module SMPC_ERAM 
++module SMPC_ERAM
+ (
+ 	input          CLK,
+ 	input  [ 3: 0] ADDR,
+@@ -782,24 +782,24 @@ module SMPC_ERAM
+ // synopsys translate_off
+ `define SIM
+ // synopsys translate_on
+-	
++
+ `ifdef SIM
+ 
+ 	reg [3:0] MEM [2**4];
+ 	initial begin
+ 		MEM <= '{2**4{'0}};
+ 	end
+-		
++
+ 	always @(posedge CLK) begin
+ 		if (WREN) MEM[ADDR] <= DATA;
+ 	end
+-	
++
+ 	assign Q = MEM[ADDR];
+ 
+ `else
+ 
+ 	wire [3:0] sub_wire0;
+-		
++
+ 	altdpram	altdpram_component (
+ 				.data (DATA),
+ 				.inclock (CLK),
+@@ -836,14 +836,14 @@ module SMPC_ERAM
+ 		altdpram_component.wraddress_reg = "INCLOCK",
+ 		altdpram_component.wrcontrol_aclr = "OFF",
+ 		altdpram_component.wrcontrol_reg = "INCLOCK";
+-		
++
+ 	assign Q = sub_wire0;
+-	
++
+ `endif
+ 
+-endmodule 
++endmodule
+ 
+-module SMPC_IREG 
++module SMPC_IREG
+ (
+ 	input          CLK,
+ 	input  [ 3: 1] WADDR,
+@@ -856,24 +856,24 @@ module SMPC_IREG
+ // synopsys translate_off
+ `define SIM
+ // synopsys translate_on
+-	
++
+ `ifdef SIM
+ 
+ 	reg [7:0] MEM [2**3];
+ 	initial begin
+ 		MEM <= '{2**3{'0}};
+ 	end
+-		
++
+ 	always @(posedge CLK) begin
+ 		if (WREN) MEM[WADDR] <= DATA;
+ 	end
+-	
++
+ 	assign Q = MEM[RADDR];
+ 
+ `else
+ 
+ 	wire [7:0] sub_wire0;
+-		
++
+ 	altdpram	altdpram_component (
+ 				.data (DATA),
+ 				.inclock (CLK),
+@@ -910,12 +910,12 @@ module SMPC_IREG
+ 		altdpram_component.wraddress_reg = "INCLOCK",
+ 		altdpram_component.wrcontrol_aclr = "OFF",
+ 		altdpram_component.wrcontrol_reg = "INCLOCK";
+-		
++
+ 	assign Q = sub_wire0;
+-	
++
+ `endif
+ 
+-endmodule 
++endmodule
+ 
+ module SMPC_OREG (
+ 	input          CLK,
+@@ -929,25 +929,25 @@ module SMPC_OREG (
+ // synopsys translate_off
+ `define SIM
+ // synopsys translate_on
+-	
++
+ `ifdef SIM
+ 
+ 	reg [7:0] MEM [2**5];
+ 	initial begin
+ 		MEM <= '{2**5{'0}};
+ 	end
+-		
++
+ 	always @(posedge CLK) begin
+ 		if (WREN[1]) MEM[WADDR][ 7: 4] <= DATA[ 7: 4];
+ 		if (WREN[0]) MEM[WADDR][ 3: 0] <= DATA[ 3: 0];
+ 	end
+-	
++
+ 	assign Q = MEM[RADDR];
+ 
+ `else
+ 
+ 	wire [7:0] sub_wire0;
+-		
++
+ 	altdpram	altdpram_component_2 (
+ 				.data (DATA[7:4]),
+ 				.inclock (CLK),
+@@ -984,7 +984,7 @@ module SMPC_OREG (
+ 		altdpram_component_2.wraddress_reg = "INCLOCK",
+ 		altdpram_component_2.wrcontrol_aclr = "OFF",
+ 		altdpram_component_2.wrcontrol_reg = "INCLOCK";
+-		
++
+ 	altdpram	altdpram_component_3 (
+ 				.data (DATA[3:0]),
+ 				.inclock (CLK),
+@@ -1021,9 +1021,9 @@ module SMPC_OREG (
+ 		altdpram_component_3.wraddress_reg = "INCLOCK",
+ 		altdpram_component_3.wrcontrol_aclr = "OFF",
+ 		altdpram_component_3.wrcontrol_reg = "INCLOCK";
+-		
++
+ 	assign Q = sub_wire0;
+-	
++
+ `endif
+ 
+-endmodule 
+\ No newline at end of file
++endmodule
+diff --git a/rtl/Saturn/STV/5881.sv b/rtl/Saturn/STV/5881.sv
+index a07a084..e756a55 100644
+--- a/rtl/Saturn/STV/5881.sv
++++ b/rtl/Saturn/STV/5881.sv
+@@ -731,6 +731,7 @@ module SEGA_315_5881 (
+ 	wire         LINE_WREN = (DECOMP_ST == DECOMP_LINE_WRITE || DECOMP_ST == DECOMP_LINE_COPY);
+ 	wire [ 8: 0] LINE_READ_ADDR = LINE_COPY_ADDR > HEADER[16:8] ? LINE_COPY_ADDR - (HEADER[16:8] + 9'd1): LINE_COPY_ADDR;
+ 	bit  [ 7: 0] LINE0_Q;
++	bit  [ 7: 0] LINE1_Q;
+ 	dpram #(9,8) line0
+ 	(
+ 		.clock(CLK),
+@@ -743,7 +744,6 @@ module SEGA_315_5881 (
+ 		.q_b(LINE0_Q)
+ 	);
+ 	
+-	bit  [ 7: 0] LINE1_Q;
+ 	dpram #(9,8) line1
+ 	(
+ 		.clock(CLK),
+diff --git a/rtl/Saturn/STV/93C45.sv b/rtl/Saturn/STV/93C45.sv
+index bdad426..c0fe420 100644
+--- a/rtl/Saturn/STV/93C45.sv
++++ b/rtl/Saturn/STV/93C45.sv
+@@ -5,7 +5,7 @@ module E93C45
+ 	input              RST_N,
+ 	
+ 	input              DI,
+-	output             DO,
++	output reg         DO,
+ 	input              CS,
+ 	input              SK,
+ 	
+diff --git a/rtl/Saturn/STV/RAX.sv b/rtl/Saturn/STV/RAX.sv
+index b6db960..c6d946d 100644
+--- a/rtl/Saturn/STV/RAX.sv
++++ b/rtl/Saturn/STV/RAX.sv
+@@ -24,8 +24,8 @@ module ACCLAIM_RAX (
+ 	output             RAM_RD,
+ 	input              RAM_RDY,
+ 	
+-	output     [15: 0] SOUND_L,
+-	output     [15: 0] SOUND_R
++	output reg [15: 0] SOUND_L,
++	output reg [15: 0] SOUND_R
+ );
+ 
+ 	bit  [13: 0] ADSP_A;
+diff --git a/rtl/Saturn/STV/STV_CART.sv b/rtl/Saturn/STV/STV_CART.sv
+index 5762dee..12a810e 100644
+--- a/rtl/Saturn/STV/STV_CART.sv
++++ b/rtl/Saturn/STV/STV_CART.sv
+@@ -25,11 +25,11 @@ module STV_CART (
+ 	output             AWAIT_N,
+ 	output             ARQT_N,
+ 	
+-	output     [25: 1] MEM_A,
++	output reg [25: 1] MEM_A,
+ 	input      [15: 0] MEM_DI,
+ 	output     [15: 0] MEM_DO,
+-	output     [ 1: 0] MEM_WE,
+-	output             MEM_RD,
++	output reg [ 1: 0] MEM_WE,
++	output reg         MEM_RD,
+ 	input              MEM_RDY,
+ 	
+ 	output     [24: 1] RAX_MEM_A,
+@@ -65,6 +65,8 @@ module STV_CART (
+ 	
+ 	bit [15:0] ABUS_DO;
+ 	bit        ABUS_WAIT;
++	bit [15:0] RAX_MEM_DI_LATCH;
++	bit        RAX_MEM_RDY_LATCH;
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+ 			MEM_WE <= '0;
+@@ -220,8 +222,6 @@ module STV_CART (
+ 		.SOUND_R(RAX_SOUND_R)
+ 	);
+ 	
+-	bit  [15: 0] RAX_MEM_DI_LATCH;
+-	bit          RAX_MEM_RDY_LATCH;
+ 	bit          RAX_ROM_SEL;
+ 	bit  [24: 0] RAX_ROM_A_LATCH,ROM_A_OLD;
+ 	bit          RAX_ROM_RD_PULSE;
+diff --git a/rtl/Saturn/Saturn.sv b/rtl/Saturn/Saturn.sv
+index 023d40e..2b1c0ed 100644
+--- a/rtl/Saturn/Saturn.sv
++++ b/rtl/Saturn/Saturn.sv
+@@ -382,7 +382,6 @@ module Saturn
+ 		.EIVECF_N(1'b1),
+ 		
+ 		.WAIT_N(MSHWAIT_N),
+-		.IVECF_N(),
+ 		.BRLS_N(MSHBRLS_N),
+ 		.BGR_N(MSHBGR_N),
+ 		
+diff --git a/rtl/Saturn/VDP1/VDP1.sv b/rtl/Saturn/VDP1/VDP1.sv
+index eccd9d2..2334b99 100644
+--- a/rtl/Saturn/VDP1/VDP1.sv
++++ b/rtl/Saturn/VDP1/VDP1.sv
+@@ -15,14 +15,14 @@ module VDP1 (
+ 	input              REQ_N,
+ 	output             RDY_N,
+ 	
+-	output             IRQ_N,
++	output reg         IRQ_N,
+ 	
+ 	input              DCE_R,
+ 	input              DCE_F,
+ 	input              HTIM_N,
+ 	input              VTIM_N,
+ 	input      [15: 0] VOUTI,
+-	output     [15: 0] VOUTO,
++	output reg [15: 0] VOUTO,
+ 	
+ 	output reg [18: 1] VRAM_A,
+ 	output reg [15: 0] VRAM_D,
+@@ -2729,18 +2729,18 @@ module VDP1_PAT_FIFO #(parameter l = 1) (
+ 	bit  [l-1: 0] RADDR;
+ 	bit  [l-1: 0] WADDR;
+ 	bit  [l: 0] AMOUNT;
+-	bit         NULL;
++	bit         NULL_FLAG;
+ 	always @(posedge CLK) begin
+ 		if (RST) begin
+ 			AMOUNT <= '0;
+ 			RADDR <= '0;
+ 			WADDR <= '0;
+-			NULL <= 1;
++			NULL_FLAG <= 1;
+ 		end
+ 		else begin
+ 			if (WRREQ && !AMOUNT[l]) begin
+ 				WADDR <= WADDR + 1'd1;
+-				NULL <= 0;
++				NULL_FLAG <= 0;
+ 			end
+ 			if (RDREQ && AMOUNT) begin
+ 				RADDR <= RADDR + 1'd1;
+@@ -2791,7 +2791,7 @@ module VDP1_PAT_FIFO #(parameter l = 1) (
+ 		altdpram_component.wrcontrol_aclr = "OFF",
+ 		altdpram_component.wrcontrol_reg = "INCLOCK";
+ 		
+-	assign Q = NULL ? '0 : sub_wire0;
++	assign Q = NULL_FLAG ? '0 : sub_wire0;
+ 
+ endmodule
+ 
+@@ -2877,4 +2877,3 @@ module VDP1_DIV_24_12
+ 	assign QUOT = D[16:0];
+ 
+ endmodule
+-
+diff --git a/rtl/Saturn/VDP2/VDP2.sv b/rtl/Saturn/VDP2/VDP2.sv
+index 91dcc5a..34db1bd 100644
+--- a/rtl/Saturn/VDP2/VDP2.sv
++++ b/rtl/Saturn/VDP2/VDP2.sv
+@@ -26,7 +26,7 @@ module VDP2 (
+ 	output            HTIM_N,
+ 	output            VTIM_N,
+ 	input      [15:0] FBDI,
+-	output     [15:0] FBDO,
++	output reg [15:0] FBDO,
+ 	
+ 	input             PAL,
+ 	
+@@ -1011,6 +1011,7 @@ module VDP2 (
+ 	bit          VRAM_RRDY;
+ 	bit          VRAM_WRDY;
+ 	bit          VRAM_WLOCK;
++	bit  [ 1: 0] DQM;
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		bit DTEN_N_OLD,CS_N_OLD;
+ 		bit VRAMA_ALLOW,VRAMB_ALLOW;
+@@ -2086,9 +2087,14 @@ module VDP2 (
+ 					R0RP_PIPE[i+1] <= R0RP_PIPE[i];
+ 				end
+ 				
+-				RPxLCSD_PIPE[0] = RPxLCSD[R0_RP];
+-				RPxKLCE_PIPE[0] = RPxREG[R0_RP].KLCE;
+-				for (int i=0; i<8; i++) begin
++				// The original blocking assignment made stages 0 and 1 receive
++				// the new value on the same edge. Express that behavior using
++				// only nonblocking assignments for Quartus 25.
++				RPxLCSD_PIPE[0] <= RPxLCSD[R0_RP];
++				RPxKLCE_PIPE[0] <= RPxREG[R0_RP].KLCE;
++				RPxLCSD_PIPE[1] <= RPxLCSD[R0_RP];
++				RPxKLCE_PIPE[1] <= RPxREG[R0_RP].KLCE;
++				for (int i=1; i<8; i++) begin
+ 					RPxLCSD_PIPE[i+1] <= RPxLCSD_PIPE[i];
+ 					RPxKLCE_PIPE[i+1] <= RPxKLCE_PIPE[i];
+ 				end
+@@ -2253,6 +2259,59 @@ module VDP2 (
+ 	bit             RBG_TP_PIPE[5][2];
+ 	bit  [ 7: 0]    RBG_DC[2][4];
+ 	CellParam_t     RBG_CDP[2];
++	NBGState_t      BG_PIPE_INPUT;
++	always_comb begin
++		for (int i=0; i<4; i++) begin
++			BG_PIPE_INPUT.NxPN[i] = VA_PIPE[0].NxA0PN[i] | VA_PIPE[0].NxA1PN[i] | VA_PIPE[0].NxB0PN[i] | VA_PIPE[0].NxB1PN[i];
++			BG_PIPE_INPUT.NxPNS[i] = VA_PIPE[0].NxA0PN[i] && NxPN_ADDR[NBG_A0VA.Nx][18:17] == 2'b00 ? 2'd0 :
++			                              VA_PIPE[0].NxA1PN[i] && NxPN_ADDR[NBG_A1VA.Nx][18:17] == 2'b01 ? 2'd1 :
++			                              VA_PIPE[0].NxB0PN[i] && NxPN_ADDR[NBG_B0VA.Nx][18:17] == 2'b10 ? 2'd2 :
++			                              2'd3;
++			BG_PIPE_INPUT.NxCH[i] = VA_PIPE[0].NxA0CH[i] | VA_PIPE[0].NxA1CH[i] | VA_PIPE[0].NxB0CH[i] | VA_PIPE[0].NxB1CH[i];
++			BG_PIPE_INPUT.NxCHS[i] = VA_PIPE[0].NxA0CH[i] && NxCH_ADDR[NBG_A0VA.Nx][18:17] == 2'b00 ? 2'd0 :
++			                              VA_PIPE[0].NxA1CH[i] && NxCH_ADDR[NBG_A1VA.Nx][18:17] == 2'b01 ? 2'd1 :
++			                              VA_PIPE[0].NxB0CH[i] && NxCH_ADDR[NBG_B0VA.Nx][18:17] == 2'b10 ? 2'd2 :
++			                              2'd3;
++			BG_PIPE_INPUT.NxPN_EN[i] = NBG_PN_EN[i];
++			BG_PIPE_INPUT.NxCH_CNT[i] = NBG_CH_CNT[i];
++			BG_PIPE_INPUT.NxCH_EN[i] = NBG_CH_EN[i];
++		end
++		for (int i=0; i<2; i++) begin
++			BG_PIPE_INPUT.NxVS[i] = VA_PIPE[0].NxA0VS[i] | VA_PIPE[0].NxA1VS[i] | VA_PIPE[0].NxB0VS[i] | VA_PIPE[0].NxB1VS[i];
++			BG_PIPE_INPUT.NxVSS[i] = VA_PIPE[0].NxA0VS[i] && NxVS_ADDR[18:17] == 2'b00 ? 2'd0 :
++			                              VA_PIPE[0].NxA1VS[i] && NxVS_ADDR[18:17] == 2'b01 ? 2'd1 :
++			                              VA_PIPE[0].NxB0VS[i] && NxVS_ADDR[18:17] == 2'b10 ? 2'd2 :
++			                              2'd3;
++			BG_PIPE_INPUT.NxPN_CNT[i] = NBG_PN_CNT[i];
++		end
++	end
++
++	RBGState_t RBG_PIPE_INPUT;
++	always_comb begin
++		for (int i=0; i<2; i++) begin
++			RBG_PIPE_INPUT.RxCT[i] = VA_PIPE[0].RxA0CT[i] | VA_PIPE[0].RxA1CT[i] | VA_PIPE[0].RxB0CT[i] | VA_PIPE[0].RxB1CT[i];
++			RBG_PIPE_INPUT.RxCTS[i] = VA_PIPE[0].RxA0CT[i] && RxCT_ADDR[RBG_A0VA.Rx][18:17] == 2'b00 ? 2'd0 :
++			                             VA_PIPE[0].RxA1CT[i] && RxCT_ADDR[RBG_A1VA.Rx][18:17] == 2'b01 ? 2'd1 :
++			                             VA_PIPE[0].RxB0CT[i] && RxCT_ADDR[RBG_B0VA.Rx][18:17] == 2'b10 ? 2'd2 :
++			                             2'd3;
++			RBG_PIPE_INPUT.RxCRCT[i] = VA_PIPE[0].RxCRCT[i];
++			RBG_PIPE_INPUT.RxPN[i] = VA_PIPE[0].RxA0PN[i] | VA_PIPE[0].RxA1PN[i] | VA_PIPE[0].RxB0PN[i] | VA_PIPE[0].RxB1PN[i];
++			RBG_PIPE_INPUT.RxPNS[i] = VA_PIPE[0].RxA0PN[i] && RxPN_ADDR[RBG_A0VA.Rx][18:17] == 2'b00 ? 2'd0 :
++			                             VA_PIPE[0].RxA1PN[i] && RxPN_ADDR[RBG_A1VA.Rx][18:17] == 2'b01 ? 2'd1 :
++			                             VA_PIPE[0].RxB0PN[i] && RxPN_ADDR[RBG_B0VA.Rx][18:17] == 2'b10 ? 2'd2 :
++			                             2'd3;
++			RBG_PIPE_INPUT.RxOVR[i] = RxSCRN_OVER[i];
++			RBG_PIPE_INPUT.RxCTTP[i] = VA_PIPE[0].RxCTTP[i];
++			RBG_PIPE_INPUT.RxCH[i] = VA_PIPE[0].RxA0CH[i] | VA_PIPE[0].RxA1CH[i] | VA_PIPE[0].RxB0CH[i] | VA_PIPE[0].RxB1CH[i];
++			RBG_PIPE_INPUT.RxCHS[i] = VA_PIPE[0].RxA0CH[i] && RxCH_ADDR[RBG_A0VA.Rx][18:17] == 2'b00 ? 2'd0 :
++			                             VA_PIPE[0].RxA1CH[i] && RxCH_ADDR[RBG_A1VA.Rx][18:17] == 2'b01 ? 2'd1 :
++			                             VA_PIPE[0].RxB0CH[i] && RxCH_ADDR[RBG_B0VA.Rx][18:17] == 2'b10 ? 2'd2 :
++			                             2'd3;
++			RBG_PIPE_INPUT.RxCELLX[i] = i == 0 ?
++				VA_PIPE[4].RxX[VA_PIPE[4].R0RP][2:0] : VA_PIPE[4].RxX[1][2:0];
++			RBG_PIPE_INPUT.RxCT_EN[i] = RBG_CT_EN[i];
++		end
++	end
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		bit [31: 0] PN_WD[4];
+ 		bit [31: 0] NBG_CH[4];
+@@ -2280,7 +2339,6 @@ module VDP2 (
+ 		bit [31: 0] RCT_WD[2];
+ 		bit [31: 0] RBG_CH[2];
+ 		bit         PN_RP;
+-		bit         CH_RP;
+ //		bit         CT_RP;
+ 		
+ 		
+@@ -2295,31 +2353,7 @@ module VDP2 (
+ 			// synopsys translate_on
+ 		end
+ 		else begin
+-			//NBG0,NBG1,NBG2,NBG3
+-			for (int i=0; i<4; i++) begin
+-				BG_PIPE[0].NxPN[i] = VA_PIPE[0].NxA0PN[i] | VA_PIPE[0].NxA1PN[i] | VA_PIPE[0].NxB0PN[i] | VA_PIPE[0].NxB1PN[i];
+-				BG_PIPE[0].NxPNS[i] = VA_PIPE[0].NxA0PN[i] && NxPN_ADDR[NBG_A0VA.Nx][18:17] == 2'b00 ? 2'd0 : 
+-									       VA_PIPE[0].NxA1PN[i] && NxPN_ADDR[NBG_A1VA.Nx][18:17] == 2'b01 ? 2'd1 : 
+-									       VA_PIPE[0].NxB0PN[i] && NxPN_ADDR[NBG_B0VA.Nx][18:17] == 2'b10 ? 2'd2 : 
+-									       2'd3;
+-				BG_PIPE[0].NxCH[i] = VA_PIPE[0].NxA0CH[i] | VA_PIPE[0].NxA1CH[i] | VA_PIPE[0].NxB0CH[i] | VA_PIPE[0].NxB1CH[i];
+-				BG_PIPE[0].NxCHS[i] = VA_PIPE[0].NxA0CH[i] && NxCH_ADDR[NBG_A0VA.Nx][18:17] == 2'b00 ? 2'd0 : 
+-									       VA_PIPE[0].NxA1CH[i] && NxCH_ADDR[NBG_A1VA.Nx][18:17] == 2'b01 ? 2'd1 : 
+-									       VA_PIPE[0].NxB0CH[i] && NxCH_ADDR[NBG_B0VA.Nx][18:17] == 2'b10 ? 2'd2 : 
+-									       2'd3;
+-				if (i < 2) begin
+-					BG_PIPE[0].NxVS[i] = VA_PIPE[0].NxA0VS[i] | VA_PIPE[0].NxA1VS[i] | VA_PIPE[0].NxB0VS[i] | VA_PIPE[0].NxB1VS[i];
+-					BG_PIPE[0].NxVSS[i] = VA_PIPE[0].NxA0VS[i] && NxVS_ADDR[18:17] == 2'b00 ? 2'd0 : 
+-										       VA_PIPE[0].NxA1VS[i] && NxVS_ADDR[18:17] == 2'b01 ? 2'd1 : 
+-										       VA_PIPE[0].NxB0VS[i] && NxVS_ADDR[18:17] == 2'b10 ? 2'd2 : 
+-										       2'd3;		 
+-					BG_PIPE[0].NxPN_CNT[i] = NBG_PN_CNT[i];
+-				end
+-				BG_PIPE[0].NxPN_EN[i] = NBG_PN_EN[i];
+-				BG_PIPE[0].NxCH_CNT[i] = NBG_CH_CNT[i];
+-				BG_PIPE[0].NxCH_EN[i] = NBG_CH_EN[i];
+-			end
+-			
++			BG_PIPE[0] <= BG_PIPE_INPUT;
+ 			if (CE_R) begin
+ 				for (int i=0; i<4; i++) begin
+ 					if (BG_PIPE[2].NxPN[i] && BG_PIPE[1].NxPN_EN[i]) begin
+@@ -2799,7 +2833,10 @@ module VDP2 (
+ 					endcase
+ 				end
+ 				
+-				BG_PIPE[1] <= BG_PIPE[0];
++				// The original blocking writes to stage 0 made stage 1 receive
++				// the new input on this same edge. Keep that behavior while using
++				// one assignment style for the sequential pipeline.
++				BG_PIPE[1] <= BG_PIPE_INPUT;
+ 				BG_PIPE[2] <= BG_PIPE[1];
+ 				BG_PIPE[3] <= BG_PIPE[2];
+ 				
+@@ -2839,28 +2876,6 @@ module VDP2 (
+ 			if (DOT_CE_R) begin
+ 			for (int i=0; i<2; i++) begin
+ 				PN_RP = (i == 0 ? VA_PIPE[2].R0RP : 1'b1);
+-				CH_RP = (i == 0 ? VA_PIPE[4].R0RP : 1'b1);
+-				
+-				RBG_PIPE[0].RxCT[i] = VA_PIPE[0].RxA0CT[i] | VA_PIPE[0].RxA1CT[i] | VA_PIPE[0].RxB0CT[i] | VA_PIPE[0].RxB1CT[i];
+-				RBG_PIPE[0].RxCTS[i] = VA_PIPE[0].RxA0CT[i] && RxCT_ADDR[RBG_A0VA.Rx][18:17] == 2'b00 ? 2'd0 : 
+-									        VA_PIPE[0].RxA1CT[i] && RxCT_ADDR[RBG_A1VA.Rx][18:17] == 2'b01 ? 2'd1 : 
+-									        VA_PIPE[0].RxB0CT[i] && RxCT_ADDR[RBG_B0VA.Rx][18:17] == 2'b10 ? 2'd2 : 
+-									        2'd3;
+-				RBG_PIPE[0].RxCRCT[i] = VA_PIPE[0].RxCRCT[i];
+-				RBG_PIPE[0].RxPN[i] = VA_PIPE[0].RxA0PN[i] | VA_PIPE[0].RxA1PN[i] | VA_PIPE[0].RxB0PN[i] | VA_PIPE[0].RxB1PN[i];
+-				RBG_PIPE[0].RxPNS[i] = VA_PIPE[0].RxA0PN[i] && RxPN_ADDR[RBG_A0VA.Rx][18:17] == 2'b00 ? 2'd0 : 
+-									        VA_PIPE[0].RxA1PN[i] && RxPN_ADDR[RBG_A1VA.Rx][18:17] == 2'b01 ? 2'd1 : 
+-									        VA_PIPE[0].RxB0PN[i] && RxPN_ADDR[RBG_B0VA.Rx][18:17] == 2'b10 ? 2'd2 : 
+-									        2'd3;
+-				RBG_PIPE[0].RxOVR[i] = RxSCRN_OVER[i];
+-				RBG_PIPE[0].RxCTTP[i] = VA_PIPE[0].RxCTTP[i];
+-				RBG_PIPE[0].RxCH[i] = VA_PIPE[0].RxA0CH[i] | VA_PIPE[0].RxA1CH[i] | VA_PIPE[0].RxB0CH[i] | VA_PIPE[0].RxB1CH[i];
+-				RBG_PIPE[0].RxCHS[i] = VA_PIPE[0].RxA0CH[i] && RxCH_ADDR[RBG_A0VA.Rx][18:17] == 2'b00 ? 2'd0 : 
+-									        VA_PIPE[0].RxA1CH[i] && RxCH_ADDR[RBG_A1VA.Rx][18:17] == 2'b01 ? 2'd1 : 
+-									        VA_PIPE[0].RxB0CH[i] && RxCH_ADDR[RBG_B0VA.Rx][18:17] == 2'b10 ? 2'd2 : 
+-									        2'd3;
+-				RBG_PIPE[0].RxCELLX[i] = VA_PIPE[4].RxX[CH_RP][2:0];
+-				RBG_PIPE[0].RxCT_EN[i] = RBG_CT_EN[i];
+ 				
+ 				if (RBG_PIPE[2].RxPN[i]) begin
+ 					case (RBG_PIPE[2].RxPNS[i])
+@@ -2942,7 +2957,8 @@ module VDP2 (
+ 				end
+ 			end
+ 			
+-			RBG_PIPE[1] <= RBG_PIPE[0];
++			RBG_PIPE[0] <= RBG_PIPE_INPUT;
++			RBG_PIPE[1] <= RBG_PIPE_INPUT;
+ 			RBG_PIPE[2] <= RBG_PIPE[1];
+ 			RBG_PIPE[3] <= RBG_PIPE[2];
+ 			
+@@ -3580,6 +3596,8 @@ module VDP2 (
+ 		.Q_B(PAL0_DO)
+ 	);
+ 	
++	bit  [10:1] CT_CRAM_A;
++
+ 	VDP2_PAL_RAM pal2
+ 	(
+ 		.CLK(CLK),
+@@ -3595,7 +3613,6 @@ module VDP2 (
+ 		.Q_B(PAL1_DO)
+ 	);
+ 	
+-	bit  [10:1] CT_CRAM_A;
+ 	bit  [31:0] CT_CRAM_Q;
+ 	always @(posedge CLK or negedge RST_N) begin
+ 		if (!RST_N) begin
+@@ -3629,7 +3646,6 @@ module VDP2 (
+ 	
+ 	bit [20: 1] A;
+ 	bit         WE_N;
+-	bit [ 1: 0] DQM;
+ 	bit         BURST;
+ 	bit [15: 0] REG_DO;
+ 	bit         REG_RRDY;
+@@ -4113,8 +4129,8 @@ module VDP2 (
+ 						default: REG_DO <= '0;
+ 					endcase
+ 					if ({REG_RA,1'b0} == 9'h002 && !REGS.EXTEN.EXLTEN) begin	//EXTEN
+-						REGS.HCNT.HCT = !REGS.TVMD.HRESO[2] ? {HCT,DOTCLK_DIV[1]&REGS.TVMD.HRESO[1]} : {HCT9,HCT};
+-						REGS.VCNT.VCT = REGS.TVMD.LSMD != 2'b11 && !REGS.TVMD.HRESO[2] ? {1'b0,VCT} : REGS.TVMD.LSMD == 2'b11 && ((!ODD && !NNI) || !REGS.TVMD.HRESO[2]) ? {VCT,~ODD&~NNI} : {VCT,VCT0};
++						REGS.HCNT.HCT <= !REGS.TVMD.HRESO[2] ? {HCT,DOTCLK_DIV[1]&REGS.TVMD.HRESO[1]} : {HCT9,HCT};
++						REGS.VCNT.VCT <= REGS.TVMD.LSMD != 2'b11 && !REGS.TVMD.HRESO[2] ? {1'b0,VCT} : REGS.TVMD.LSMD == 2'b11 && ((!ODD && !NNI) || !REGS.TVMD.HRESO[2]) ? {VCT,~ODD&~NNI} : {VCT,VCT0};
+ 						REGS.TVSTAT.EXLTFG <= 1;
+ 					end
+ 					if ({REG_RA,1'b0} == 9'h004) begin								//TVSTAT
+@@ -4126,8 +4142,8 @@ module VDP2 (
+ 			if (DOT_CE_F || DOT_CE_R) begin
+ 				EXLAT_N_OLD <= EXLAT_N;
+ 				if (!EXLAT_N && EXLAT_N_OLD && REGS.EXTEN.EXLTEN) begin	//EXTEN
+-					REGS.HCNT.HCT = !REGS.TVMD.HRESO[2] ? {HCT,DOTCLK_DIV[1]&REGS.TVMD.HRESO[1]} : {HCT9,HCT};
+-					REGS.VCNT.VCT = REGS.TVMD.LSMD != 2'b11 && !REGS.TVMD.HRESO[2] ? {1'b0,VCT} : REGS.TVMD.LSMD == 2'b11 && ((!ODD && !NNI) || !REGS.TVMD.HRESO[2]) ? {VCT,~ODD&~NNI} : {VCT,VCT0};
++					REGS.HCNT.HCT <= !REGS.TVMD.HRESO[2] ? {HCT,DOTCLK_DIV[1]&REGS.TVMD.HRESO[1]} : {HCT9,HCT};
++					REGS.VCNT.VCT <= REGS.TVMD.LSMD != 2'b11 && !REGS.TVMD.HRESO[2] ? {1'b0,VCT} : REGS.TVMD.LSMD == 2'b11 && ((!ODD && !NNI) || !REGS.TVMD.HRESO[2]) ? {VCT,~ODD&~NNI} : {VCT,VCT0};
+ 					REGS.TVSTAT.EXLTFG <= 1;
+ 				end
+ 			end
+diff --git a/rtl/bram.vhd b/rtl/bram.vhd
+index b862f1d..9db80e9 100644
+--- a/rtl/bram.vhd
++++ b/rtl/bram.vhd
+@@ -29,8 +29,26 @@ END spram;
+ 
+ 
+ ARCHITECTURE SYN OF spram IS
++	COMPONENT spram_sz IS
++		generic (
++			addr_width    : integer := 8;
++			data_width    : integer := 8;
++			numwords      : integer := 2**8;
++			mem_init_file : string := " ";
++			mem_name      : string := "MEM"
++		);
++		PORT (
++			clock   : in  STD_LOGIC;
++			address : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0);
++			data    : in  STD_LOGIC_VECTOR (data_width-1 DOWNTO 0) := (others => '0');
++			enable  : in  STD_LOGIC := '1';
++			wren    : in  STD_LOGIC := '0';
++			q       : out STD_LOGIC_VECTOR (data_width-1 DOWNTO 0);
++			cs      : in  std_logic := '1'
++		);
++	END COMPONENT;
+ BEGIN
+-	spram_sz : work.spram_sz
++	spram_sz_inst : spram_sz
+ 	generic map(addr_width, data_width, 2**addr_width, mem_init_file, mem_name)
+ 	port map(clock,address,data,enable,wren,q,cs);
+ END SYN;
+@@ -75,7 +93,7 @@ BEGIN
+ 	GENERIC MAP (
+ 		clock_enable_input_a => "BYPASS",
+ 		clock_enable_output_a => "BYPASS",
+-		intended_device_family => "Cyclone V",
++		intended_device_family => "Agilex 5",
+ 		lpm_hint => "ENABLE_RUNTIME_MOD=YES,INSTANCE_NAME="&mem_name,
+ 		lpm_type => "altsyncram",
+ 		numwords_a => numwords,
+@@ -83,7 +101,7 @@ BEGIN
+ 		outdata_aclr_a => "NONE",
+ 		outdata_reg_a => "UNREGISTERED",
+ 		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
++		read_during_write_mode_port_a => "DONT_CARE",
+ 		init_file => mem_init_file, 
+ 		widthad_a => addr_width,
+ 		width_a => data_width,
+@@ -131,8 +149,28 @@ end entity;
+ 
+ 
+ ARCHITECTURE SYN OF DualPortRAM IS
++	COMPONENT dpram_dif IS
++		generic (
++			addr_width_a  : integer := 8;
++			data_width_a  : integer := 8;
++			addr_width_b  : integer := 8;
++			data_width_b  : integer := 8;
++			mem_init_file : string := " "
++		);
++		PORT (
++			clock : in STD_LOGIC;
++			address_a : in STD_LOGIC_VECTOR (addr_width_a-1 DOWNTO 0);
++			data_a : in STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0) := (others => '0');
++			enable_a : in STD_LOGIC := '1'; wren_a : in STD_LOGIC := '0';
++			q_a : out STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0); cs_a : in std_logic := '1';
++			address_b : in STD_LOGIC_VECTOR (addr_width_b-1 DOWNTO 0) := (others => '0');
++			data_b : in STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0) := (others => '0');
++			enable_b : in STD_LOGIC := '1'; wren_b : in STD_LOGIC := '0';
++			q_b : out STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0); cs_b : in std_logic := '1'
++		);
++	END COMPONENT;
+ BEGIN
+-	ram : work.dpram_dif generic map(addrbits,databits,addrbits,databits)
++	ram : dpram_dif generic map(addrbits,databits,addrbits,databits)
+ 	port map(clock,address_a,data_a,'1',wren_a,q_a,'1',address_b,data_b,'1',wren_b,q_b,'1');
+ END SYN;
+ 
+@@ -161,27 +199,43 @@ END obj_cache;
+ 
+ 
+ ARCHITECTURE SYN OF obj_cache IS
++	COMPONENT dpram_dif IS
++		generic (addr_width_a : integer := 8; data_width_a : integer := 8;
++		         addr_width_b : integer := 8; data_width_b : integer := 8;
++		         mem_init_file : string := " ");
++		PORT (
++			clock : in STD_LOGIC;
++			address_a : in STD_LOGIC_VECTOR (addr_width_a-1 DOWNTO 0);
++			data_a : in STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0) := (others => '0');
++			enable_a : in STD_LOGIC := '1'; wren_a : in STD_LOGIC := '0';
++			q_a : out STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0); cs_a : in std_logic := '1';
++			address_b : in STD_LOGIC_VECTOR (addr_width_b-1 DOWNTO 0) := (others => '0');
++			data_b : in STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0) := (others => '0');
++			enable_b : in STD_LOGIC := '1'; wren_b : in STD_LOGIC := '0';
++			q_b : out STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0); cs_b : in std_logic := '1'
++		);
++	END COMPONENT;
+ BEGIN
+ 
+-	ram0: work.dpram_dif generic map(7,8,7,8)
++	ram0: dpram_dif generic map(7,8,7,8)
+ 	port map
+ 	(
+ 		clock, rdaddress, (others => '0'), '1', '0', q(7 downto 0), '1', wraddress, data(7 downto 0), '1', wren and byteena_a(0)
+ 	);
+ 
+-	ram1: work.dpram_dif generic map(7,8,7,8)
++	ram1: dpram_dif generic map(7,8,7,8)
+ 	port map
+ 	(
+ 		clock, rdaddress, (others => '0'), '1', '0', q(15 downto 8), '1', wraddress, data(15 downto 8), '1', wren and byteena_a(1)
+ 	);
+ 
+-	ram2: work.dpram_dif generic map(7,8,7,8)
++	ram2: dpram_dif generic map(7,8,7,8)
+ 	port map
+ 	(
+ 		clock, rdaddress, (others => '0'), '1', '0', q(23 downto 16), '1', wraddress, data(23 downto 16), '1', wren and byteena_a(2)
+ 	);
+ 	
+-	ram3: work.dpram_dif generic map(7,8,7,8)
++	ram3: dpram_dif generic map(7,8,7,8)
+ 	port map
+ 	(
+ 		clock, rdaddress, (others => '0'), '1', '0', q(31 downto 24), '1', wraddress, data(31 downto 24), '1', wren and byteena_a(3)
+@@ -227,8 +281,24 @@ end entity;
+ 
+ 
+ ARCHITECTURE SYN OF dpram IS
++	COMPONENT dpram_dif IS
++		generic (addr_width_a : integer := 8; data_width_a : integer := 8;
++		         addr_width_b : integer := 8; data_width_b : integer := 8;
++		         mem_init_file : string := " ");
++		PORT (
++			clock : in STD_LOGIC;
++			address_a : in STD_LOGIC_VECTOR (addr_width_a-1 DOWNTO 0);
++			data_a : in STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0) := (others => '0');
++			enable_a : in STD_LOGIC := '1'; wren_a : in STD_LOGIC := '0';
++			q_a : out STD_LOGIC_VECTOR (data_width_a-1 DOWNTO 0); cs_a : in std_logic := '1';
++			address_b : in STD_LOGIC_VECTOR (addr_width_b-1 DOWNTO 0) := (others => '0');
++			data_b : in STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0) := (others => '0');
++			enable_b : in STD_LOGIC := '1'; wren_b : in STD_LOGIC := '0';
++			q_b : out STD_LOGIC_VECTOR (data_width_b-1 DOWNTO 0); cs_b : in std_logic := '1'
++		);
++	END COMPONENT;
+ BEGIN
+-	ram : work.dpram_dif generic map(addr_width,data_width,addr_width,data_width,mem_init_file)
++	ram : dpram_dif generic map(addr_width,data_width,addr_width,data_width,mem_init_file)
+ 	port map(clock,address_a,data_a,enable_a,wren_a,q_a,cs_a,address_b,data_b,enable_b,wren_b,q_b,cs_b);
+ END SYN;
+ 
+@@ -281,13 +351,13 @@ BEGIN
+ 
+ 	altsyncram_component : altsyncram
+ 	GENERIC MAP (
+-		address_reg_b => "CLOCK1",
++		address_reg_b => "CLOCK0",
+ 		clock_enable_input_a => "NORMAL",
+ 		clock_enable_input_b => "NORMAL",
+ 		clock_enable_output_a => "BYPASS",
+ 		clock_enable_output_b => "BYPASS",
+-		indata_reg_b => "CLOCK1",
+-		intended_device_family => "Cyclone V",
++		indata_reg_b => "CLOCK0",
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",
+ 		numwords_a => 2**addr_width_a,
+ 		numwords_b => 2**addr_width_b,
+@@ -297,8 +367,8 @@ BEGIN
+ 		outdata_reg_a => "UNREGISTERED",
+ 		outdata_reg_b => "UNREGISTERED",
+ 		power_up_uninitialized => "FALSE",
+-		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
+-		read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
++		read_during_write_mode_port_a => "DONT_CARE",
++		read_during_write_mode_port_b => "DONT_CARE",
+ 		init_file => mem_init_file, 
+ 		widthad_a => addr_width_a,
+ 		widthad_b => addr_width_b,
+@@ -306,15 +376,13 @@ BEGIN
+ 		width_b => data_width_b,
+ 		width_byteena_a => 1,
+ 		width_byteena_b => 1,
+-		wrcontrol_wraddress_reg_b => "CLOCK1"
++		wrcontrol_wraddress_reg_b => "CLOCK0"
+ 	)
+ 	PORT MAP (
+ 		address_a => address_a,
+ 		address_b => address_b,
+ 		clock0 => clock,
+-		clock1 => clock,
+ 		clocken0 => enable_a,
+-		clocken1 => enable_b,
+ 		data_a => data_a,
+ 		data_b => data_b,
+ 		wren_a => wren_a and cs_a,
+@@ -324,4 +392,3 @@ BEGIN
+ 	);
+ 
+ END SYN;
+-
+diff --git a/rtl/ddram.sv b/rtl/ddram.sv
+index bfac913..97b20da 100644
+--- a/rtl/ddram.sv
++++ b/rtl/ddram.sv
+@@ -37,82 +37,82 @@ module ddram
+ 	input          rst,
+ 
+ 	input  [19: 2] ramh_addr,
+-	output [31: 0] ramh_dout,
++	output reg [31: 0] ramh_dout,
+ 	input  [31: 0] ramh_din,
+ 	input          ramh_rd,
+ 	input  [ 3: 0] ramh_wr,
+-	output         ramh_busy,
++	output reg     ramh_busy,
+ 
+ `ifndef STV_BUILD
+ 	input  [18: 1] cdram_addr,
+-	output [15: 0] cdram_dout,
++	output reg [15: 0] cdram_dout,
+ 	input  [15: 0] cdram_din,
+ 	input          cdram_rd,
+ 	input  [ 1: 0] cdram_wr,
+-	output         cdram_busy,
++	output reg     cdram_busy,
+ `endif
+ 	
+ 	input  [21: 1] raml_addr,
+-	output [15: 0] raml_dout,
++	output reg [15: 0] raml_dout,
+ 	input  [15: 0] raml_din,
+ 	input          raml_rd,
+ 	input  [ 1: 0] raml_wr,
+-	output         raml_busy,
++	output reg     raml_busy,
+ 
+ 	input  [18: 1] vdp1vram_addr,
+-	output [15: 0] vdp1vram_dout,
++	output reg [15: 0] vdp1vram_dout,
+ 	input  [15: 0] vdp1vram_din,
+ 	input          vdp1vram_rd,
+ 	input  [ 1: 0] vdp1vram_wr,
+ 	input  [ 8: 0] vdp1vram_blen,
+-	output         vdp1vram_busy,
++	output reg     vdp1vram_busy,
+ 
+ 	input  [18: 1] vdp1fb_addr,
+-	output [15: 0] vdp1fb_dout,
++	output reg [15: 0] vdp1fb_dout,
+ 	input  [15: 0] vdp1fb_din,
+ 	input          vdp1fb_rd,
+ 	input  [ 1: 0] vdp1fb_wr,
+-	output         vdp1fb_busy,
++	output reg     vdp1fb_busy,
+ 
+ `ifndef STV_BUILD
+ 	input  [13: 1] cdbuf_addr,
+-	output [15: 0] cdbuf_dout,
++	output reg [15: 0] cdbuf_dout,
+ 	input          cdbuf_rd,
+-	output         cdbuf_busy,
++	output reg     cdbuf_busy,
+ `endif
+ 
+ 	input  [25: 1] cart_addr,
+-	output [15: 0] cart_dout,
++	output reg [15: 0] cart_dout,
+ 	input  [15: 0] cart_din,
+ 	input          cart_rd,
+ 	input  [ 1: 0] cart_wr,
+-	output         cart_busy,
++	output reg     cart_busy,
+ 
+ `ifdef STV_BUILD
+ 	input  [ 6: 1] eeprom_addr,
+-	output [15: 0] eeprom_dout,
++	output reg [15: 0] eeprom_dout,
+ 	input          eeprom_rd,
+-	output         eeprom_busy,
++	output reg     eeprom_busy,
+ 
+ 	input  [24: 1] rax_addr,
+-	output [15: 0] rax_dout,
++	output reg [15: 0] rax_dout,
+ 	input  [15: 0] rax_din,
+ 	input          rax_rd,
+ 	input  [ 1: 0] rax_wr,
+-	output         rax_busy,
++	output reg     rax_busy,
+ `endif
+ 
+ 	input  [26: 1] bios_addr,
+ 	input  [15: 0] bios_din,
+ 	input  [ 1: 0] bios_wr,
+-	output         bios_busy,
++	output reg     bios_busy,
+ 
+ 	input  [20: 1] bsram_addr,
+-	output [15: 0] bsram_dout,
++	output reg [15: 0] bsram_dout,
+ 	input  [15: 0] bsram_din,
+ 	input          bsram_rd,
+ 	input  [ 1: 0] bsram_wr,
+-	output         bsram_busy
++	output reg     bsram_busy
+ );
+ 
+ reg  [ 26:  1] ram_address;
+@@ -236,9 +236,9 @@ always @(posedge clk) begin
+ end
+ wire           rst_pulse = (rst && !old_rst);
+ 
+-wire           ramh_fifo_wrreq,ramh_fifo_rdreq;
+-wire           vdp1vram_fifo_wrreq,vdp1vram_fifo_rdreq;
+-wire           vdp1fb_fifo_wrreq,vdp1fb_fifo_rdreq;
++logic          ramh_fifo_wrreq,ramh_fifo_rdreq;
++logic          vdp1vram_fifo_wrreq,vdp1vram_fifo_rdreq;
++logic          vdp1fb_fifo_wrreq,vdp1fb_fifo_rdreq;
+ always_comb begin
+ 	ramh_fifo_wrreq = (|ramh_wr && !ramh_wr_old);
+ 	ramh_fifo_rdreq = (state == 3'h1 && !DDRAM_BUSY && ram_chan == 4'd0);
+@@ -1017,7 +1017,7 @@ module ddr_cache_ram #(parameter wa = 2) (
+ 	defparam
+ 		altdpram_component.indata_aclr = "OFF",
+ 		altdpram_component.indata_reg = "INCLOCK",
+-		altdpram_component.intended_device_family = "Cyclone V",
++		altdpram_component.intended_device_family = "Agilex 5",
+ 		altdpram_component.lpm_type = "altdpram",
+ 		altdpram_component.outdata_aclr = "OFF",
+ 		altdpram_component.outdata_reg = "UNREGISTERED",
+@@ -1093,7 +1093,7 @@ module ddr_cache_ram2 #(parameter wa = 2) (
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 2**wa,
+ 		altsyncram_component.numwords_b = 2**wa,
+@@ -1101,7 +1101,7 @@ module ddr_cache_ram2 #(parameter wa = 2) (
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = wa,
+ 		altsyncram_component.widthad_b = wa,
+@@ -1160,7 +1160,7 @@ module ddr_ram #(parameter wa = 10) (
+ 		altsyncram_component.clock_enable_input_a = "BYPASS",
+ 		altsyncram_component.clock_enable_input_b = "BYPASS",
+ 		altsyncram_component.clock_enable_output_b = "BYPASS",
+-		altsyncram_component.intended_device_family = "Cyclone V",
++		altsyncram_component.intended_device_family = "Agilex 5",
+ 		altsyncram_component.lpm_type = "altsyncram",
+ 		altsyncram_component.numwords_a = 2**wa,
+ 		altsyncram_component.numwords_b = 2**wa,
+@@ -1168,7 +1168,7 @@ module ddr_ram #(parameter wa = 10) (
+ 		altsyncram_component.outdata_aclr_b = "NONE",
+ 		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+ 		altsyncram_component.power_up_uninitialized = "FALSE",
+-		altsyncram_component.ram_block_type = "M10K",
++		altsyncram_component.ram_block_type = "AUTO",
+ 		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+ 		altsyncram_component.widthad_a = wa,
+ 		altsyncram_component.widthad_b = wa,
+@@ -1239,7 +1239,7 @@ module ddr_infifo
+ 	defparam
+ 		altdpram_component.indata_aclr = "OFF",
+ 		altdpram_component.indata_reg = "INCLOCK",
+-		altdpram_component.intended_device_family = "Cyclone V",
++		altdpram_component.intended_device_family = "Agilex 5",
+ 		altdpram_component.lpm_type = "altdpram",
+ 		altdpram_component.outdata_aclr = "OFF",
+ 		altdpram_component.outdata_reg = "UNREGISTERED",
+diff --git a/rtl/hps2cdd.sv b/rtl/hps2cdd.sv
+index 1f5da2f..5ac5972 100644
+--- a/rtl/hps2cdd.sv
++++ b/rtl/hps2cdd.sv
+@@ -290,8 +290,8 @@ module CDFIFO (
+ 				.usedw ());
+ 	defparam
+ 		scfifo_component.add_ram_output_register = "OFF",
+-		scfifo_component.intended_device_family = "Cyclone V",
+-		scfifo_component.lpm_hint = "RAM_BLOCK_TYPE=M10K",
++		scfifo_component.intended_device_family = "Agilex 5",
++		scfifo_component.lpm_hint = "RAM_BLOCK_TYPE=AUTO",
+ 		scfifo_component.lpm_numwords = 64,
+ 		scfifo_component.lpm_showahead = "ON",
+ 		scfifo_component.lpm_type = "scfifo",
+diff --git a/rtl/hps2pad.sv b/rtl/hps2pad.sv
+index 38b6200..b277e37 100644
+--- a/rtl/hps2pad.sv
++++ b/rtl/hps2pad.sv
+@@ -3,10 +3,10 @@ module HPS2PAD (
+ 	input              RST_N,
+ 	input              SMPC_CE,
+ 	
+-	output     [ 6: 0] PDR1I,
++	output reg [ 6: 0] PDR1I,
+ 	input      [ 6: 0] PDR1O,
+ 	input      [ 6: 0] DDR1,
+-	output     [ 6: 0] PDR2I,
++	output reg [ 6: 0] PDR2I,
+ 	input      [ 6: 0] PDR2O,
+ 	input      [ 6: 0] DDR2,
+ 	
+diff --git a/rtl/lightgun.sv b/rtl/lightgun.sv
+index 3f76c60..1cbccdb 100644
+--- a/rtl/lightgun.sv
++++ b/rtl/lightgun.sv
+@@ -30,11 +30,11 @@ module lightgun
+ 	
+ 	output       CROSS_DRAW,
+ 	
+-	output       SENSOR,
+-	output       BTN_A,
+-	output       BTN_B,
+-	output       BTN_C,
+-	output       BTN_START
++	output reg   SENSOR,
++	output reg   BTN_A,
++	output reg   BTN_B,
++	output reg   BTN_C,
++	output reg   BTN_START
+ );
+ 
+ assign CROSS_DRAW = ~offscreen & draw;
+diff --git a/rtl/sdram1.sv b/rtl/sdram1.sv
+index 4a5a1dc..30cce94 100644
+--- a/rtl/sdram1.sv
++++ b/rtl/sdram1.sv
+@@ -1,11 +1,17 @@
+ module sdram1
+ (
+-	inout  reg [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	input      [15:0] SDRAM_DQ_IN,
++	output     [15:0] SDRAM_DQ_OUT,
++	output            SDRAM_DQ_OE,
++`else
++	inout      [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
++`endif
+ 	output reg [12:0] SDRAM_A,    // 13 bit multiplexed address bus
+ 	output reg        SDRAM_DQML, // byte mask
+ 	output reg        SDRAM_DQMH, // byte mask
+ 	output reg  [1:0] SDRAM_BA,   // two banks
+-	output            SDRAM_nCS,  // a single chip select
++	output reg        SDRAM_nCS,  // a single chip select
+ 	output reg        SDRAM_nWE,  // write enable
+ 	output reg        SDRAM_nRAS, // row address select
+ 	output reg        SDRAM_nCAS, // columns address select
+@@ -15,6 +21,7 @@ module sdram1
+ 	// cpu/chipset interface
+ 	input             init,			// init signal after FPGA config to initialize RAM
+ 	input             clk,			// sdram is accessed at up to 128MHz
++	input             clk_physical,	// half-cycle-shifted PLL output for SDRAM_CLK
+ 	input             sync,			//
+ 
+ 	input      [17:1] addr_a0,
+@@ -51,6 +58,17 @@ module sdram1
+ 	
+ 	output reg [15:0] dbg_sdram_d
+ );
++	reg  [15:0] sdram_dq_out;
++	reg         sdram_dq_oe;
++	wire [15:0] sdram_dq_in;
++`ifdef DE25_CORE_HAS_SPLIT_SDRAM_DQ
++	assign sdram_dq_in = SDRAM_DQ_IN;
++	assign SDRAM_DQ_OUT = sdram_dq_out;
++	assign SDRAM_DQ_OE = sdram_dq_oe;
++`else
++	assign sdram_dq_in = SDRAM_DQ;
++	assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'hzzzz;
++`endif
+ 
+ 	localparam RASCAS_DELAY   = 3'd2; // tRCD=20ns -> 2 cycles@85MHz
+ 	localparam BURST_1        = 3'd0; // 0=1, 1=2, 2=4, 3=8, 7=full page
+@@ -80,26 +98,28 @@ module sdram1
+ 	reg [1:0] mode;
+ 	reg       init_chip = 0;
+ 	reg       init_done = 0;
++	// These are persistent controller registers. Quartus 25 treats initialized
++	// declarations inside an always block as ambiguous and can constant-fold
++	// the countdown to its initial value, leaving init_done permanently low.
++	reg [4:0] init_reset_count = 5'h1f;
++	reg       init_old = 0;
+ 	always @(posedge clk) begin
+-		reg [4:0] reset = 5'h1f;
+-		reg init_old = 0;
+-		
+-		if(mode != MODE_NORMAL || init_state != STATE_IDLE || reset) begin
++		if(mode != MODE_NORMAL || init_state != STATE_IDLE || init_reset_count) begin
+ 			init_state <= init_state + 1'd1;
+ 			if (init_state == STATE_LAST) init_state <= STATE_IDLE;
+ 		end
+ 
+ 		init_old <= init;
+ 		if (init_old & ~init) begin
+-			reset <= 5'h1f; 
++			init_reset_count <= 5'h1f;
+ 			init_chip <= 0;
+ 			init_done <= 0;
+ 		end
+ 		else if (init_state == STATE_LAST) begin
+-			if(reset != 0) begin
+-				reset <= reset - 5'd1;
+-				if (reset == 15 || reset == 14) begin mode <= MODE_PRE; init_chip <= (reset == 15); end
+-				else if(reset == 4 || reset == 3) begin mode <= MODE_LDM; init_chip <= (reset == 4); end
++			if(init_reset_count != 0) begin
++				init_reset_count <= init_reset_count - 5'd1;
++				if (init_reset_count == 15 || init_reset_count == 14) begin mode <= MODE_PRE; init_chip <= (init_reset_count == 15); end
++				else if(init_reset_count == 4 || init_reset_count == 3) begin mode <= MODE_LDM; init_chip <= (init_reset_count == 4); end
+ 				else                mode <= MODE_RESET;
+ 			end
+ 			else begin
+@@ -128,7 +148,7 @@ module sdram1
+ 		bit [ 1:0] BE;		//write byte enable
+ 		bit        RFS;	//refresh	
+ 	} state_t;
+-	state_t state[6];
++	state_t state[8];
+ 	reg [ 3: 0] st_num;
+ 	
+ 	reg [16: 1] raddr01[2];
+@@ -324,6 +344,8 @@ module sdram1
+ 		state[3] <= state[2];
+ 		state[4] <= state[3];
+ 		state[5] <= state[4];
++		state[6] <= state[5];
++		state[7] <= state[6];
+ 	end
+ 	
+ 	wire [ 1:0] ctrl_cmd   = state[0].CMD;
+@@ -338,10 +360,15 @@ module sdram1
+ 	wire        ctrl_chip  = state[0].CHIP;
+ 	
+ 	wire       data_read = state[4].RD;
+-	wire       out_read  = state[5].RD;
+-	wire [1:0] out_bank  = state[5].BANK;
+-	wire       out_half  = state[5].HALF;
+-	wire       out_word  = state[5].WORD;
++	// The DE25-Nano round trip includes the SDRAM clock output buffer, the
++	// device tAC, and the FPGA fabric input path. The first two controller
++	// edges after the physical launch are too early at the slow corner. The
++	// third edge captures the preceding beat while maintaining one beat per
++	// cycle after the pipeline fills. Keep the consumer aligned to that beat.
++	wire       out_read  = state[7].RD;
++	wire [1:0] out_bank  = state[7].BANK;
++	wire       out_half  = state[7].HALF;
++	wire       out_word  = state[7].WORD;
+ 	
+ 	reg [31:0] dout[4];
+ 	reg [15:0] dout2;
+@@ -349,7 +376,7 @@ module sdram1
+ 		reg [15:0] rbuf0,rbuf1;
+ 		
+ 		rbuf1 <= rbuf0; 
+-		rbuf0 <= SDRAM_DQ;
++		rbuf0 <= sdram_dq_in;
+ 
+ 		if (out_read && !out_bank[1] && out_word) dout[{out_bank[0],out_half}] <= {rbuf1,rbuf0};
+ 		if (out_read &&  out_bank[1]) dout2 <= rbuf0;
+@@ -391,9 +418,9 @@ module sdram1
+ 										   default: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE, SDRAM_nCS} <= {CMD_NOP,1'b1};
+ 		endcase
+ 		
+-		SDRAM_DQ <= 'Z;
++		sdram_dq_oe <= 0;
+ 		casex({init_done,ctrl_rfs,we,mode,ctrl_cmd})
+-			{3'b101, MODE_NORMAL, CTRL_CAS}: begin SDRAM_DQ <= d; dbg_sdram_d <= d; end
++			{3'b101, MODE_NORMAL, CTRL_CAS}: begin sdram_dq_out <= d; sdram_dq_oe <= 1; dbg_sdram_d <= d; end
+ 										   default: ;
+ 		endcase
+ 
+@@ -422,29 +449,6 @@ module sdram1
+ 	assign dbg_out0_read = out_read;
+ 	assign dbg_out0_bank = out_bank;
+ 
+-	altddio_out
+-	#(
+-		.extend_oe_disable("OFF"),
+-		.intended_device_family("Cyclone V"),
+-		.invert_output("OFF"),
+-		.lpm_hint("UNUSED"),
+-		.lpm_type("altddio_out"),
+-		.oe_reg("UNREGISTERED"),
+-		.power_up_high("OFF"),
+-		.width(1)
+-	)
+-	sdramclk_ddr
+-	(
+-		.datain_h(1'b0),
+-		.datain_l(1'b1),
+-		.outclock(clk),
+-		.dataout(SDRAM_CLK),
+-		.aclr(1'b0),
+-		.aset(1'b0),
+-		.oe(1'b1),
+-		.outclocken(1'b1),
+-		.sclr(1'b0),
+-		.sset(1'b0)
+-	);
++	assign SDRAM_CLK = clk_physical;
+ 
+ endmodule
+diff --git a/rtl/sdram2.sv b/rtl/sdram2.sv
+index 85927c3..27faac4 100644
+--- a/rtl/sdram2.sv
++++ b/rtl/sdram2.sv
+@@ -1,6 +1,6 @@
+ module sdram2
+ (
+-	inout  reg [15: 0] SDRAM_DQ,   // 16 bit bidirectional data bus
++	inout      [15: 0] SDRAM_DQ,   // 16 bit bidirectional data bus
+ 	output reg [12: 0] SDRAM_A,    // 13 bit multiplexed address bus
+ 	output reg         SDRAM_DQML, // byte mask
+ 	output reg         SDRAM_DQMH, // byte mask
+@@ -45,6 +45,9 @@ module sdram2
+ 	output reg [23:0] dbg_numrfs_in_64ms
+ `endif
+ );
++	reg  [15:0] sdram_dq_out;
++	reg         sdram_dq_oe;
++	assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_out : 16'hzzzz;
+ 
+ 	localparam RASCAS_DELAY   = 3'd3; // tRCD=20ns -> 2 cycles@85MHz
+ 	localparam BURST_1        = 3'd1; // 0=1, 1=2, 2=4, 3=8, 7=full page
+@@ -328,9 +331,9 @@ module sdram2
+ 										   default: {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE, SDRAM_nCS} <= {CMD_NOP,1'b1};
+ 		endcase
+ 		
+-		SDRAM_DQ <= 'Z;
++		sdram_dq_oe <= 0;
+ 		casex({init_done,ctrl_rfs,we,mode,ctrl_cmd})
+-			{3'b101, MODE_NORMAL, CTRL_CAS}: begin SDRAM_DQ <= d; end
++			{3'b101, MODE_NORMAL, CTRL_CAS}: begin sdram_dq_out <= d; sdram_dq_oe <= 1; end
+ 										   default: ;
+ 		endcase
+ 
+@@ -380,7 +383,7 @@ module sdram2
+ 	altddio_out
+ 	#(
+ 		.extend_oe_disable("OFF"),
+-		.intended_device_family("Cyclone V"),
++		.intended_device_family("Agilex 5"),
+ 		.invert_output("OFF"),
+ 		.lpm_hint("UNUSED"),
+ 		.lpm_type("altddio_out"),
+diff --git a/sys/hq2x.sv b/sys/hq2x.sv
+index f5fcc71..29c45c6 100644
+--- a/sys/hq2x.sv
++++ b/sys/hq2x.sv
+@@ -83,6 +83,7 @@ wire     [23:0] Curr21 = HALF_DEPTH ? h2rgb(Curr21tmp) : Curr21tmp;
+ reg  [AWIDTH:0] wrin_addr2;
+ reg  [DWIDTH:0] wrpix;
+ reg             wrin_en;
++reg  [AWIDTH:0] offs;
+ 
+ function [23:0] h2rgb;
+ 	input [11:0] v;
+@@ -145,7 +146,6 @@ end
+ 
+ wire [DWIDTH:0] blend_result = HALF_DEPTH ? rgb2h(blend_result_pre) : blend_result_pre[DWIDTH:0];
+ 
+-reg [AWIDTH:0] offs;
+ always @(posedge clk) begin
+ 	reg old_reset_line;
+ 	reg old_reset_frame;
+@@ -306,7 +306,7 @@ module Blend
+ 	input  [23:0] D,
+ 	input  [23:0] F,
+ 	input  [23:0] H,
+-	output [23:0] Result
++	output reg [23:0] Result
+ );
+ 
+ 	localparam BLEND1 = 7'b110_10_00; // (A * 12 + B * 4        ) >> 4
+diff --git a/sys/scandoubler.v b/sys/scandoubler.v
+index 81e7c3f..7759873 100644
+--- a/sys/scandoubler.v
++++ b/sys/scandoubler.v
+@@ -100,6 +100,9 @@ always @(posedge clk_vid) begin
+ 	end
+ end
+ 
++reg        ce_x4o, ce_x2o;
++reg  [1:0] sd_line;
++
+ Hq2x #(.LENGTH(LENGTH), .HALF_DEPTH(HALF_DEPTH)) Hq2x
+ (
+ 	.clk(clk_vid),
+@@ -119,7 +122,6 @@ Hq2x #(.LENGTH(LENGTH), .HALF_DEPTH(HALF_DEPTH)) Hq2x
+ reg  [7:0] pix_out_cnt = 0;
+ wire [7:0] pc_out = pix_out_cnt + 1'b1;
+ 
+-reg ce_x4o, ce_x2o;
+ always @(posedge clk_vid) begin
+ 	reg hs;
+ 
+@@ -140,7 +142,6 @@ always @(posedge clk_vid) begin
+ 	end
+ end
+ 
+-reg [1:0] sd_line;
+ reg [3:0] vbo;
+ reg [3:0] vso;
+ reg [8:0] hbo;
+diff --git a/sys/video_mixer.sv b/sys/video_mixer.sv
+index e53e1c0..41dc681 100644
+--- a/sys/video_mixer.sv
++++ b/sys/video_mixer.sv
+@@ -20,7 +20,8 @@ module video_mixer
+ #(
+ 	parameter LINE_LENGTH  = 768,
+ 	parameter HALF_DEPTH   = 0,
+-	parameter GAMMA        = 0
++	parameter GAMMA        = 0,
++	parameter DWIDTH       = HALF_DEPTH ? 3 : 7
+ )
+ (
+ 	input            CLK_VIDEO, // should be multiple by (ce_pix*4)
+@@ -59,9 +60,13 @@ module video_mixer
+ 	output reg       VGA_DE
+ );
+ 
+-localparam DWIDTH = HALF_DEPTH ? 3 : 7;
+-localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
+-localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
++localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
++localparam RIN_DWIDTH = GAMMA ? 7 : DWIDTH;
++
++wire [RIN_DWIDTH:0] R_in;
++wire [RIN_DWIDTH:0] G_in;
++wire [RIN_DWIDTH:0] B_in;
+ 
+ wire frz_hs, frz_vs;
+ wire frz_hbl, frz_vbl;
+@@ -89,15 +94,15 @@ always @(posedge CLK_VIDEO) begin
+ end
+ 
+ generate
+-	if(GAMMA && HALF_DEPTH) begin
+-		wire [7:0] R_in  = frz ? 8'd0 : {R,R};
+-		wire [7:0] G_in  = frz ? 8'd0 : {G,G};
+-		wire [7:0] B_in  = frz ? 8'd0 : {B,B};
+-	end else begin
+-		wire [DWIDTH:0] R_in = frz ? 1'd0 : R;
+-		wire [DWIDTH:0] G_in = frz ? 1'd0 : G;
+-		wire [DWIDTH:0] B_in = frz ? 1'd0 : B;
+-	end
++	if(GAMMA && HALF_DEPTH) begin
++		assign R_in = frz ? 8'd0 : {R,R};
++		assign G_in = frz ? 8'd0 : {G,G};
++		assign B_in = frz ? 8'd0 : {B,B};
++	end else begin
++		assign R_in = frz ? '0 : R;
++		assign G_in = frz ? '0 : G;
++		assign B_in = frz ? '0 : B;
++	end
+ endgenerate
+ 
+ wire hs_g, vs_g;

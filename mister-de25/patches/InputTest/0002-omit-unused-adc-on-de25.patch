@@ -1,0 +1,20 @@
+diff --git a/InputTest.sv b/InputTest.sv
+--- a/InputTest.sv
++++ b/InputTest.sv
+@@ -108,6 +108,8 @@ module emu
+ 	output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
+ 
+ 	//ADC
++`ifndef DE25_OMIT_ADC_BUS
+ 	inout   [3:0] ADC_BUS,
++`endif
+ 
+ 	//SD-SPI
+@@ -177,5 +179,7 @@ module emu
+ 
+ ///////// Default values for ports not used in this core /////////
+ 
++`ifndef DE25_OMIT_ADC_BUS
+ assign ADC_BUS  = 'Z;
++`endif
+ assign USER_OUT = '1;

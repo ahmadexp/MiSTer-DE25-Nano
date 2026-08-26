@@ -1,0 +1,16 @@
+diff --git a/sys/hps_io.sv b/sys/hps_io.sv
+index 26f410b..6f51aab 100644
+--- a/sys/hps_io.sv
++++ b/sys/hps_io.sv
+@@ -211,7 +211,11 @@ reg  [7:0] gamma_value;
+ assign buttons = cfg[1:0];
+ //cfg[2] - vga_scaler handled in sys_top
+ //cfg[3] - csync handled in sys_top
++`ifdef DE25_FORCE_SCANDOUBLER
++assign forced_scandoubler = 1'b1;
++`else
+ assign forced_scandoubler = cfg[4];
++`endif
+ //cfg[5] - ypbpr handled in sys_top
+ assign direct_video = cfg[10];
+ 

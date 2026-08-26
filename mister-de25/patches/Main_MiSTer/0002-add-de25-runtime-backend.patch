@@ -1,0 +1,249 @@
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+index b64cfe5..7e60bbf 100644
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -23,11 +23,18 @@
+ #include "fpga_reset_manager.h"
+ #include "fpga_nic301.h"
+ 
++#ifdef MISTER_DE25
++#define FPGA_REG_BASE 0x20000000
++#define FPGA_REG_SIZE 0x00400000
++#define DE25_GP_OUT   0x20020000
++#define DE25_GP_IN    0x20020010
++#else
+ #define FPGA_REG_BASE 0xFF000000
+ #define FPGA_REG_SIZE 0x01000000
++#endif
+ 
+-#define MAP_ADDR(x) (volatile uint32_t*)(&map_base[(((uint32_t)(x)) & 0xFFFFFF)>>2])
+-#define IS_REG(x) (((((uint32_t)(x))-1)>=(FPGA_REG_BASE - 1)) && ((((uint32_t)(x))-1)<(FPGA_REG_BASE + FPGA_REG_SIZE - 1)))
++#define MAP_ADDR(x) (volatile uint32_t*)(&map_base[(((uintptr_t)(x)) & 0xFFFFFF)>>2])
++#define IS_REG(x) (((((uintptr_t)(x))-1)>=(FPGA_REG_BASE - 1)) && ((((uintptr_t)(x))-1)<(FPGA_REG_BASE + FPGA_REG_SIZE - 1)))
+ 
+ #define fatal(x) munmap((void*)map_base, FPGA_REG_SIZE); close(fd); exit(x)
+ 
+@@ -45,6 +52,69 @@ static uint32_t *map_base;
+ #define setbits_le32(addr, set)           writel( readl(addr) | (set), addr)
+ #define clrbits_le32(addr, clear)         writel( readl(addr) & ~(clear), addr)
+ 
++#ifdef MISTER_DE25
++static int write_all(int out, const void *data, size_t size)
++{
++	const uint8_t *src = (const uint8_t *)data;
++	while (size) {
++		ssize_t written = write(out, src, size);
++		if (written < 0 && errno == EINTR) continue;
++		if (written <= 0) return -1;
++		src += written;
++		size -= written;
++	}
++	return 0;
++}
++
++static int write_text_file(const char *path, const char *text)
++{
++	int out = open(path, O_WRONLY | O_CLOEXEC);
++	if (out < 0) return -1;
++	int result = write_all(out, text, strlen(text));
++	if (close(out) < 0) result = -1;
++	return result;
++}
++
++static int de25_fpga_load(const void *rbf_data, size_t rbf_size)
++{
++	static const char firmware_name[] = "mister-de25-core.rbf";
++	static const char firmware_path[] = "/lib/firmware/mister-de25-core.rbf";
++
++	int out = open(firmware_path, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
++	if (out < 0) {
++		printf("FPGA: unable to create %s: %s\n", firmware_path, strerror(errno));
++		return -1;
++	}
++
++	int result = write_all(out, rbf_data, rbf_size);
++	if (fsync(out) < 0) result = -1;
++	if (close(out) < 0) result = -1;
++	if (result < 0) {
++		printf("FPGA: unable to write firmware: %s\n", strerror(errno));
++		return -1;
++	}
++
++	if (write_text_file("/sys/class/fpga_manager/fpga0/firmware", firmware_name) < 0) {
++		printf("FPGA: Linux FPGA Manager rejected %s: %s\n", firmware_name, strerror(errno));
++		return -1;
++	}
++
++	for (unsigned int retry = 0; retry < 500; ++retry) {
++		char state[32] = {};
++		int in = open("/sys/class/fpga_manager/fpga0/state", O_RDONLY | O_CLOEXEC);
++		if (in >= 0) {
++			ssize_t count = read(in, state, sizeof(state) - 1);
++			close(in);
++			if (count > 0 && !strncmp(state, "operating", 9)) return 0;
++		}
++		usleep(10000);
++	}
++
++	printf("FPGA: timed out waiting for Linux FPGA Manager\n");
++	return -ETIMEDOUT;
++}
++#endif
++
+ /* Timeout count */
+ #define FPGA_TIMEOUT_CNT		0x1000000
+ 
+@@ -231,6 +301,12 @@ static int fpgamgr_program_init(void)
+ /* Write the RBF data to FPGA Manager */
+ static void fpgamgr_program_write(const void *rbf_data, size_t rbf_size)
+ {
++#ifdef __aarch64__
++	volatile uint32_t *dst = MAP_ADDR(SOCFPGA_FPGAMGRDATA_ADDRESS);
++	const uint32_t *src = (const uint32_t *)rbf_data;
++	for (size_t words = DIV_ROUND_UP(rbf_size, 4); words; --words)
++		*dst = *src++;
++#else
+ 	uint32_t src = (uint32_t)rbf_data;
+ 	uint32_t dst = (uint32_t)MAP_ADDR(SOCFPGA_FPGAMGRDATA_ADDRESS);
+ 
+@@ -256,6 +332,7 @@ static void fpgamgr_program_write(const void *rbf_data, size_t rbf_size)
+ 		"4: nop\n"
+ 		: "+r"(src), "+r"(dst), "+r"(loops32), "+r"(loops4) :
+ 		: "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "cc");
++#endif
+ }
+ 
+ /* Ensure the FPGA entering config done */
+@@ -346,9 +423,12 @@ static int fpgamgr_program_poll_usermode(void)
+ */
+ static int socfpga_load(const void *rbf_data, size_t rbf_size)
+ {
++#ifdef MISTER_DE25
++	return de25_fpga_load(rbf_data, rbf_size);
++#else
+ 	unsigned long status;
+ 
+-	if ((uint32_t)rbf_data & 0x3) {
++	if ((uintptr_t)rbf_data & 0x3) {
+ 		printf("FPGA: Unaligned data, realign to 32bit boundary.\n");
+ 		return -EINVAL;
+ 	}
+@@ -373,10 +453,14 @@ static int socfpga_load(const void *rbf_data, size_t rbf_size)
+ 
+ 	/* Ensure the FPGA entering user mode */
+ 	return fpgamgr_program_poll_usermode();
++#endif
+ }
+ 
+ static void do_bridge(uint32_t enable)
+ {
++#ifdef MISTER_DE25
++	(void)enable;
++#else
+ 	if (enable)
+ 	{
+ 		writel(0x00003FFF, (void*)(SOCFPGA_SDR_ADDRESS + 0x5080));
+@@ -390,6 +474,7 @@ static void do_bridge(uint32_t enable)
+ 		writel(7, &reset_regs->brg_mod_reset);
+ 		writel(1, &nic301_regs->remap);
+ 	}
++#endif
+ }
+ 
+ static int make_env(const char *name, const char *cfg)
+@@ -511,21 +596,40 @@ static uint32_t gpo_copy = 0;
+ void inline fpga_gpo_write(uint32_t value)
+ {
+ 	gpo_copy = value;
++#ifdef MISTER_DE25
++	writel(value, (void*)DE25_GP_OUT);
++#else
+ 	writel(value, (void*)(SOCFPGA_MGR_ADDRESS + 0x10));
++#endif
+ }
+ 
++#ifdef MISTER_DE25
++#define fpga_gpo_writeN(value) writel((value), (void*)DE25_GP_OUT)
++#define fpga_gpo_read() gpo_copy
++#define fpga_gpi_read() (int)readl((void*)DE25_GP_IN)
++#else
+ #define fpga_gpo_writeN(value) writel((value), (void*)(SOCFPGA_MGR_ADDRESS + 0x10))
+ #define fpga_gpo_read() gpo_copy //readl((void*)(SOCFPGA_MGR_ADDRESS + 0x10))
+ #define fpga_gpi_read() (int)readl((void*)(SOCFPGA_MGR_ADDRESS + 0x14))
++#endif
+ 
+ void fpga_core_write(uint32_t offset, uint32_t value)
+ {
++#ifndef MISTER_DE25
+ 	if (offset <= 0x1FFFFF) writel(value, (void*)(SOCFPGA_LWFPGASLAVES_ADDRESS + (offset & ~3)));
++#else
++	(void)offset;
++	(void)value;
++#endif
+ }
+ 
+ uint32_t fpga_core_read(uint32_t offset)
+ {
++#ifndef MISTER_DE25
+ 	if (offset <= 0x1FFFFF) return readl((void*)(SOCFPGA_LWFPGASLAVES_ADDRESS + (offset & ~3)));
++#else
++	(void)offset;
++#endif
+ 	return 0;
+ }
+ 
+@@ -587,6 +691,15 @@ int fpga_get_hdmi_int()
+ 
+ void reboot(int cold)
+ {
++#ifdef MISTER_DE25
++	(void)cold;
++	sync();
++	fpga_core_reset(1);
++	execl("/sbin/reboot", "reboot", (char *)NULL);
++	execl("/usr/sbin/reboot", "reboot", (char *)NULL);
++	printf("Unable to reboot: %s\n", strerror(errno));
++	_exit(1);
++#else
+ 	sync();
+ 	fpga_core_reset(1);
+ 
+@@ -603,6 +716,7 @@ void reboot(int cold)
+ 
+ 	writel(1, &reset_regs->ctrl);
+ 	while (1) sleep(1);
++#endif
+ }
+ 
+ char *getappname()
+@@ -654,12 +768,17 @@ void fpga_core_reset(int reset)
+ 
+ int is_fpga_ready(int quick)
+ {
++#ifdef MISTER_DE25
++	(void)quick;
++	return fpga_gpi_read() >= 0;
++#else
+ 	if (quick)
+ 	{
+ 		return (fpga_gpi_read() >= 0);
+ 	}
+ 
+ 	return fpgamgr_test_fpga_ready();
++#endif
+ }
+ 
+ #define SSPI_STROBE  (1<<17)
+diff --git a/shmem.cpp b/shmem.cpp
+index ec6acaa..84c636b 100644
+--- a/shmem.cpp
++++ b/shmem.cpp
+@@ -41,7 +41,7 @@ int shmem_unmap(void* map, uint32_t size)
+ {
+ 	if (munmap(map, size) < 0)
+ 	{
+-		printf("Error: Unable to unmap(0x%X, %d)!\n", (uint32_t)map, size);
++		printf("Error: Unable to unmap(%p, %d)!\n", map, size);
+ 		return 0;
+ 	}
+ 

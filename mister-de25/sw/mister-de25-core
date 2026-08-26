@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+request_dir=${MISTER_DE25_REQUEST_DIR:-/run/mister-de25}
+request=$request_dir/core.request
+catalog=${MISTER_DE25_CORE_CATALOG:-/etc/mister-de25/cores.tsv}
+
+usage() {
+    cat <<'EOF'
+Usage: mister-de25-core --list
+       mister-de25-core CORE_ID
+
+Requests a verified installed core through the privileged DE25-Nano loader.
+Use MENU to return to Menu.
+EOF
+}
+
+if [[ ${1:-} == --list && $# -eq 1 ]]; then
+    if [[ ! -s $catalog ]]; then
+        echo "DE25-Nano runtime core catalog is missing: $catalog" >&2
+        exit 1
+    fi
+    awk -F '\t' '$1 !~ /^#/ { print $1 }' "$catalog"
+    exit
+fi
+core_id=${1:-}
+if [[ $# -ne 1 ]]; then
+    usage >&2
+    exit 2
+fi
+if [[ ! $core_id =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    usage >&2
+    exit 2
+fi
+if [[ ! -d $request_dir || ! -w $request_dir ]]; then
+    echo "DE25-Nano core request directory is not writable: $request_dir" >&2
+    exit 1
+fi
+
+temporary=$request_dir/.core.request.$$
+cleanup() {
+    rm -f -- "$temporary"
+}
+trap cleanup EXIT HUP INT TERM
+printf 'LOAD\t%s\n' "$core_id" >"$temporary"
+chmod 0660 "$temporary"
+mv -f "$temporary" "$request"
+trap - EXIT HUP INT TERM
+echo "DE25-Nano core requested: $core_id"

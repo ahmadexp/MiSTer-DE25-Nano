@@ -1,0 +1,75 @@
+diff --git a/rtl/RamMLAB.vhd b/rtl/RamMLAB.vhd
+--- a/rtl/RamMLAB.vhd
++++ b/rtl/RamMLAB.vhd
+@@ -31,7 +31,7 @@ begin
+       (
+          indata_aclr                         => "OFF",
+          indata_reg                          => "INCLOCK",
+-         intended_device_family              => "Cyclone V",
++         intended_device_family              => "Agilex 5",
+          lpm_type                            => "altdpram",
+          outdata_aclr                        => "OFF",
+          outdata_reg                         => "UNREGISTERED",
+diff --git a/rtl/SyncRamDualByteEnable.vhd b/rtl/SyncRamDualByteEnable.vhd
+--- a/rtl/SyncRamDualByteEnable.vhd
++++ b/rtl/SyncRamDualByteEnable.vhd
+@@ -125,7 +125,7 @@ begin
+          clock_enable_output_a => "BYPASS",
+          clock_enable_output_b => "BYPASS",
+          indata_reg_b => "CLOCK1",
+-         intended_device_family => "Cyclone V",
++         intended_device_family => "Agilex 5",
+          lpm_type => "altsyncram",
+          numwords_a => 2**ADDR_WIDTH,
+          numwords_b => 2**ADDR_WIDTH,
+diff --git a/rtl/cpu_mul.vhd b/rtl/cpu_mul.vhd
+--- a/rtl/cpu_mul.vhd
++++ b/rtl/cpu_mul.vhd
+@@ -251,7 +251,7 @@ begin
+       negate_latency_clock  => "UNREGISTERED",
+       negate_latency_aclr  => "NONE",
+       negate_latency_sclr  => "NONE",
+-      selected_device_family  => "Cyclone V"
++      selected_device_family  => "Agilex 5"
+    )
+    port map
+    (
+diff --git a/rtl/dpram.vhd b/rtl/dpram.vhd
+--- a/rtl/dpram.vhd
++++ b/rtl/dpram.vhd
+@@ -38,7 +38,7 @@ BEGIN
+ 		clock_enable_output_a => "BYPASS",
+ 		clock_enable_output_b => "BYPASS",
+ 		indata_reg_b => "CLOCK1",
+-		intended_device_family => "Cyclone V",
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",
+ 		numwords_a => 2**addr_width,
+ 		numwords_b => 2**addr_width,
+@@ -119,7 +119,7 @@ BEGIN
+ 		clock_enable_output_a => "BYPASS",
+ 		clock_enable_output_b => "BYPASS",
+ 		indata_reg_b => "CLOCK1",
+-		intended_device_family => "Cyclone V",
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",
+ 		numwords_a => 2**addr_width,
+ 		numwords_b => 2**addr_width,
+@@ -217,7 +217,7 @@ BEGIN
+ 		clock_enable_output_a => "BYPASS",                                      
+ 		clock_enable_output_b => "BYPASS",                                      
+ 		indata_reg_b => "CLOCK1",                                               
+-		intended_device_family => "Cyclone V",                                  
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",                                               
+ 		numwords_a => 2**addr_width_a,                                          
+ 		numwords_b => 2**addr_width_b,                                          
+@@ -319,7 +319,7 @@ BEGIN
+ 		clock_enable_output_a => "BYPASS",                                      
+ 		clock_enable_output_b => "BYPASS",                                      
+ 		indata_reg_b => "CLOCK1",                                               
+-		intended_device_family => "Cyclone V",                                  
++		intended_device_family => "Agilex 5",
+ 		lpm_type => "altsyncram",                                               
+ 		numwords_a => 2**addr_width_a,                                          
+ 		numwords_b => 2**addr_width_b,                                          

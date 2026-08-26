@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DE25-Nano Port <de25-nano@example.invalid>
+Date: Thu, 13 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Report DE25 hardware OSD status
+
+Expose a maintenance command that records the FPGA compositor's OSD enable
+feedback. This distinguishes Main's menu state from the fabric OSD state
+during remote board validation.
+---
+ fpga_io.cpp | 9 +++++++++
+ fpga_io.h   | 1 +
+ input.cpp   | 2 ++
+ 3 files changed, 12 insertions(+)
+
+diff --git a/fpga_io.cpp b/fpga_io.cpp
+index 2eaf654..0fb4efe 100644
+--- a/fpga_io.cpp
++++ b/fpga_io.cpp
+@@ -826,6 +826,15 @@ int fpga_get_hdmi_int()
+ 	return (fpga_gpi_read() >> 20) & 1;
+ }
+ 
++int fpga_get_osd_status()
++{
++#ifdef MISTER_DE25
++	return (fpga_gpi_read() >> 27) & 1;
++#else
++	return 0;
++#endif
++}
++
+ void reboot(int cold)
+ {
+ #ifdef MISTER_DE25
+diff --git a/fpga_io.h b/fpga_io.h
+index 8668828..4345a49 100644
+--- a/fpga_io.h
++++ b/fpga_io.h
+@@ -27,6 +27,7 @@ void fpga_set_led(uint32_t on);
+ int  fpga_get_buttons();
+ int  fpga_get_io_type();
+ int  fpga_get_hdmi_int();
++int  fpga_get_osd_status();
+ 
+ void fpga_core_reset(int reset);
+ void fpga_core_write(uint32_t offset, uint32_t value);
+diff --git a/input.cpp b/input.cpp
+index 7479499..9d08ebc 100644
+--- a/input.cpp
++++ b/input.cpp
+@@ -6237,5 +6237,7 @@ int input_test(int getchar)
+ 					#ifdef MISTER_DE25
+ 					else if (!strcmp(cmd, "menu")) menu_key_set(KEY_F12 | UPSTROKE);
++					else if (!strcmp(cmd, "de25_status"))
++						MakeFile("/tmp/HW_OSD_VISIBLE", fpga_get_osd_status() ? "1" : "0");
+ 					#endif
+ 					else if (!strncmp(cmd, "video_mode ", 11)) video_mode_cmd(cmd + 11);
+ 					else if (!strncmp(cmd, "load_core ", 10))
+-- 
+2.43.0
