@@ -38,6 +38,8 @@ are recorded in [`mister-de25/CORE_CANDIDATE_STATUS.md`](mister-de25/CORE_CANDID
 - `mister-de25/`: Platform V2, Quartus projects, core patches, build scripts,
   Linux runtime integration, SD-card tooling, and tests.
 - `de25-nano/`: board-level Agilex 5 support and Si5332 diagnostic projects.
+- `hardware/de25-nano-bridge/`: KiCad source, reference Gerbers, and installation
+  documentation for the passive GPIO 1 to Si5332B I2C bridge.
 - `rtl/`, `sys/`, and `PC110.sv`: IBM PC110 core sources used by the DE25 port.
 - `docs/PC110_CORE.md`: original PC110 project documentation and history.
 
@@ -63,6 +65,11 @@ behavior are validated. Cores currently use their checked Agilex PLL paths.
 
 See [`mister-de25/PLATFORM_V2.md`](mister-de25/PLATFORM_V2.md) and
 [`mister-de25/SI5332B.md`](mister-de25/SI5332B.md) for the design details.
+
+The optional passive bridge PCB makes the otherwise unconnected U24 SDA and
+SCL pads available to the FPGA through GPIO 1 pins 1 and 2. Its source and
+verified electrical mapping are documented in
+[`hardware/de25-nano-bridge/README.md`](hardware/de25-nano-bridge/README.md).
 
 ## Building
 
