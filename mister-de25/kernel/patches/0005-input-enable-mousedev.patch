@@ -1,0 +1,18 @@
+From: DE25-Nano port
+Subject: [PATCH] arm64: enable mousedev for MiSTer pointer input
+
+Main consumes physical relative-pointer motion through /dev/input/mouseX.
+Build mousedev as a module so the DE25 runtime can provide that compatibility
+interface while retaining evdev for keyboard and button handling.
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -439,6 +439,7 @@
+ CONFIG_MHI_WWAN_CTRL=m
+ CONFIG_MHI_WWAN_MBIM=m
+ CONFIG_INPUT_EVDEV=y
++CONFIG_INPUT_MOUSEDEV=m
+ CONFIG_KEYBOARD_ADC=m
+ CONFIG_KEYBOARD_GPIO=y
+ CONFIG_KEYBOARD_GPIO_POLLED=m

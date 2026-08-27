@@ -177,7 +177,7 @@ done
 module_count=$(tar -tzf \
     "$platform_root/artifacts/kernel/modules-$kernel_release.tar.gz" | \
     grep -c '\.ko$')
-[[ $module_count -eq 1334 ]] || {
+[[ $module_count -eq 1335 ]] || {
     echo "Release module archive is incomplete: $module_count modules" >&2
     exit 1
 }

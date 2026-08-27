@@ -94,6 +94,10 @@ grep -A35 'void HandleUI(void)' \
     grep -q '#ifndef MISTER_DE25'
 grep -q 'menu_key_set(KEY_F12 | UPSTROKE)' \
     "$target_root/upstream/Main_MiSTer/input.cpp"
+grep -q 'EVIOCGBIT(EV_REL' \
+    "$target_root/upstream/Main_MiSTer/input.cpp"
+grep -q 'ioctl(pool\[n\].fd, EVIOCGRAB, input_grab_value(n))' \
+    "$target_root/upstream/Main_MiSTer/input.cpp"
 grep -A10 'void user_io_osd_key_enable' \
     "$target_root/upstream/Main_MiSTer/user_io.cpp" | \
     grep -q 'MakeFile("/tmp/OSD_VISIBLE"'
@@ -1116,7 +1120,15 @@ grep -q 'artifacts/kernel/stratix10-soc.ko' \
     "$target_root/scripts/prepare-sd-image.sh"
 grep -q 'artifacts/kernel/modules-' \
     "$target_root/scripts/prepare-sd-image.sh"
-grep -q 'Expected 1334 matching kernel modules' \
+grep -q '^+CONFIG_INPUT_MOUSEDEV=m$' \
+    "$target_root/kernel/patches/0005-input-enable-mousedev.patch"
+grep -q '^mousedev$' \
+    "$target_root/systemd/mister-de25-input.conf"
+grep -q 'mister-de25-input.conf' \
+    "$target_root/scripts/prepare-sd-image.sh"
+grep -q 'mister-de25-input.conf' \
+    "$target_root/scripts/make-update-bundle.sh"
+grep -q 'Expected 1335 matching kernel modules' \
     "$target_root/scripts/prepare-sd-image.sh"
 grep -q 'rm -rf -- "$module_dir"' \
     "$target_root/scripts/prepare-sd-image.sh"

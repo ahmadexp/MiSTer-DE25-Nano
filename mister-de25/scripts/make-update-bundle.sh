@@ -224,6 +224,8 @@ add_payload "$platform_root/systemd/mister-de25-preload.service" \
     root etc/systemd/system/mister-de25-preload.service 0644 mister-de25-preload.service
 add_payload "$platform_root/systemd/mister.service" \
     root etc/systemd/system/mister.service 0644 mister.service
+add_payload "$platform_root/systemd/mister-de25-input.conf" \
+    root etc/modules-load.d/mister-de25-input.conf 0644 mister-de25-input.conf
 
 cp "$platform_root/README.md" "$output/README.md"
 echo "DE25-Nano update bundle ready: $output"

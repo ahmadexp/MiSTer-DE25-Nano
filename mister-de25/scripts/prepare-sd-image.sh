@@ -111,8 +111,8 @@ while IFS= read -r member; do
         *.ko) module_count=$((module_count + 1)) ;;
     esac
 done < <(tar -tzf "$kernel_modules")
-if [[ $module_count -ne 1334 ]]; then
-    echo "Expected 1334 matching kernel modules, found $module_count" >&2
+if [[ $module_count -ne 1335 ]]; then
+    echo "Expected 1335 matching kernel modules, found $module_count" >&2
     exit 1
 fi
 
@@ -345,6 +345,7 @@ mkdir -p "$work_dir/rootfs/usr/libexec"
 mkdir -p "$work_dir/rootfs/usr/bin"
 mkdir -p "$work_dir/rootfs/etc/systemd/system"
 mkdir -p "$work_dir/rootfs/etc/mister-de25"
+mkdir -p "$work_dir/rootfs/etc/modules-load.d"
 mkdir -p "$work_dir/rootfs/usr/lib/tmpfiles.d"
 mkdir -p "$work_dir/runtime-debs"
 
@@ -428,6 +429,8 @@ install -m 0644 "$platform_root/systemd/mister-de25-preload.service" \
     "$work_dir/rootfs/etc/systemd/system/mister-de25-preload.service"
 install -m 0644 "$platform_root/systemd/mister.service" \
     "$work_dir/rootfs/etc/systemd/system/mister.service"
+install -m 0644 "$platform_root/systemd/mister-de25-input.conf" \
+    "$work_dir/rootfs/etc/modules-load.d/mister-de25-input.conf"
 install -m 0644 "$kernel_modules" \
     "$work_dir/rootfs/usr/lib/mister-de25/kernel-modules.tar.gz"
 
@@ -464,6 +467,7 @@ install -d /mnt/root/usr/bin
 install -d /mnt/root/usr/lib/tmpfiles.d
 install -d /mnt/root/etc/systemd/system/multi-user.target.wants
 install -d /mnt/root/etc/mister-de25
+install -d /mnt/root/etc/modules-load.d
 install -m 0644 /payload/usr/lib/mister-de25/fpga-load.dtbo \
     /mnt/root/usr/lib/mister-de25/fpga-load.dtbo
 install -m 0755 /payload/usr/libexec/mister-de25-load \
@@ -512,6 +516,8 @@ install -m 0644 /payload/etc/systemd/system/mister-de25-preload.service \
     /mnt/root/etc/systemd/system/mister-de25-preload.service
 install -m 0644 /payload/etc/systemd/system/mister.service \
     /mnt/root/etc/systemd/system/mister.service
+install -m 0644 /payload/etc/modules-load.d/mister-de25-input.conf \
+    /mnt/root/etc/modules-load.d/mister-de25-input.conf
 module_relative=kernel/drivers/fpga/stratix10-soc.ko
 module_dir=/mnt/root/lib/modules/$kernel_release
 rm -rf -- "$module_dir"
@@ -555,7 +561,7 @@ test -s /mnt/root/etc/mister-de25/cores.tsv
 test -s /mnt/root/usr/lib/mister-de25/fpga-load.dtbo
 test -s "$module_dir/$module_relative"
 grep -qF "$module_relative:" "$module_dir/modules.dep"
-test "$(find "$module_dir" -type f -name '*.ko' | wc -l)" -eq 1334
+test "$(find "$module_dir" -type f -name '*.ko' | wc -l)" -eq 1335
 LC_ALL=C grep -aFq "vermagic=$kernel_release " "$module_dir/$module_relative"
 test -e /mnt/root/usr/lib/aarch64-linux-gnu/libImlib2.so.1
 test -L /mnt/root/etc/systemd/system/multi-user.target.wants/mister.service
