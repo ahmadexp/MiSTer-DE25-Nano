@@ -164,6 +164,14 @@ if [[ $runtime_only -eq 0 ]]; then
         fat menu.rbf.hps-io-hash 0644 menu.rbf.hps-io-hash
     add_payload "$menu_rbf.sha256" \
         fat menu.rbf.sha256 0644 menu.rbf.sha256
+    add_payload "$menu_rbf" \
+        root var/lib/mister-de25/boot/menu.rbf 0644 boot/menu.rbf
+    add_payload "$menu_rbf.hps-io-hash" \
+        root var/lib/mister-de25/boot/menu.rbf.hps-io-hash 0644 \
+        boot/menu.rbf.hps-io-hash
+    add_payload "$menu_rbf.sha256" \
+        root var/lib/mister-de25/boot/menu.rbf.sha256 0644 \
+        boot/menu.rbf.sha256
     for index in "${!core_rbfs[@]}"; do
         rbf=${core_rbfs[$index]}
         category=${core_categories[$index]}

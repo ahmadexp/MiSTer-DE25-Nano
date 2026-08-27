@@ -705,7 +705,7 @@ index b912439..96938a3 100644
  void fpga_core_reset(int reset);
  void fpga_core_write(uint32_t offset, uint32_t value);
 diff --git a/input.cpp b/input.cpp
-index 50f1991..a598dd2 100644
+index 50f1991..3f35981 100644
 --- a/input.cpp
 +++ b/input.cpp
 @@ -36,6 +36,9 @@
@@ -718,7 +718,44 @@ index 50f1991..a598dd2 100644
  
  #define NUMDEV 30
  #define UINPUT_NAME "MiSTer virtual input"
-@@ -5139,6 +5142,13 @@ int input_test(int getchar)
+@@ -1734,6 +1737,36 @@ static int tmp_axis_n = 0;
+ 
+ static int grabbed = 1;
+ 
++static int input_grab_value(int dev)
++{
++	int grab = (grabbed | user_io_osd_is_visible()) ? 1 : 0;
++
++#ifdef MISTER_DE25
++	// EVIOCGRAB on a relative-pointer evdev node prevents the kernel
++	// mousedev handler from receiving the same events. Main consumes motion
++	// through /dev/input/mouseX, so keep only these evdev nodes shared while
++	// retaining exclusive grabs for keyboards and controllers.
++	if (grab && dev >= 0 && dev < NUMDEV && pool[dev].fd >= 0 && !input[dev].mouse)
++	{
++		unsigned char evtype_b[(EV_MAX + 7) / 8] = {};
++		unsigned char rel_b[(REL_MAX + 7) / 8] = {};
++		unsigned char key_b[(KEY_MAX + 7) / 8] = {};
++
++		if (ioctl(pool[dev].fd, EVIOCGBIT(0, sizeof(evtype_b)), evtype_b) >= 0 &&
++			test_bit(EV_REL, evtype_b) && test_bit(EV_KEY, evtype_b) &&
++			ioctl(pool[dev].fd, EVIOCGBIT(EV_REL, sizeof(rel_b)), rel_b) >= 0 &&
++			ioctl(pool[dev].fd, EVIOCGBIT(EV_KEY, sizeof(key_b)), key_b) >= 0 &&
++			(test_bit(REL_X, rel_b) || test_bit(REL_Y, rel_b)) &&
++			test_bit(BTN_MOUSE, key_b))
++		{
++			return 0;
++		}
++	}
++#endif
++
++	return grab;
++}
++
+ static uint32_t osd_timer = 0;
+ static uint32_t map_advance_timer = 0;
+ 
+@@ -5139,6 +5172,13 @@ int input_test(int getchar)
  
  		unlink(CMD_FIFO);
  		mkfifo(CMD_FIFO, 0666);
@@ -732,7 +769,16 @@ index 50f1991..a598dd2 100644
  
  		pool[NUMDEV+1].fd = open(CMD_FIFO, O_RDWR | O_NONBLOCK | O_CLOEXEC);
  		pool[NUMDEV+1].events = POLLIN;
-@@ -6234,6 +6244,56 @@ int input_test(int getchar)
+@@ -5525,7 +5565,7 @@ int input_test(int getchar)
+ 						// use specific keyboard(s) as a joystick
+ 						for (int i = 0; i < (int)cfg.keyboard_as_joystick[0]; i++) input[n].force_joy = (input[n].vid == (cfg.keyboard_as_joystick[i + 1] >> 16) && input[n].pid == (cfg.keyboard_as_joystick[i + 1] & 0xFFFF));
+ 
+-						ioctl(pool[n].fd, EVIOCGRAB, (grabbed | user_io_osd_is_visible()) ? 1 : 0);
++						ioctl(pool[n].fd, EVIOCGRAB, input_grab_value(n));
+ 
+ 						n++;
+ 						if (n >= NUMDEV) break;
+@@ -6234,6 +6274,56 @@ int input_test(int getchar)
  					cmd[len] = 0;
  					printf("MiSTer_cmd: %s\n", cmd);
  					if (!strncmp(cmd, "fb_cmd", 6)) video_cmd(cmd);
@@ -789,6 +835,15 @@ index 50f1991..a598dd2 100644
  					else if (!strncmp(cmd, "video_mode ", 11)) video_mode_cmd(cmd + 11);
  					else if (!strncmp(cmd, "load_core ", 10))
  					{
+@@ -6460,7 +6550,7 @@ void input_switch(int grab)
+ 
+ 	for (int i = 0; i < NUMDEV; i++)
+ 	{
+-		if (pool[i].fd >= 0) ioctl(pool[i].fd, EVIOCGRAB, (grabbed | user_io_osd_is_visible()) ? 1 : 0);
++		if (pool[i].fd >= 0) ioctl(pool[i].fd, EVIOCGRAB, input_grab_value(i));
+ 	}
+ }
+ 
 diff --git a/lib/libco/ucontext.c b/lib/libco/ucontext.c
 index 72ea871..181c656 100644
 --- a/lib/libco/ucontext.c
@@ -802,7 +857,7 @@ index 72ea871..181c656 100644
  #define _BSD_SOURCE
  #include <stdlib.h>
 diff --git a/main.cpp b/main.cpp
-index f1eaf82..92e9de5 100644
+index f1eaf82..b99f9bb 100644
 --- a/main.cpp
 +++ b/main.cpp
 @@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -814,8 +869,57 @@ index f1eaf82..92e9de5 100644
  #include "menu.h"
  #include "user_io.h"
  #include "input.h"
-@@ -39,6 +41,44 @@ const char *version = "$VER:" VDATE;
+@@ -37,8 +39,94 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
+ const char *version = "$VER:" VDATE;
+ 
++#ifdef MISTER_DE25
++static bool de25_read_trimmed(const char *path, char *value, size_t size)
++{
++	FILE *file = fopen(path, "r");
++	if (!file) return false;
++	bool ok = fgets(value, size, file) != NULL;
++	fclose(file);
++	if (!ok) return false;
++	value[strcspn(value, "\r\n")] = 0;
++	return value[0] != 0;
++}
++
++static bool de25_menu_is_preloaded()
++{
++	char load_record[PATH_MAX + 160] = {};
++	char boot_id[80] = {};
++	char expected_digest[80] = {};
++	char manager_state[32] = {};
++
++	if (!de25_read_trimmed("/var/lib/mister-de25/fpga-load.current",
++	                       load_record, sizeof(load_record)) ||
++	    !de25_read_trimmed("/proc/sys/kernel/random/boot_id",
++	                       boot_id, sizeof(boot_id)) ||
++	    !de25_read_trimmed("/media/fat/menu.rbf.sha256",
++	                       expected_digest, sizeof(expected_digest)) ||
++	    !de25_read_trimmed("/sys/class/fpga_manager/fpga0/state",
++	                       manager_state, sizeof(manager_state)))
++		return false;
++
++	char *save = NULL;
++	char *loaded_path = strtok_r(load_record, "\t", &save);
++	char *loaded_digest = strtok_r(NULL, "\t", &save);
++	char *loaded_boot = strtok_r(NULL, "\t", &save);
++	if (!loaded_path || loaded_path[0] != '/' || !loaded_digest || !loaded_boot ||
++	    strlen(expected_digest) != 64 || strlen(loaded_digest) != 64)
++		return false;
++	for (size_t i = 0; i < 64; i++)
++		if (!isxdigit((unsigned char)expected_digest[i]) ||
++		    !isxdigit((unsigned char)loaded_digest[i]))
++			return false;
++
++	return !strcasecmp(manager_state, "operating") &&
++	       !strcasecmp(loaded_digest, expected_digest) &&
++	       !strcmp(loaded_boot, boot_id);
++}
++#endif
++
  int main(int argc, char *argv[])
  {
 +	const char *core_path_arg = argc > 1 ? argv[1] : "";
@@ -848,7 +952,8 @@ index f1eaf82..92e9de5 100644
 +				               !strcasecmp(extension, ".mra")))
 +				xml_path_arg = selected_xml;
 +		}
-+		else if (system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
++		else if (!de25_menu_is_preloaded() &&
++		         system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
 +		{
 +			fprintf(stderr, "Unable to recover DE25 Menu fabric image\n");
 +			return 1;
@@ -859,7 +964,7 @@ index f1eaf82..92e9de5 100644
  	// Always pin main worker process to core #1 as core #0 is the
  	// hardware interrupt handler in Linux.  This reduces idle latency
  	// in the main loop by about 6-7x.
-@@ -59,8 +99,8 @@ int main(int argc, char *argv[])
+@@ -59,8 +147,8 @@ int main(int argc, char *argv[])
  
  	printf("Version %s\n\n", version + 5);
  
@@ -870,7 +975,7 @@ index f1eaf82..92e9de5 100644
  
  	if (!is_fpga_ready(1))
  	{
-@@ -70,7 +110,10 @@ int main(int argc, char *argv[])
+@@ -70,7 +158,10 @@ int main(int argc, char *argv[])
  	}
  
  	FindStorage();
@@ -882,7 +987,7 @@ index f1eaf82..92e9de5 100644
  
  #ifdef USE_SCHEDULER
  	scheduler_init();
-@@ -78,16 +121,30 @@ int main(int argc, char *argv[])
+@@ -78,16 +169,30 @@ int main(int argc, char *argv[])
  #else
  	while (1)
  	{

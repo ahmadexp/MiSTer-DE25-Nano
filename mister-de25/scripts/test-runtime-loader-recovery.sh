@@ -18,6 +18,7 @@ watchdog=$test_root/watchdog
 watchdog_timeout=$test_root/watchdog-timeout
 watchdog_nowayout=$test_root/watchdog-nowayout
 modprobe_log=$test_root/modprobe.log
+compatibility_log=$test_root/compatibility.log
 candidate=$test_root/candidate.rbf
 menu=$test_root/menu.rbf
 loader=$platform_root/sw/mister-de25-load
@@ -31,10 +32,20 @@ printf menu >"$menu"
 : >"$watchdog_timeout"
 printf '0\n' >"$watchdog_nowayout"
 
-for helper in compatibility migration; do
-    printf '#!/usr/bin/env bash\nexit 0\n' >"$bin/$helper"
-    chmod +x "$bin/$helper"
-done
+printf '#!/usr/bin/env bash\nexit 0\n' >"$bin/migration"
+cat >"$bin/compatibility" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$COMPATIBILITY_LOG"
+if [[ ${1:-} == --print-digest ]]; then
+    shift
+fi
+if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+else
+    shasum -a 256 "$1" | awk '{print $1}'
+fi
+EOF
+chmod +x "$bin/compatibility" "$bin/migration"
 cat >"$bin/bridge" <<EOF
 #!/usr/bin/env bash
 if [[ \$1 == disable ]]; then
@@ -63,6 +74,7 @@ run_loader() {
     MISTER_DE25_MANAGER_STATE=$manager_state \
     MISTER_DE25_BRIDGE_HELPER=$bin/bridge \
     MISTER_DE25_COMPATIBILITY_HELPER=$bin/compatibility \
+    COMPATIBILITY_LOG=$compatibility_log \
     MISTER_DE25_MIGRATION_HELPER=$bin/migration \
     MISTER_DE25_WATCHDOG_HELPER=$platform_root/sw/mister-de25-watchdog-run \
     MISTER_DE25_WATCHDOG_DEVICE=$watchdog \
@@ -75,6 +87,7 @@ run_loader() {
 }
 
 run_loader "$candidate" >/dev/null
+[[ $(wc -l <"$compatibility_log") -eq 1 ]]
 cmp "$candidate" "$firmware"
 [[ ! -e $state_dir/fpga-load.pending ]]
 [[ $(od -An -tx1 -v "$watchdog" | tr -d ' \n') == 0056 ]]
@@ -84,10 +97,22 @@ cmp "$test_root/expected-modprobe.log" "$modprobe_log"
 # Preload followed by Main asks for the same Menu twice. The second request
 # must return successfully without touching the FPGA manager or watchdog.
 run_loader "$candidate" >"$test_root/idempotent.out"
+[[ $(wc -l <"$compatibility_log") -eq 2 ]]
 grep -q 'FPGA already operates with candidate.rbf' "$test_root/idempotent.out"
 [[ ! -e $overlay_dir ]]
 [[ $(od -An -tx1 -v "$watchdog" | tr -d ' \n') == 0056 ]]
 cmp "$test_root/expected-modprobe.log" "$modprobe_log"
+
+# A later boot has a different boot ID but may find firmware and the cached
+# Menu already hard-linked to the same inode. Reprogramming must not fail by
+# attempting to move that inode onto itself.
+IFS=$'\t' read -r cached_path cached_digest cached_boot \
+    <"$state_dir/fpga-load.current"
+printf '%s\t%s\told-boot\n' "$cached_path" "$cached_digest" \
+    >"$state_dir/fpga-load.current"
+run_loader "$candidate" >/dev/null
+cmp "$candidate" "$firmware"
+[[ $(wc -l <"$compatibility_log") -eq 3 ]]
 
 # A watchdog-reset candidate is recorded, then the boot Menu is allowed to
 # recover the fabric because it is a different image.

@@ -14,6 +14,7 @@ systemctl_log=$test_root/systemctl.log
 systemctl_mock=$test_root/systemctl
 target=$test_root/target-menu.rbf
 pending=$system/var/lib/mister-de25/platform-migration/pending
+boot_menu=$system/var/lib/mister-de25/boot/menu.rbf
 helper=$platform_root/sw/mister-de25-platform-migration
 checker=$platform_root/sw/mister-de25-check-rbf
 
@@ -25,11 +26,14 @@ write_digest() {
     fi
 }
 
-mkdir -p "$fat" "$system/etc/mister-de25"
+mkdir -p "$fat" "$system/etc/mister-de25" "$(dirname "$boot_menu")"
 printf 'boot-source\n' >"$boot_id"
 printf 'old menu\n' >"$fat/menu.rbf"
 write_digest "$fat/menu.rbf"
 printf '%s\n' "$source_hash" >"$fat/menu.rbf.hps-io-hash"
+cp "$fat/menu.rbf" "$boot_menu"
+cp "$fat/menu.rbf.sha256" "$boot_menu.sha256"
+cp "$fat/menu.rbf.hps-io-hash" "$boot_menu.hps-io-hash"
 printf '%s\n' "$source_hash" >"$system/etc/mister-de25/hps-io-hash"
 printf 'new menu\n' >"$target"
 write_digest "$target"
@@ -57,6 +61,8 @@ if grep -Eq '^stop .*mister-de25-preload\.service' "$systemctl_log"; then
     exit 1
 fi
 grep -qx 'old menu' "$system/var/lib/mister-de25/platform-migration/backup/menu.rbf"
+grep -qx 'old menu' \
+    "$system/var/lib/mister-de25/platform-migration/backup/boot-menu.rbf"
 if MISTER_DE25_HPS_IO_HASH=$system/etc/mister-de25/hps-io-hash \
    MISTER_DE25_MIGRATION_PENDING=$pending \
    "$checker" "$fat/menu.rbf" >/dev/null 2>&1; then
@@ -85,6 +91,9 @@ grep -qx 'new menu' "$fat/menu.rbf"
 grep -qx "$target_hash" "$fat/menu.rbf.hps-io-hash"
 cmp "$target.sha256" "$fat/menu.rbf.sha256"
 grep -qx "$target_hash" "$system/etc/mister-de25/hps-io-hash"
+grep -qx 'new menu' "$boot_menu"
+grep -qx "$target_hash" "$boot_menu.hps-io-hash"
+cmp "$target.sha256" "$boot_menu.sha256"
 if run_migration finalize-boot >/dev/null 2>&1; then
     echo "FAIL: flashed migration finalized in the pre-flash boot" >&2
     exit 1
@@ -95,6 +104,9 @@ run_migration finalize-boot >/dev/null
 MISTER_DE25_HPS_IO_HASH=$system/etc/mister-de25/hps-io-hash \
 MISTER_DE25_MIGRATION_PENDING=$pending \
     "$checker" "$fat/menu.rbf" >/dev/null
+MISTER_DE25_HPS_IO_HASH=$system/etc/mister-de25/hps-io-hash \
+MISTER_DE25_MIGRATION_PENDING=$pending \
+    "$checker" "$boot_menu" >/dev/null
 
 # Exercise rollback after a verified target flash. The source JIC itself is
 # restored by Quartus outside this helper; the explicit confirmation prevents
@@ -103,6 +115,9 @@ printf 'boot-source-2\n' >"$boot_id"
 printf 'old menu\n' >"$fat/menu.rbf"
 write_digest "$fat/menu.rbf"
 printf '%s\n' "$source_hash" >"$fat/menu.rbf.hps-io-hash"
+cp "$fat/menu.rbf" "$boot_menu"
+cp "$fat/menu.rbf.sha256" "$boot_menu.sha256"
+cp "$fat/menu.rbf.hps-io-hash" "$boot_menu.hps-io-hash"
 printf '%s\n' "$source_hash" >"$system/etc/mister-de25/hps-io-hash"
 run_migration prepare "$target" >/dev/null
 run_migration flashed --confirm FLASH-VERIFIED >/dev/null
@@ -118,5 +133,7 @@ write_digest "$fat/menu.rbf"
 cmp "$fat/menu.rbf.sha256" \
     "$system/var/lib/mister-de25/platform-migration/backup/menu.rbf.sha256"
 grep -qx "$source_hash" "$system/etc/mister-de25/hps-io-hash"
+grep -qx 'old menu' "$boot_menu"
+grep -qx "$source_hash" "$boot_menu.hps-io-hash"
 
 echo "PASS: platform migration interlock, reboot gate, abort, and rollback"

@@ -65,11 +65,18 @@ keeper_mode() {
     trap '' HUP INT QUIT TERM
     trap cleanup_keeper EXIT
 
+    local keepalive_tick=0
     while :; do
         if ((paused == 0)); then
-            printf '\0' >&9
+            if ((keepalive_tick == 0)); then
+                printf '\0' >&9
+            fi
+            keepalive_tick=$(((keepalive_tick + 1) % 10))
         fi
-        sleep 1
+        # Keep signal acknowledgement below one tenth of a second. The former
+        # one-second sleep made every FPGA transaction wait as much as two
+        # extra seconds for the pause and resume handshakes.
+        sleep 0.1
     done
 }
 

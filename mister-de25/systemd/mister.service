@@ -1,7 +1,8 @@
 [Unit]
 Description=MiSTer ARM64 service for DE25-Nano
 Requires=mister-de25-preload.service
-After=mister-de25-preload.service network.target
+After=mister-de25-preload.service
+RequiresMountsFor=/media/fat
 
 [Service]
 Type=simple

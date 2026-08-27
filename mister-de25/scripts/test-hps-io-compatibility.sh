@@ -20,6 +20,14 @@ fi
 
 MISTER_DE25_HPS_IO_HASH=$platform \
     "$platform_root/sw/mister-de25-check-rbf" "$rbf" >/dev/null
+expected_digest=$(tr -d '[:space:]' <"$rbf.sha256")
+reported_digest=$(MISTER_DE25_HPS_IO_HASH=$platform \
+    "$platform_root/sw/mister-de25-check-rbf" --print-digest "$rbf" \
+    2>/dev/null)
+[[ $reported_digest == "$expected_digest" ]] || {
+    echo "FAIL: digest output mode returned the wrong RBF digest" >&2
+    exit 1
+}
 
 printf '%s\n' "$different" >"$rbf.hps-io-hash"
 if MISTER_DE25_HPS_IO_HASH=$platform \

@@ -1,14 +1,15 @@
 [Unit]
 Description=Load the DE25-Nano MiSTer Menu fabric image
+DefaultDependencies=no
 Requires=mister-de25-watchdog-keeper.service
-After=local-fs.target systemd-modules-load.service mister-de25-watchdog-keeper.service
-RequiresMountsFor=/media/fat
-Before=mister.service
+After=systemd-remount-fs.service systemd-modules-load.service mister-de25-watchdog-keeper.service
+Before=mister.service shutdown.target
+Conflicts=shutdown.target
 
 [Service]
 Type=oneshot
 ExecCondition=/usr/bin/test ! -s /run/mister-de25-selected-core
-ExecStart=/usr/libexec/mister-de25-load /media/fat/menu.rbf
+ExecStart=/usr/libexec/mister-de25-load /var/lib/mister-de25/boot/menu.rbf
 TimeoutStartSec=infinity
 RemainAfterExit=yes
 

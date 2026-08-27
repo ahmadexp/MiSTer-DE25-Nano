@@ -324,6 +324,10 @@ grep -q 'execl(appname, appname, path, xml, NULL)' \
     "$target_root/patches/Main_MiSTer/0011-keep-de25-core-switch-under-systemd.patch"
 grep -q 'mister-de25-load /media/fat/menu.rbf' \
     "$target_root/patches/Main_MiSTer/0012-recover-menu-before-de25-mmio.patch"
+grep -q 'de25_menu_is_preloaded' \
+    "$target_root/upstream/Main_MiSTer/main.cpp"
+grep -q 'fpga-load.current' \
+    "$target_root/patches/Main_MiSTer/0035-trust-verified-de25-menu-preload.patch"
 grep -q 'chmod(CMD_FIFO, 0666)' \
     "$target_root/patches/Main_MiSTer/0013-allow-de25-remote-command-writes.patch"
 grep -q '/run/mister-de25-selected-core' \
@@ -1190,6 +1194,10 @@ grep -q 'mister-de25-platform-migration.path' \
     "$target_root/scripts/make-update-bundle.sh"
 grep -q 'mister-de25-platform-migration.path' \
     "$target_root/scripts/prepare-sd-image.sh"
+grep -q 'rootfs/var/lib/mister-de25/boot/menu.rbf' \
+    "$target_root/scripts/prepare-sd-image.sh"
+grep -q 'root var/lib/mister-de25/boot/menu.rbf' \
+    "$target_root/scripts/make-update-bundle.sh"
 grep -q 'mister-de25-platform-migration.path' \
     "$target_root/sw/update_de25.sh"
 grep -q '#define MISTER_SCALER_BASEADDR     0x30000000' \
@@ -1325,7 +1333,7 @@ grep -q '"$bridge_helper" disable' \
     "$target_root/sw/mister-de25-load"
 grep -q '"$bridge_helper" enable' \
     "$target_root/sw/mister-de25-load"
-grep -q '"$compatibility_helper" "$rbf"' \
+grep -q '"$compatibility_helper" --print-digest "$rbf"' \
     "$target_root/sw/mister-de25-load"
 grep -q '"$migration_helper" finalize-boot' \
     "$target_root/sw/mister-de25-load"
@@ -1384,6 +1392,14 @@ grep -q 'mister-de25-watchdog-keeper.service' \
     "$target_root/scripts/prepare-sd-image.sh"
 grep -q 'ExecStart=/usr/libexec/mister-de25-watchdog-run --keeper /dev/watchdog0 90 /run/mister-de25-watchdog' \
     "$target_root/systemd/mister-de25-watchdog-keeper.service"
+grep -q 'DefaultDependencies=no' \
+    "$target_root/systemd/mister-de25-watchdog-keeper.service"
+grep -q 'ExecStartPre=.*test\|ExecStartPre=.*watchdog0' \
+    "$target_root/systemd/mister-de25-watchdog-keeper.service"
+grep -q 'DefaultDependencies=no' \
+    "$target_root/systemd/mister-de25-preload.service"
+grep -q 'systemd-remount-fs.service' \
+    "$target_root/systemd/mister-de25-preload.service"
 grep -q 'Requires=mister-de25-watchdog-keeper.service' \
     "$target_root/systemd/mister-de25-preload.service"
 grep -q 'Requires=mister-de25-watchdog-keeper.service' \
@@ -1394,7 +1410,7 @@ grep -q 'de25_check_rbf_compatibility(path)' \
     "$target_root/upstream/Main_MiSTer/fpga_io.cpp"
 grep -q 'de25_load_rbf_path(path)' \
     "$target_root/upstream/Main_MiSTer/fpga_io.cpp"
-grep -q 'ExecStart=/usr/libexec/mister-de25-load /media/fat/menu.rbf' \
+grep -q 'ExecStart=/usr/libexec/mister-de25-load /var/lib/mister-de25/boot/menu.rbf' \
     "$target_root/systemd/mister-de25-preload.service"
 grep -q 'ExecCondition=/usr/bin/test ! -s /run/mister-de25-selected-core' \
     "$target_root/systemd/mister-de25-preload.service"
@@ -1402,6 +1418,13 @@ grep -q 'TimeoutStartSec=infinity' \
     "$target_root/systemd/mister-de25-preload.service"
 grep -q 'Requires=mister-de25-preload.service' \
     "$target_root/systemd/mister.service"
+grep -q 'RequiresMountsFor=/media/fat' \
+    "$target_root/systemd/mister.service"
+if grep -q 'RequiresMountsFor=/media/fat' \
+    "$target_root/systemd/mister-de25-platform-migration.path"; then
+    echo "Platform migration watcher must not delay the early boot cache" >&2
+    exit 1
+fi
 grep -q 'PathExists=/media/fat/.mister-de25/headless-migration/request' \
     "$target_root/systemd/mister-de25-platform-migration.path"
 grep -q 'ExecStart=/usr/libexec/mister-de25-headless-migrate' \

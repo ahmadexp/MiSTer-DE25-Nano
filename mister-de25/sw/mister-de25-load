@@ -15,6 +15,8 @@ compatibility_helper=${MISTER_DE25_COMPATIBILITY_HELPER:-/usr/libexec/mister-de2
 migration_helper=${MISTER_DE25_MIGRATION_HELPER:-/usr/libexec/mister-de25-platform-migration}
 watchdog_helper=${MISTER_DE25_WATCHDOG_HELPER:-/usr/libexec/mister-de25-watchdog-run}
 watchdog_armed=${MISTER_DE25_WATCHDOG_ARMED:-0}
+validated_digest=${MISTER_DE25_VALIDATED_RBF_DIGEST:-}
+validated_identity=${MISTER_DE25_VALIDATED_RBF_IDENTITY:-}
 load_state_dir=${MISTER_DE25_LOAD_STATE_DIR:-/var/lib/mister-de25}
 load_pending=$load_state_dir/fpga-load.pending
 last_failed_load=$load_state_dir/fpga-load.last-failed
@@ -45,11 +47,33 @@ if [[ ! -x $watchdog_helper ]]; then
     exit 1
 fi
 
+file_identity() {
+    local identity
+    if identity=$(stat -Lc '%d:%i:%s:%Y:%Z' "$1" 2>/dev/null); then
+        printf '%s' "$identity"
+    else
+        stat -Lf '%d:%i:%z:%m:%c' "$1"
+    fi
+}
+
 "$migration_helper" finalize-boot
-"$compatibility_helper" "$rbf"
+rbf_identity_before=$(file_identity "$rbf")
+if [[ $watchdog_armed == 1 &&
+      $validated_digest =~ ^[0-9a-f]{64}$ &&
+      $validated_identity == "$rbf_identity_before" ]]; then
+    rbf_digest=$validated_digest
+else
+    rbf_digest=$("$compatibility_helper" --print-digest "$rbf")
+    rbf_identity_after=$(file_identity "$rbf")
+    if [[ $rbf_identity_after != "$rbf_identity_before" ]]; then
+        echo "MiSTer RBF changed during compatibility verification: $rbf" >&2
+        exit 1
+    fi
+    validated_digest=$rbf_digest
+    validated_identity=$rbf_identity_after
+fi
 
 rbf_path=$(readlink -f "$rbf" 2>/dev/null || printf '%s' "$rbf")
-rbf_digest=$(sha256sum "$rbf" | awk '{print $1}')
 
 mkdir -p "$load_state_dir"
 boot_id=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || printf unknown)
@@ -92,6 +116,8 @@ fi
 # with MISTER_DE25_WATCHDOG_ARMED set.
 if [[ $watchdog_armed != 1 ]]; then
     exec env MISTER_DE25_WATCHDOG_ARMED=1 \
+        MISTER_DE25_VALIDATED_RBF_DIGEST="$validated_digest" \
+        MISTER_DE25_VALIDATED_RBF_IDENTITY="$validated_identity" \
         "$watchdog_helper" "$0" "$rbf"
 fi
 
@@ -110,9 +136,22 @@ if [[ ! -d $region_sysfs ]]; then
 fi
 
 mkdir -p "$(dirname "$firmware")" "$configfs_root"
-install -m 0644 "$rbf" "$firmware.new"
-sync "$firmware.new"
-mv -f "$firmware.new" "$firmware"
+rm -f "$firmware.new"
+if ln "$rbf" "$firmware.new" 2>/dev/null; then
+    # The early boot Menu cache is already durable on the root filesystem.
+    # Linking its verified inode avoids reading and writing the same RBF a
+    # second time. Runtime cores on FAT naturally take the copy fallback.
+    :
+else
+    install -m 0644 "$rbf" "$firmware.new"
+    sync "$firmware.new"
+fi
+if [[ -e $firmware && $firmware.new -ef $firmware ]]; then
+    # A previous cached boot may already have installed the same inode.
+    rm -f "$firmware.new"
+else
+    mv -f "$firmware.new" "$firmware"
+fi
 
 printf '%s\t%s\n' "$rbf" "$boot_id" >"$load_pending"
 sync "$load_pending" "$load_state_dir"

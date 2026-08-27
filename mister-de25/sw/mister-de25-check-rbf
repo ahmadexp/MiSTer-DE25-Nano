@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+print_digest=0
+if [[ ${1:-} == --print-digest ]]; then
+    print_digest=1
+    shift
+fi
+
 rbf=${1:-}
 platform_hash_file=${MISTER_DE25_HPS_IO_HASH:-/etc/mister-de25/hps-io-hash}
 migration_pending=${MISTER_DE25_MIGRATION_PENDING:-/var/lib/mister-de25/platform-migration/pending}
 
-if [[ -z $rbf ]]; then
-    echo "Usage: mister-de25-check-rbf RUNTIME.rbf" >&2
+if [[ -z $rbf || $# -ne 1 ]]; then
+    echo "Usage: mister-de25-check-rbf [--print-digest] RUNTIME.rbf" >&2
     exit 2
 fi
 if [[ -e $migration_pending ]]; then
@@ -83,5 +89,11 @@ if [[ $actual_digest != "$expected_digest" ]]; then
     exit 1
 fi
 
-echo "DE25-Nano HPS I/O compatibility verified: $platform_hash"
-echo "DE25-Nano RBF payload verified: $actual_digest"
+if ((print_digest == 1)); then
+    echo "DE25-Nano HPS I/O compatibility verified: $platform_hash" >&2
+    echo "DE25-Nano RBF payload verified: $actual_digest" >&2
+    printf '%s\n' "$actual_digest"
+else
+    echo "DE25-Nano HPS I/O compatibility verified: $platform_hash"
+    echo "DE25-Nano RBF payload verified: $actual_digest"
+fi

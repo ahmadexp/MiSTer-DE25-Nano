@@ -347,6 +347,7 @@ mkdir -p "$work_dir/rootfs/etc/systemd/system"
 mkdir -p "$work_dir/rootfs/etc/mister-de25"
 mkdir -p "$work_dir/rootfs/etc/modules-load.d"
 mkdir -p "$work_dir/rootfs/usr/lib/tmpfiles.d"
+mkdir -p "$work_dir/rootfs/var/lib/mister-de25/boot"
 mkdir -p "$work_dir/runtime-debs"
 
 download_runtime_deb() {
@@ -411,6 +412,12 @@ install -m 0755 "$platform_root/sw/mister-de25-migrate" \
     "$work_dir/rootfs/usr/bin/mister-de25-migrate"
 install -m 0644 "$platform_hash_file" \
     "$work_dir/rootfs/etc/mister-de25/hps-io-hash"
+install -m 0644 "$menu_rbf" \
+    "$work_dir/rootfs/var/lib/mister-de25/boot/menu.rbf"
+install -m 0644 "$menu_rbf.hps-io-hash" \
+    "$work_dir/rootfs/var/lib/mister-de25/boot/menu.rbf.hps-io-hash"
+install -m 0644 "$menu_rbf.sha256" \
+    "$work_dir/rootfs/var/lib/mister-de25/boot/menu.rbf.sha256"
 install -m 0644 "$runtime_catalog" \
     "$work_dir/rootfs/etc/mister-de25/cores.tsv"
 install -m 0644 "$platform_root/systemd/mister-de25-core-request.path" \
@@ -468,6 +475,7 @@ install -d /mnt/root/usr/lib/tmpfiles.d
 install -d /mnt/root/etc/systemd/system/multi-user.target.wants
 install -d /mnt/root/etc/mister-de25
 install -d /mnt/root/etc/modules-load.d
+install -d /mnt/root/var/lib/mister-de25/boot
 install -m 0644 /payload/usr/lib/mister-de25/fpga-load.dtbo \
     /mnt/root/usr/lib/mister-de25/fpga-load.dtbo
 install -m 0755 /payload/usr/libexec/mister-de25-load \
@@ -498,6 +506,12 @@ install -m 0755 /payload/usr/bin/mister-de25-migrate \
     /mnt/root/usr/bin/mister-de25-migrate
 install -m 0644 /payload/etc/mister-de25/hps-io-hash \
     /mnt/root/etc/mister-de25/hps-io-hash
+install -m 0644 /payload/var/lib/mister-de25/boot/menu.rbf \
+    /mnt/root/var/lib/mister-de25/boot/menu.rbf
+install -m 0644 /payload/var/lib/mister-de25/boot/menu.rbf.hps-io-hash \
+    /mnt/root/var/lib/mister-de25/boot/menu.rbf.hps-io-hash
+install -m 0644 /payload/var/lib/mister-de25/boot/menu.rbf.sha256 \
+    /mnt/root/var/lib/mister-de25/boot/menu.rbf.sha256
 install -m 0644 /payload/etc/mister-de25/cores.tsv \
     /mnt/root/etc/mister-de25/cores.tsv
 install -m 0644 /payload/etc/systemd/system/mister-de25-core-request.path \
@@ -557,6 +571,9 @@ test -x /mnt/root/usr/bin/mister-de25-core
 test -x /mnt/root/usr/bin/mister-de25-screenshot
 test -x /mnt/root/usr/bin/mister-de25-migrate
 test -s /mnt/root/etc/mister-de25/hps-io-hash
+test -s /mnt/root/var/lib/mister-de25/boot/menu.rbf
+test -s /mnt/root/var/lib/mister-de25/boot/menu.rbf.hps-io-hash
+test -s /mnt/root/var/lib/mister-de25/boot/menu.rbf.sha256
 test -s /mnt/root/etc/mister-de25/cores.tsv
 test -s /mnt/root/usr/lib/mister-de25/fpga-load.dtbo
 test -s "$module_dir/$module_relative"

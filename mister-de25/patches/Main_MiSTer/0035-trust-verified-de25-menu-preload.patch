@@ -1,0 +1,75 @@
+From: DE25-Nano port
+Subject: [PATCH] Trust the verified Menu preload for the current boot
+
+The preload service already validates and records the exact Menu digest before
+Main starts. Avoid hashing the FAT copy again when that root-owned record has
+the current boot ID, the expected Menu digest, and an operating FPGA manager.
+Any missing or mismatched field retains the guarded Menu recovery path.
+
+diff --git a/main.cpp b/main.cpp
+--- a/main.cpp
++++ b/main.cpp
+@@ -39,6 +39,53 @@
+ 
+ const char *version = "$VER:" VDATE;
+ 
++#ifdef MISTER_DE25
++static bool de25_read_trimmed(const char *path, char *value, size_t size)
++{
++	FILE *file = fopen(path, "r");
++	if (!file) return false;
++	bool ok = fgets(value, size, file) != NULL;
++	fclose(file);
++	if (!ok) return false;
++	value[strcspn(value, "\r\n")] = 0;
++	return value[0] != 0;
++}
++
++static bool de25_menu_is_preloaded()
++{
++	char load_record[PATH_MAX + 160] = {};
++	char boot_id[80] = {};
++	char expected_digest[80] = {};
++	char manager_state[32] = {};
++
++	if (!de25_read_trimmed("/var/lib/mister-de25/fpga-load.current",
++	                       load_record, sizeof(load_record)) ||
++	    !de25_read_trimmed("/proc/sys/kernel/random/boot_id",
++	                       boot_id, sizeof(boot_id)) ||
++	    !de25_read_trimmed("/media/fat/menu.rbf.sha256",
++	                       expected_digest, sizeof(expected_digest)) ||
++	    !de25_read_trimmed("/sys/class/fpga_manager/fpga0/state",
++	                       manager_state, sizeof(manager_state)))
++		return false;
++
++	char *save = NULL;
++	char *loaded_path = strtok_r(load_record, "\t", &save);
++	char *loaded_digest = strtok_r(NULL, "\t", &save);
++	char *loaded_boot = strtok_r(NULL, "\t", &save);
++	if (!loaded_path || loaded_path[0] != '/' || !loaded_digest || !loaded_boot ||
++	    strlen(expected_digest) != 64 || strlen(loaded_digest) != 64)
++		return false;
++	for (size_t i = 0; i < 64; i++)
++		if (!isxdigit((unsigned char)expected_digest[i]) ||
++		    !isxdigit((unsigned char)loaded_digest[i]))
++			return false;
++
++	return !strcasecmp(manager_state, "operating") &&
++	       !strcasecmp(loaded_digest, expected_digest) &&
++	       !strcmp(loaded_boot, boot_id);
++}
++#endif
++
+ int main(int argc, char *argv[])
+ {
+ 	const char *core_path_arg = argc > 1 ? argv[1] : "";
+@@ -70,7 +117,8 @@ int main(int argc, char *argv[])
+ 				               !strcasecmp(extension, ".mra")))
+ 				xml_path_arg = selected_xml;
+ 		}
+-		else if (system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
++		else if (!de25_menu_is_preloaded() &&
++		         system("/usr/libexec/mister-de25-load /media/fat/menu.rbf"))
+ 		{
+ 			fprintf(stderr, "Unable to recover DE25 Menu fabric image\n");
+ 			return 1;

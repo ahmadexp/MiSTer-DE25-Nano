@@ -1,9 +1,13 @@
 [Unit]
 Description=Keep the DE25-Nano HPS hardware watchdog serviced
-After=dev-watchdog0.device
+DefaultDependencies=no
+After=systemd-remount-fs.service
+Before=shutdown.target
+Conflicts=shutdown.target
 
 [Service]
 Type=simple
+ExecStartPre=/bin/sh -c 'i=0; while [ "$i" -lt 200 ]; do [ -c /dev/watchdog0 ] && exit 0; i=$((i + 1)); sleep 0.01; done; exit 1'
 ExecStart=/usr/libexec/mister-de25-watchdog-run --keeper /dev/watchdog0 90 /run/mister-de25-watchdog
 Restart=always
 RestartSec=1

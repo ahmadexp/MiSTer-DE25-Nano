@@ -24,9 +24,16 @@ rollback=$2
 content=${3:-}
 loader=${MISTER_DE25_LOADER:-/usr/libexec/mister-de25-load}
 systemctl_command=${MISTER_DE25_SYSTEMCTL:-systemctl}
-firmware=${MISTER_DE25_FIRMWARE:-/lib/firmware/mister-de25-core.rbf}
 selected_core_marker=${MISTER_DE25_SELECTED_CORE_MARKER:-/run/mister-de25-selected-core}
-settle_seconds=${MISTER_DE25_TEST_SETTLE_SECONDS:-5}
+current_load=${MISTER_DE25_CURRENT_LOAD:-/var/lib/mister-de25/fpga-load.current}
+ready_attempts=${MISTER_DE25_TEST_READY_ATTEMPTS:-40}
+ready_interval=${MISTER_DE25_TEST_READY_INTERVAL:-0.05}
+settle_seconds=${MISTER_DE25_TEST_SETTLE_SECONDS:-0.25}
+
+if [[ ! $ready_attempts =~ ^[1-9][0-9]*$ ]]; then
+    echo "Invalid readiness-attempt count: $ready_attempts" >&2
+    exit 2
+fi
 
 for rbf in "$candidate" "$rollback"; do
     if [[ ! -s $rbf || ! -s $rbf.hps-io-hash || ! -s $rbf.sha256 ]]; then
@@ -57,6 +64,20 @@ fi
 
 main_stopped=0
 service_started=0
+candidate_path=$(readlink -f "$candidate" 2>/dev/null || printf '%s' "$candidate")
+candidate_digest=$(tr -d '[:space:]' <"$candidate.sha256" | \
+    tr '[:upper:]' '[:lower:]')
+
+candidate_is_ready() {
+    local loaded_path loaded_digest loaded_boot
+    "$systemctl_command" is-active --quiet mister.service || return 1
+    [[ ! -e $selected_core_marker && -s $current_load ]] || return 1
+    IFS=$'\t' read -r loaded_path loaded_digest loaded_boot \
+        <"$current_load" || return 1
+    [[ $loaded_path == "$candidate_path" &&
+       $loaded_digest == "$candidate_digest" ]]
+}
+
 cleanup() {
     status=$?
     trap - EXIT HUP INT TERM
@@ -91,17 +112,21 @@ if ! "$systemctl_command" start mister.service; then
     exit 1
 fi
 service_started=1
+ready=0
+for ((attempt = 0; attempt < ready_attempts; attempt++)); do
+    if candidate_is_ready; then
+        ready=1
+        break
+    fi
+    sleep "$ready_interval"
+done
+if ((ready == 0)); then
+    echo "Main did not become ready on $(basename "$candidate")" >&2
+    exit 1
+fi
 sleep "$settle_seconds"
-if ! "$systemctl_command" is-active --quiet mister.service; then
-    echo "Main did not remain active on $(basename "$candidate")" >&2
-    exit 1
-fi
-if [[ -e $selected_core_marker ]]; then
-    echo "Main did not consume the selected-core marker" >&2
-    exit 1
-fi
-if ! cmp -s "$candidate" "$firmware"; then
-    echo "Candidate was replaced during Main startup" >&2
+if ! candidate_is_ready; then
+    echo "Main did not remain ready on $(basename "$candidate")" >&2
     exit 1
 fi
 main_stopped=0

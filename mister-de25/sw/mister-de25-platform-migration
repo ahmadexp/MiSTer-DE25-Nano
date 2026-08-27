@@ -23,6 +23,7 @@ sys_root=${MISTER_DE25_SYS_ROOT:-/}
 state_root=${MISTER_DE25_MIGRATION_ROOT:-${sys_root%/}/var/lib/mister-de25/platform-migration}
 pending=$state_root/pending
 platform_hash_file=${MISTER_DE25_HPS_IO_HASH:-${sys_root%/}/etc/mister-de25/hps-io-hash}
+boot_menu=${MISTER_DE25_BOOT_MENU:-${sys_root%/}/var/lib/mister-de25/boot/menu.rbf}
 boot_id_file=${MISTER_DE25_BOOT_ID_FILE:-/proc/sys/kernel/random/boot_id}
 systemctl_command=${MISTER_DE25_SYSTEMCTL:-systemctl}
 
@@ -165,6 +166,14 @@ case $command in
         else
             rm -f "$state_root/backup/menu.rbf.sha256"
         fi
+        for suffix in '' .hps-io-hash .sha256; do
+            if [[ -e $boot_menu$suffix ]]; then
+                install -m 0644 "$boot_menu$suffix" \
+                    "$state_root/backup/boot-menu.rbf$suffix"
+            else
+                rm -f "$state_root/backup/boot-menu.rbf$suffix"
+            fi
+        done
 
         # Publish the interlock before stopping services. Any concurrent or
         # post-crash FPGA load will fail closed once this file exists.
@@ -197,19 +206,29 @@ case $command in
             exit 1
         }
 
-        install -d -m 0755 "$fat_root" "$(dirname "$platform_hash_file")"
+        install -d -m 0755 "$fat_root" "$(dirname "$platform_hash_file")" \
+            "$(dirname "$boot_menu")"
         install -m 0644 "$state_root/staged/menu.rbf.hps-io-hash" \
             "$fat_root/.menu.rbf.hps-io-hash.migration"
         install -m 0644 "$state_root/staged/menu.rbf.sha256" \
             "$fat_root/.menu.rbf.sha256.migration"
         install -m 0644 "$state_root/staged/menu.rbf" \
             "$fat_root/.menu.rbf.migration"
+        install -m 0644 "$state_root/staged/menu.rbf.hps-io-hash" \
+            "$boot_menu.hps-io-hash.migration"
+        install -m 0644 "$state_root/staged/menu.rbf.sha256" \
+            "$boot_menu.sha256.migration"
+        install -m 0644 "$state_root/staged/menu.rbf" \
+            "$boot_menu.migration"
         printf '%s\n' "$target_hash" >"$platform_hash_file.migration"
         mv -f "$fat_root/.menu.rbf.hps-io-hash.migration" \
             "$fat_root/menu.rbf.hps-io-hash"
         mv -f "$fat_root/.menu.rbf.sha256.migration" \
             "$fat_root/menu.rbf.sha256"
         mv -f "$fat_root/.menu.rbf.migration" "$fat_root/menu.rbf"
+        mv -f "$boot_menu.hps-io-hash.migration" "$boot_menu.hps-io-hash"
+        mv -f "$boot_menu.sha256.migration" "$boot_menu.sha256"
+        mv -f "$boot_menu.migration" "$boot_menu"
         mv -f "$platform_hash_file.migration" "$platform_hash_file"
         write_pending flashed "$source_boot_id" "$source_hash" "$target_hash"
         sync
@@ -237,11 +256,23 @@ case $command in
             echo "Installed platform hash does not match the migration target" >&2
             exit 1
         }
+        # The early boot cache lives on the root filesystem, but the FAT copy
+        # remains the source used by Main and rollback. Wait for that mount
+        # only during the exceptional migration-finalization boot.
+        for _ in {1..200}; do
+            [[ -s $fat_root/menu.rbf ]] && break
+            sleep 0.05
+        done
         [[ $(read_hash "$fat_root/menu.rbf.hps-io-hash") == "$target_hash" ]] || {
             echo "Installed Menu does not match the migration target" >&2
             exit 1
         }
         verify_digest "$fat_root/menu.rbf"
+        [[ $(read_hash "$boot_menu.hps-io-hash") == "$target_hash" ]] || {
+            echo "Cached boot Menu does not match the migration target" >&2
+            exit 1
+        }
+        verify_digest "$boot_menu"
         rm -f "$pending"
         sync "$state_root" 2>/dev/null || sync
         echo "Platform migration finalized after reboot: $target_hash"
@@ -290,6 +321,15 @@ case $command in
         else
             rm -f "$fat_root/menu.rbf.sha256"
         fi
+        install -d -m 0755 "$(dirname "$boot_menu")"
+        for suffix in '' .hps-io-hash .sha256; do
+            if [[ -e $state_root/backup/boot-menu.rbf$suffix ]]; then
+                install -m 0644 "$state_root/backup/boot-menu.rbf$suffix" \
+                    "$boot_menu$suffix"
+            else
+                rm -f "$boot_menu$suffix"
+            fi
+        done
         install -m 0644 "$state_root/backup/hps-io-hash" "$platform_hash_file"
         rm -f "$pending"
         sync

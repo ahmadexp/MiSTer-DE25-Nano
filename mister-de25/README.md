@@ -260,7 +260,10 @@ For real-board validation before installation,
 loads the compatibility-checked candidate, and restarts Main without replacing
 the boot Menu. The optional absolute MGL or MRA path launches test content in
 the same root-owned, one-shot service start, which supports unattended core
-validation.
+validation. Candidate startup now completes as soon as Main consumes the
+one-shot marker, remains active, and the authoritative FPGA load record matches
+the requested path and digest. A short stability window replaces the former
+fixed five-second delay.
 
 The common scaler stores a native RGB copy of the displayed frame in the
 logical `0x30000000` LPDDR4 window, separate from core DDRAM. Main's standard
@@ -285,6 +288,17 @@ hardware watchdog exists. Agilex's DesignWare watchdog cannot be stopped once
 started, so a resident keeper owns it and pets it between loads. The loader
 pauses the keeper before programming and resumes it only after FPGA user mode
 and bridge recovery, leaving a failed or hung transaction to reset the HPS.
+The keeper acknowledges pause and resume within 100 milliseconds, and the
+loader reuses a compatibility result across its watchdog re-entry only while
+the RBF device, inode, size, and timestamps remain unchanged. This removes
+duplicate payload hashing without weakening the guarded transaction.
+
+Boot Menu is also stored as a digest-checked root-filesystem cache under
+`/var/lib/mister-de25/boot`. The preload service can therefore configure the
+mandatory HPS-first phase-2 image while the FAT partition is still mounting.
+Main still starts only after `/media/fat` is available. Update bundles, new SD
+images, and platform migration install or roll back the cached and FAT copies
+together, so early loading never bypasses the platform-hash interlock.
 
 QSPI changes are intentionally separate from ordinary updates. The guarded
 `scripts/program-qspi.sh` command requires an explicit JTAG index and literal

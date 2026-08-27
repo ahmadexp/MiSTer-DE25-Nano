@@ -11,7 +11,7 @@ loader_mock=$test_root/loader
 log=$test_root/actions.log
 candidate=$test_root/candidate.rbf
 rollback=$test_root/rollback.rbf
-firmware=$test_root/firmware.rbf
+current_load=$test_root/fpga-load.current
 marker=$test_root/selected-core
 consumed_marker=$test_root/selected-core.consumed
 content=$test_root/game.mgl
@@ -46,13 +46,15 @@ printf 'load %s\n' "\$1" >>'$log'
 case "\${FAIL_CANDIDATE:-}:\$1" in
     1:'$candidate') exit 1 ;;
 esac
-cp "\$1" '$firmware'
+loaded_path=\$(readlink -f "\$1" 2>/dev/null || printf '%s' "\$1")
+loaded_digest=\$(tr -d '[:space:]' <"\$1.sha256" | tr '[:upper:]' '[:lower:]')
+printf '%s\t%s\ttest-boot\n' "\$loaded_path" "\$loaded_digest" >'$current_load'
 EOF
 chmod +x "$systemctl_mock" "$loader_mock"
 
 MISTER_DE25_SYSTEMCTL=$systemctl_mock \
 MISTER_DE25_LOADER=$loader_mock \
-MISTER_DE25_FIRMWARE=$firmware \
+MISTER_DE25_CURRENT_LOAD=$current_load \
 MISTER_DE25_SELECTED_CORE_MARKER=$marker \
 MISTER_DE25_TEST_SETTLE_SECONDS=0 \
     "$helper" "$candidate" "$rollback" "$content" >/dev/null
@@ -70,7 +72,7 @@ fi
 : >"$log"
 if MISTER_DE25_SYSTEMCTL=$systemctl_mock \
    MISTER_DE25_LOADER=$loader_mock \
-   MISTER_DE25_FIRMWARE=$firmware \
+   MISTER_DE25_CURRENT_LOAD=$current_load \
    MISTER_DE25_SELECTED_CORE_MARKER=$marker \
    MISTER_DE25_TEST_SETTLE_SECONDS=0 \
        "$helper" "$candidate" "$rollback" "$test_root/missing.mgl" \
@@ -87,7 +89,7 @@ fi
 if FAIL_CANDIDATE=1 \
    MISTER_DE25_SYSTEMCTL=$systemctl_mock \
    MISTER_DE25_LOADER=$loader_mock \
-   MISTER_DE25_FIRMWARE=$firmware \
+   MISTER_DE25_CURRENT_LOAD=$current_load \
    MISTER_DE25_SELECTED_CORE_MARKER=$marker \
    MISTER_DE25_TEST_SETTLE_SECONDS=0 \
        "$helper" "$candidate" "$rollback" >/dev/null 2>&1; then
@@ -107,7 +109,7 @@ cmp "$expected" "$log"
 if FAIL_START=1 \
    MISTER_DE25_SYSTEMCTL=$systemctl_mock \
    MISTER_DE25_LOADER=$loader_mock \
-   MISTER_DE25_FIRMWARE=$firmware \
+   MISTER_DE25_CURRENT_LOAD=$current_load \
    MISTER_DE25_SELECTED_CORE_MARKER=$marker \
    MISTER_DE25_TEST_SETTLE_SECONDS=0 \
        "$helper" "$candidate" "$rollback" >/dev/null 2>&1; then
