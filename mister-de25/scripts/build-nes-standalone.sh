@@ -62,13 +62,13 @@ generate_rom_hex
 docker_args=(
     run --rm --network host --user "$host_uid:$host_gid"
     -e HOME=/quartus-home
-    -e NES_ROM=/work/PC110-Mister/mister-de25/artifacts/private/Super_Mario_Bros.nes
-    -v "$workspace_root:/work/PC110-Mister"
+    -e NES_ROM=/work/MiSTer-DE25-Nano/mister-de25/artifacts/private/Super_Mario_Bros.nes
+    -v "$workspace_root:/work/MiSTer-DE25-Nano"
     -v "$quartus_home:/quartus-home"
-    -w /work/PC110-Mister/mister-de25
+    -w /work/MiSTer-DE25-Nano/mister-de25
 )
 [[ -z ${LM_LICENSE_FILE:-} ]] || docker_args+=( -e "LM_LICENSE_FILE=$LM_LICENSE_FILE" )
 [[ -z ${SALT_LICENSE_SERVER:-} ]] || docker_args+=( -e "SALT_LICENSE_SERVER=$SALT_LICENSE_SERVER" )
 
 exec docker "${docker_args[@]}" "$image" bash -lc \
-    '/work/PC110-Mister/mister-de25/scripts/build-nes-standalone.sh'
+    '/work/MiSTer-DE25-Nano/mister-de25/scripts/build-nes-standalone.sh'

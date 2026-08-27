@@ -71,9 +71,9 @@ fi
 docker_args=(
     run --rm --network host --user "$host_uid:$host_gid"
     -e HOME=/quartus-home
-    -v "$workspace_root:/work/PC110-Mister"
+    -v "$workspace_root:/work/MiSTer-DE25-Nano"
     -v "$quartus_home:/quartus-home"
-    -w /work/PC110-Mister/mister-de25
+    -w /work/MiSTer-DE25-Nano/mister-de25
 )
 if [[ -n ${DE25_QUARTUS_SYSFS_WORKAROUND_DIR:-} ]]; then
     sysfs_root=${DE25_QUARTUS_SYSFS_WORKAROUND_DIR%/}
@@ -120,4 +120,4 @@ if [[ -n ${DE25_AO486_OUTPUT_RBF:-} ]]; then
 fi
 
 exec docker "${docker_args[@]}" "$image" bash -lc \
-    '/work/PC110-Mister/mister-de25/scripts/build-ao486.sh'
+    '/work/MiSTer-DE25-Nano/mister-de25/scripts/build-ao486.sh'

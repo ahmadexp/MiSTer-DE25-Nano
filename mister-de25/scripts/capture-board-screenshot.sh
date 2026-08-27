@@ -2,9 +2,9 @@
 set -euo pipefail
 
 platform_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-board=${MISTER_DE25_SSH_TARGET:-terasic@192.168.1.121}
-jump=${MISTER_DE25_SSH_JUMP:-user@192.168.1.18}
-host_key_alias=${MISTER_DE25_SSH_HOST_KEY_ALIAS:-192.168.1.230}
+board=${MISTER_DE25_SSH_TARGET:-terasic@de25-nano.local}
+jump=${MISTER_DE25_SSH_JUMP:-}
+host_key_alias=${MISTER_DE25_SSH_HOST_KEY_ALIAS:-}
 output=${1:-$platform_root/artifacts/screenshots/de25-$(date +%Y%m%d-%H%M%S).png}
 remote_name=remote-$(date +%Y%m%d-%H%M%S)-$$
 

@@ -1,6 +1,6 @@
 # Third-party notices
 
-PC110-MiSTer combines code under compatible free-software licenses.
+MiSTer-DE25-Nano combines code under compatible free-software licenses.
 Files with their own copyright or license headers remain governed by those
 headers. In particular, the 486 CPU RTL retains Aleksander Osman's BSD
 license terms reproduced below. MiSTer framework and shared x86-derived
@@ -11,8 +11,8 @@ firmware is included in this repository or its releases.
 
 ## BSD-licensed CPU RTL
 
-The files under `rtl/ao486` and any other source files carrying the following
-notice retain these BSD terms:
+The files under `cores/PC110/rtl/ao486` and any other source files carrying
+the following notice retain these BSD terms:
 
 Copyright (c) 2014, Aleksander Osman
 All rights reserved.

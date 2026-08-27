@@ -99,9 +99,9 @@ fi
 docker_args=(
     run --rm --network host --user "$host_uid:$host_gid"
     -e HOME=/quartus-home
-    -v "$workspace_root:/work/PC110-Mister"
+    -v "$workspace_root:/work/MiSTer-DE25-Nano"
     -v "$quartus_home_dir:/quartus-home"
-    -w /work/PC110-Mister/mister-de25
+    -w /work/MiSTer-DE25-Nano/mister-de25
 )
 if [[ -n ${DE25_DOCKER_NAME:-} ]]; then
     docker_args+=( --name "$DE25_DOCKER_NAME" )
@@ -151,4 +151,4 @@ if [[ -n $extra_pll_name ]]; then
 fi
 
 exec docker "${docker_args[@]}" "$image" bash -lc \
-    '/work/PC110-Mister/mister-de25/scripts/build-simple-persona.sh'
+    '/work/MiSTer-DE25-Nano/mister-de25/scripts/build-simple-persona.sh'

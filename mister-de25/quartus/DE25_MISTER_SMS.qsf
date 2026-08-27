@@ -33,7 +33,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_axil.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_iopll_reconfig_axil.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_sms_pll_profiles.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_sms_pll.sv
-set_global_assignment -name VHDL_FILE ../../sys/ascal.vhd
+set_global_assignment -name VHDL_FILE ../../shared/mister/sys/ascal.vhd
 set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/adv7513_init.sv
 
 set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/SMS/sys/math.sv

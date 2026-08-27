@@ -83,7 +83,7 @@ fi
 
 partition_qdb_env=$hps_qdb
 if ! command -v quartus_sh >/dev/null 2>&1; then
-    partition_qdb_env=/work/PC110-Mister/${hps_qdb#"$workspace_root/"}
+    partition_qdb_env=/work/MiSTer-DE25-Nano/${hps_qdb#"$workspace_root/"}
 fi
 export DE25_HPS_PARTITION_MODE=reuse
 export DE25_HPS_PARTITION_QDB=$partition_qdb_env

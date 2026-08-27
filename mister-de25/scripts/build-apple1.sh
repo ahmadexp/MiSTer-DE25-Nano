@@ -61,9 +61,9 @@ fi
 docker_args=(
     run --rm --network host --user "$host_uid:$host_gid"
     -e HOME=/quartus-home
-    -v "$workspace_root:/work/PC110-Mister"
+    -v "$workspace_root:/work/MiSTer-DE25-Nano"
     -v "$quartus_home:/quartus-home"
-    -w /work/PC110-Mister/mister-de25
+    -w /work/MiSTer-DE25-Nano/mister-de25
 )
 [[ -z ${LM_LICENSE_FILE:-} ]] || docker_args+=( -e "LM_LICENSE_FILE=$LM_LICENSE_FILE" )
 [[ -z ${SALT_LICENSE_SERVER:-} ]] || docker_args+=( -e "SALT_LICENSE_SERVER=$SALT_LICENSE_SERVER" )
@@ -94,4 +94,4 @@ if [[ -n ${DE25_APPLE1_OUTPUT_RBF:-} ]]; then
 fi
 
 exec docker "${docker_args[@]}" "$image" bash -lc \
-    '/work/PC110-Mister/mister-de25/scripts/build-apple1.sh'
+    '/work/MiSTer-DE25-Nano/mister-de25/scripts/build-apple1.sh'

@@ -2,7 +2,24 @@
 set -euo pipefail
 
 target_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+workspace_root=$(cd "$target_root/.." && pwd)
 output=${TMPDIR:-/tmp}/de25_mister_gp_bridge_tb.vvp
+
+for former_root_entry in \
+    PC110.qpf PC110.qsf PC110.sdc PC110.srf PC110.sv files.qip rtl sys; do
+    [[ ! -e $workspace_root/$former_root_entry ]] || {
+        echo "FAIL: core-specific entry remains at repository root: $former_root_entry" >&2
+        exit 1
+    }
+done
+[[ -s $workspace_root/cores/PC110/PC110.sv ]]
+[[ -s $workspace_root/cores/PC110/rtl/pc110/pc110_chipset.sv ]]
+[[ -s $workspace_root/shared/mister/sys/ascal.vhd ]]
+grep -q 'SYSTEMVERILOG_FILE ../../cores/PC110/PC110.sv' \
+    "$target_root/quartus/DE25_MISTER_PC110.qsf"
+grep -q 'VHDL_FILE ../../shared/mister/sys/ascal.vhd' \
+    "$target_root/quartus/DE25_MISTER_MENU.qsf"
+echo "PASS: repository root is platform-centric and local cores are isolated"
 
 "$target_root/scripts/check-timing-summary.sh" \
     "$target_root/sim/timing-pass.summary"
@@ -47,11 +64,11 @@ bash -n "$target_root/scripts/docker-workspace-path.sh"
 mapped_workspace_path=$("$target_root/scripts/docker-workspace-path.sh" \
     "$target_root/.." "$target_root/artifacts/shell/platform.qdb")
 [[ $mapped_workspace_path == \
-    /work/PC110-Mister/mister-de25/artifacts/shell/platform.qdb ]]
+    /work/MiSTer-DE25-Nano/mister-de25/artifacts/shell/platform.qdb ]]
 mapped_workspace_path=$("$target_root/scripts/docker-workspace-path.sh" \
-    "$target_root/.." /work/PC110-Mister/mister-de25/platform.qdb)
+    "$target_root/.." /work/MiSTer-DE25-Nano/mister-de25/platform.qdb)
 [[ $mapped_workspace_path == \
-    /work/PC110-Mister/mister-de25/platform.qdb ]]
+    /work/MiSTer-DE25-Nano/mister-de25/platform.qdb ]]
 if "$target_root/scripts/docker-workspace-path.sh" \
     "$target_root/.." /tmp/outside-workspace.qdb >/dev/null 2>&1; then
     echo "FAIL: Docker build accepted a partition outside the workspace" >&2
@@ -139,7 +156,7 @@ grep -q 'set_global_assignment -name SEED 1' "$menu_qsf"
 grep -q 'source de25_mister_menu_clocks.tcl' "$menu_qsf"
 grep -q 'source de25_mister_hps_partition.tcl' "$menu_qsf"
 grep -q 'DE25_VIDEO_SCALER=1' "$menu_qsf"
-grep -q 'VHDL_FILE ../../sys/ascal.vhd' "$menu_qsf"
+grep -q 'VHDL_FILE ../../shared/mister/sys/ascal.vhd' "$menu_qsf"
 for project in \
     APPLE1 INPUTTEST MEMTEST MENU MINIMIG NES PC110 PCXT SMS SNES TGFX16; do
     grep -q 'source de25_mister_hps_partition.tcl' \
@@ -548,32 +565,32 @@ grep -A7 'assign de25_gpi_diagnostic = {' \
 for scaler_project in NES SNES MINIMIG TGFX16 APPLE1 PC110 PCXT SMS; do
     scaler_qsf="$target_root/quartus/DE25_MISTER_${scaler_project}.qsf"
     grep -q 'DE25_VIDEO_SCALER=1' "$scaler_qsf"
-    grep -q 'VHDL_FILE ../../sys/ascal.vhd' "$scaler_qsf"
+    grep -q 'VHDL_FILE ../../shared/mister/sys/ascal.vhd' "$scaler_qsf"
 done
 # PC110 plus the screenshot scaler exceeds the Agilex 5 M20K budget unless
 # its small register files and lookup tables use the plentiful MLAB fabric.
-pc110_chipset_source="$target_root/../rtl/pc110/pc110_chipset.sv"
+pc110_chipset_source="$target_root/../cores/PC110/rtl/pc110/pc110_chipset.sv"
 for memory in scamp block2 ecb pos xr; do
     grep -Eq "ramstyle *= *\"MLAB\".*$memory *\[" \
         "$pc110_chipset_source"
 done
 grep -A4 'DE25_PC110_CORE' \
-    "$target_root/../rtl/common/simple_fifo.v" | grep -q 'ramstyle = "MLAB"'
+    "$target_root/../cores/PC110/rtl/common/simple_fifo.v" | grep -q 'ramstyle = "MLAB"'
 grep -A5 'DE25_PC110_CORE' \
-    "$target_root/../rtl/common/simple_ram.v" | grep -q 'ramstyle = "MLAB"'
+    "$target_root/../cores/PC110/rtl/common/simple_ram.v" | grep -q 'ramstyle = "MLAB"'
 grep -A5 'DE25_PC110_CORE' \
-    "$target_root/../sys/gamma_corr.sv" | grep -q 'MLAB, no_rw_check'
+    "$target_root/../shared/mister/sys/gamma_corr.sv" | grep -q 'MLAB, no_rw_check'
 grep -q 'pc110_refresh_div == 9.d451' \
-    "$target_root/../rtl/system.v"
+    "$target_root/../cores/PC110/rtl/system.v"
 grep -q 'pc110_refresh_toggle, pit_readdata\[3:0\]' \
-    "$target_root/../rtl/system.v"
+    "$target_root/../cores/PC110/rtl/system.v"
 echo "PASS: PC110 preserves its scaler within the Agilex M20K budget"
 grep -q 'o_vacc_ini.*4\*OHRESH.*MOD (4\*OHRESH)' \
-    "$target_root/../sys/ascal.vhd"
+    "$target_root/../shared/mister/sys/ascal.vhd"
 grep -q 'dif_v.*8\*OHRESH.*MOD (8\*OHRESH)' \
-    "$target_root/../sys/ascal.vhd"
+    "$target_root/../shared/mister/sys/ascal.vhd"
 grep -q 'IF dif_v>=4\*OHRESH THEN' \
-    "$target_root/../sys/ascal.vhd"
+    "$target_root/../shared/mister/sys/ascal.vhd"
 echo "PASS: small scaler profiles retain full-width vertical accumulators"
 grep -A45 ') video_scaler (' \
     "$target_root/rtl/de25_mister_menu_top.sv" | \
@@ -622,17 +639,17 @@ grep -Fq 'set de25_pcxt_clk_14_318 [get_clocks -nowarn DE25_PCXT_CLK_14_318]' \
     "$target_root/quartus/DE25_MISTER_MENU.sdc"
 echo "PASS: PC110 constrains the scaler and video clocks as asynchronous"
 grep -q 'wire PC110_VGA_FORCE_60 = 1.b0' \
-    "$target_root/../PC110.sv"
+    "$target_root/../cores/PC110/PC110.sv"
 grep -q '\.video_f60.*(PC110_VGA_FORCE_60)' \
-    "$target_root/../PC110.sv"
+    "$target_root/../cores/PC110/PC110.sv"
 echo "PASS: PC110 source timing remains native before frame-store conversion"
-grep -q '\.CONF_STR_BRAM(1)' "$target_root/../PC110.sv"
+grep -q '\.CONF_STR_BRAM(1)' "$target_root/../cores/PC110/PC110.sv"
 grep -q '^localparam CONF_AW = \$clog2(STRLEN+1);$' \
-    "$target_root/../sys/hps_io.sv"
+    "$target_root/../shared/mister/sys/hps_io.sv"
 grep -A2 '^wire \[CONF_AW-1:0\] conf_addr =' \
-    "$target_root/../sys/hps_io.sv" | \
+    "$target_root/../shared/mister/sys/hps_io.sv" | \
     grep -q 'byte_cnt\[CONF_AW-1:0\]'
-grep -q '\.conf_addr(conf_addr)' "$target_root/../sys/hps_io.sv"
+grep -q '\.conf_addr(conf_addr)' "$target_root/../shared/mister/sys/hps_io.sv"
 grep -q 'pc110_execution_diagnostic = core\.hps_io\.conf_byte\[5:0\]' \
     "$target_root/rtl/de25_mister_menu_top.sv"
 grep -q 'pc110_execution_diagnostic = core\.hps_io\.byte_cnt\[5:0\]' \

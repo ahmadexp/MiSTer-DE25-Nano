@@ -32,7 +32,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_gp_bridge.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_ddram.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_mister_audio.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/de25_pcxt_pll.sv
-set_global_assignment -name VHDL_FILE ../../sys/ascal.vhd
+set_global_assignment -name VHDL_FILE ../../shared/mister/sys/ascal.vhd
 set_global_assignment -name SYSTEMVERILOG_FILE ../../de25-nano/rtl/adv7513_init.sv
 
 set_global_assignment -name SYSTEMVERILOG_FILE ../upstream/cores/PCXT/sys/math.sv

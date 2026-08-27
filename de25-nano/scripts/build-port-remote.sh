@@ -3,8 +3,8 @@ set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 target_root="$repo_root/de25-nano"
-remote=${DE25_BUILD_HOST:-user@192.168.1.18}
-remote_root=${DE25_REMOTE_ROOT:-PC110-Mister-de25}
+remote=${DE25_BUILD_HOST:?Set DE25_BUILD_HOST to the Quartus SSH target}
+remote_root=${DE25_REMOTE_ROOT:-MiSTer-DE25-Nano}
 
 if [[ ! -f "$target_root/vendor/terasic-ghrd/qsys_top.qsys" ]]; then
     echo "Terasic GHRD sources are missing." >&2
@@ -12,8 +12,9 @@ if [[ ! -f "$target_root/vendor/terasic-ghrd/qsys_top.qsys" ]]; then
     exit 1
 fi
 
-ssh "$remote" "mkdir -p '$remote_root/de25-nano' '$remote_root/rtl'"
-rsync -az --delete "$repo_root/rtl/" "$remote:$remote_root/rtl/"
+ssh "$remote" "mkdir -p '$remote_root/de25-nano' '$remote_root/cores/PC110/rtl'"
+rsync -az --delete "$repo_root/cores/PC110/rtl/" \
+    "$remote:$remote_root/cores/PC110/rtl/"
 rsync -az --delete \
     --exclude artifacts \
     --exclude ip/ip \

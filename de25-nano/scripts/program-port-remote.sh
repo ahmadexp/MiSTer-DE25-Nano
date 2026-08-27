@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-remote=${DE25_BUILD_HOST:-user@192.168.1.18}
+remote=${DE25_BUILD_HOST:?Set DE25_BUILD_HOST to the Quartus SSH target}
 remote_stage=${DE25_REMOTE_PROGRAM_DIR:-/home/user/Downloads/de25-nano/pc110-package}
 image=${QUARTUS_IMAGE:-alterafpga/quartus-pro:25.3.1-patch1.02-agilex5}
 device_index=${DE25_JTAG_INDEX:-1}

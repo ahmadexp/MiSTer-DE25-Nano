@@ -17,11 +17,11 @@ case $input_path in
 esac
 
 case $input_path in
-    /work/PC110-Mister/*)
+    /work/MiSTer-DE25-Nano/*)
         printf '%s\n' "$input_path"
         ;;
     "$workspace_root"/*)
-        printf '/work/PC110-Mister/%s\n' "${input_path#"$workspace_root/"}"
+        printf '/work/MiSTer-DE25-Nano/%s\n' "${input_path#"$workspace_root/"}"
         ;;
     *)
         echo "Docker input must be inside the workspace: $input_path" >&2

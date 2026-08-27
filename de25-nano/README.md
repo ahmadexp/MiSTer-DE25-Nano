@@ -44,11 +44,12 @@ LPDDR to be initialized before the x86 core is released.
 
 Quartus Prime Pro 25.3.1 with Agilex 5 support is required. The local build
 script uses native Quartus when available, otherwise Altera's official
-container. The remote host defaults to `user@192.168.1.18` and can be changed
-with `DE25_BUILD_HOST`.
+container. Set `DE25_BUILD_HOST` to the Quartus SSH target before using a
+remote build script.
 
 ```sh
 de25-nano/scripts/lint.sh
+DE25_BUILD_HOST=user@quartus-builder \
 de25-nano/scripts/build-port-remote.sh
 ```
 

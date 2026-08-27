@@ -1,8 +1,9 @@
 # MiSTer platform port for DE25-Nano
 
 This directory contains the platform-level work needed to run the MiSTer
-framework on the Terasic DE25-Nano Agilex 5 SoC board. It is separate from the
-PC110-specific target in `de25-nano/`.
+framework on the Terasic DE25-Nano Agilex 5 SoC board. Core-specific sources
+are fetched into `upstream/` or kept separately under the repository's
+`cores/` directory.
 
 ## Compatibility strategy
 
@@ -228,7 +229,7 @@ produce the update bundle with `--bundle DIRECTORY` and a new SD image with
 step.
 
 The individual Docker build wrappers accept either host paths inside the
-workspace or `/work/PC110-Mister/...` paths for partition QDBs, compatibility
+workspace or `/work/MiSTer-DE25-Nano/...` paths for partition QDBs, compatibility
 hashes, and optional output files. Host paths are mapped into the container
 automatically. Paths outside the mounted workspace are rejected before Docker
 starts, which prevents a long Quartus run from failing on an inaccessible QDB.

@@ -2,11 +2,11 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-remote=${DE25_BUILD_HOST:-user@192.168.1.18}
+remote=${DE25_BUILD_HOST:?Set DE25_BUILD_HOST to the Quartus SSH target}
 remote_stage=${DE25_REMOTE_PRELOAD_DIR:-/home/user/Downloads/de25-nano/pc110-preload}
 image=${QUARTUS_IMAGE:-alterafpga/quartus-pro:25.3.1-patch1.02-agilex5}
-bios=${1:-$repo_root/artifacts/roms/pc110_bios.bin}
-font=${2:-$repo_root/artifacts/roms/pc110_font.bin}
+bios=${1:-$repo_root/cores/PC110/artifacts/roms/pc110_bios.bin}
+font=${2:-$repo_root/cores/PC110/artifacts/roms/pc110_font.bin}
 design=${3:-$repo_root/de25-nano/artifacts/DE25_PC110_PORT_HPS.sof}
 
 if [[ ! -f $bios || ! -f $font || ! -f $design ]]; then

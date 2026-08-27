@@ -40,13 +40,13 @@ inspect_rbf() {
             return 1
             ;;
     esac
-    container_input=/work/PC110-Mister/${absolute_input#"$workspace_root/"}
+    container_input=/work/MiSTer-DE25-Nano/${absolute_input#"$workspace_root/"}
     image=${QUARTUS_IMAGE:-alterafpga/quartus-pro:25.3.1-patch1.02-agilex5}
     host_uid=$(id -u)
     host_gid=$(id -g)
     docker run --rm --user "$host_uid:$host_gid" \
-        -v "$workspace_root:/work/PC110-Mister:ro" \
-        -w /work/PC110-Mister "$image" quartus_pfg -i "$container_input"
+        -v "$workspace_root:/work/MiSTer-DE25-Nano:ro" \
+        -w /work/MiSTer-DE25-Nano "$image" quartus_pfg -i "$container_input"
 }
 
 inspection=$(inspect_rbf 2>&1) || {

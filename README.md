@@ -3,8 +3,8 @@
 This repository contains an independent MiSTer platform port for the Terasic
 DE25-Nano and its Agilex 5 A5EB013 FPGA. It provides the shared Platform V2
 board shell, Menu port, core compatibility patches, build automation, runtime
-loader, SD-card tooling, and the original IBM PC110 source used during board
-bring-up.
+loader, SD-card tooling, hardware documentation, and a growing catalog of
+ported MiSTer cores.
 
 This is active bring-up work, not an official MiSTer distribution. A successful
 Quartus build or guarded FPGA load does not by itself establish complete game,
@@ -15,20 +15,20 @@ BIOS, controller, video-mode, or audio compatibility.
 | Core | Build and timing | Hardware gate |
 | --- | --- | --- |
 | Menu V2 | pass | boots on DE25-Nano |
-| IBM PC110 | pass | Personaware boots; corrected scaler active |
-| NES | pass | packaged |
-| SNES | pass | packaged |
-| Minimig | pass | packaged |
-| TurboGrafx-16 | pass | packaged |
 | Apple I | pass | packaged |
+| Atari 7800 / 2600 | pass | guarded load passed |
 | ao486 | pass | content test pending |
 | IBM PC/XT | pass | content test pending |
-| Sega Master System / Game Gear | pass | content test pending |
-| Atari 7800 / 2600 | pass | guarded load passed |
+| IBM PC110 | pass | Personaware boots; corrected scaler active |
 | Atari Jaguar | pass | guarded load passed; content pending |
-| PlayStation | pass | guarded load passed; BIOS/content pending |
+| Minimig | pass | packaged |
 | Nintendo 64 | pass | hardware load pending |
+| NES | pass | packaged |
+| PlayStation | pass | guarded load passed; BIOS/content pending |
+| Sega Master System / Game Gear | pass | content test pending |
 | Sega Saturn LIGHT | pass | hardware load pending |
+| SNES | pass | packaged |
+| TurboGrafx-16 | pass | packaged |
 
 The exact candidate status, resource use, timing margins, and artifact hashes
 are recorded in [`mister-de25/CORE_CANDIDATE_STATUS.md`](mister-de25/CORE_CANDIDATE_STATUS.md).
@@ -37,11 +37,14 @@ are recorded in [`mister-de25/CORE_CANDIDATE_STATUS.md`](mister-de25/CORE_CANDID
 
 - `mister-de25/`: Platform V2, Quartus projects, core patches, build scripts,
   Linux runtime integration, SD-card tooling, and tests.
-- `de25-nano/`: board-level Agilex 5 support and Si5332 diagnostic projects.
 - `hardware/de25-nano-bridge/`: KiCad source, reference Gerbers, and installation
   documentation for the passive GPIO 1 to Si5332B I2C bridge.
-- `rtl/`, `sys/`, and `PC110.sv`: IBM PC110 core sources used by the DE25 port.
-- `docs/PC110_CORE.md`: original PC110 project documentation and history.
+- `de25-nano/`: low-level board bring-up, Terasic GHRD import, and Si5332
+  diagnostic projects.
+- `shared/mister/`: shared upstream MiSTer framework sources needed by bundled
+  local cores.
+- `cores/`: optional local core sources kept separate from the platform. The
+  IBM PC110 implementation is under `cores/PC110/`.
 
 Upstream MiSTer repositories are fetched at pinned identities during the build
 flow and patched locally. Generated upstream checkouts, Quartus databases,
