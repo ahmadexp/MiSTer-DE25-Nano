@@ -1,2 +1,2 @@
 category	name	home	sdram	repository	branch	source_id	comments
-_Computer	IBM PC110	PC110	no	https://github.com/ahmadexp/PC110_MiSTer.git		ahmadexp_PC110_MiSTer	DE25 supplemental core
+_Computer	IBM PC110	PC110	no	https://github.com/ahmadexp/PC110_MiSTer.git	stock-main-integration	ahmadexp_PC110_MiSTer	DE25 supplemental core

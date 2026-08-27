@@ -10,10 +10,20 @@ image=${QUARTUS_IMAGE:-alterafpga/quartus-pro:25.3.1-patch1.02-agilex5}
 quartus_home=${QUARTUS_HOME_DIR:-$HOME/quartus-pro-home}
 host_uid=$(id -u)
 host_gid=$(id -g)
+pc110_source=$platform_root/upstream/cores/PC110
+
+if [[ ! -s $pc110_source/PC110.sv ]]; then
+    echo "PC110 source checkout not found: $pc110_source" >&2
+    echo "Run mister-de25/scripts/fetch-core-catalog.sh first." >&2
+    exit 1
+fi
 
 generate_and_build() {
     source "$platform_root/scripts/acquire-ghrd-build-lock.sh"
     test -s "$hps_bootloader"
+    build_date=${DE25_BUILD_DATE:-$(date -u +%y%m%d)}
+    printf '`define BUILD_DATE "%s"\n' "$build_date" > \
+        "$pc110_source/build_id.v"
     ghrd_root=$("$platform_root/scripts/prepare-ghrd-worktree.sh" "$project")
     cd "$platform_root/ip"
     rm -rf mister_pll pc110_core_pll ip/mister_pll ip/pc110_core_pll \

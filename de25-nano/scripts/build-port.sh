@@ -59,7 +59,6 @@ docker_args=(
     --user "$host_uid:$host_gid"
     -e HOME=/quartus-home
     -v "$target_root:/work/de25-nano"
-    -v "$(dirname "$target_root")/rtl:/work/rtl:ro"
     -v "$repo_root/mister-de25:/work/mister-de25"
     -v "$quartus_home:/quartus-home"
     -w /work/de25-nano

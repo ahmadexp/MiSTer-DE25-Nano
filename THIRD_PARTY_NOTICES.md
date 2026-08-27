@@ -11,8 +11,8 @@ firmware is included in this repository or its releases.
 
 ## BSD-licensed CPU RTL
 
-The files under `cores/PC110/rtl/ao486` and any other source files carrying
-the following notice retain these BSD terms:
+The fetched PC110 and ao486 source repositories, and any source files carrying
+the following notice, retain these BSD terms:
 
 Copyright (c) 2014, Aleksander Osman
 All rights reserved.

@@ -42,14 +42,12 @@ are recorded in [`mister-de25/CORE_CANDIDATE_STATUS.md`](mister-de25/CORE_CANDID
 - `de25-nano/`: low-level board bring-up, Terasic GHRD import, and Si5332
   diagnostic projects.
 - `shared/mister/`: shared upstream MiSTer framework sources needed by bundled
-  local cores.
-- `cores/`: optional local core sources kept separate from the platform. The
-  IBM PC110 implementation is under `cores/PC110/`.
+  platform integrations.
 
-Upstream MiSTer repositories are fetched at pinned identities during the build
-flow and patched locally. Generated upstream checkouts, Quartus databases,
-ROMs, disk images, and private cartridge content are intentionally excluded
-from version control.
+All core repositories, including IBM PC110, are fetched at pinned identities
+during the build flow and patched locally when necessary. Generated upstream
+checkouts, Quartus databases, ROMs, disk images, and private cartridge content
+are intentionally excluded from version control.
 
 ## Platform V2
 

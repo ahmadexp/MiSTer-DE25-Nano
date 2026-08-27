@@ -2,6 +2,7 @@
 set -euo pipefail
 
 target_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+repo_root=$(cd "$target_root/.." && pwd)
 project=DE25_PC110_CORE_SMOKE
 image=${QUARTUS_IMAGE:-alterafpga/quartus-pro:25.3.1-patch1.02-agilex5}
 quartus_home=${QUARTUS_HOME_DIR:-$HOME/quartus-pro-home}
@@ -30,7 +31,7 @@ docker_args=(
     --user "$host_uid:$host_gid"
     -e HOME=/quartus-home
     -v "$target_root:/work/de25-nano"
-    -v "$(dirname "$target_root")/rtl:/work/rtl:ro"
+    -v "$repo_root/mister-de25:/work/mister-de25"
     -v "$quartus_home:/quartus-home"
     -w /work/de25-nano
 )

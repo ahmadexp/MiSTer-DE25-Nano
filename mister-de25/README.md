@@ -2,8 +2,7 @@
 
 This directory contains the platform-level work needed to run the MiSTer
 framework on the Terasic DE25-Nano Agilex 5 SoC board. Core-specific sources
-are fetched into `upstream/` or kept separately under the repository's
-`cores/` directory.
+are fetched at locked revisions into the ignored `upstream/` workspace.
 
 ## Compatibility strategy
 
@@ -211,7 +210,9 @@ the first packaged cores.
 commit, converts its core list to `official-core-catalog.tsv`, and records the
 Wiki revision plus source and catalog SHA-256 values in
 `official-core-catalog.lock`. A separate `local-core-catalog.tsv` records PC110
-without changing that upstream identity. The resulting `build-matrix.tsv`
+without changing that upstream identity, while `core-catalog.tsv` pins the
+exact PC110 source revision used by builds. PC110 is fetched into `upstream/`
+through the same locked checkout flow as the official cores. The resulting `build-matrix.tsv`
 currently tracks 306 official entries from 296 repositories plus one local
 supplemental core. `scripts/build-catalog.sh --list`
 reports the DE25-supported subset, while `--supported` rebuilds every packaged

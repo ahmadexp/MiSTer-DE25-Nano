@@ -48,6 +48,7 @@ container. Set `DE25_BUILD_HOST` to the Quartus SSH target before using a
 remote build script.
 
 ```sh
+mister-de25/scripts/fetch-core-catalog.sh
 de25-nano/scripts/lint.sh
 DE25_BUILD_HOST=user@quartus-builder \
 de25-nano/scripts/build-port-remote.sh

@@ -5,10 +5,17 @@ repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 target_root="$repo_root/de25-nano"
 remote=${DE25_BUILD_HOST:?Set DE25_BUILD_HOST to the Quartus SSH target}
 remote_root=${DE25_REMOTE_ROOT:-MiSTer-DE25-Nano}
+pc110_source="$repo_root/mister-de25/upstream/cores/PC110"
 
-ssh "$remote" "mkdir -p '$remote_root/de25-nano' '$remote_root/cores/PC110/rtl'"
-rsync -az --delete "$repo_root/cores/PC110/rtl/" \
-    "$remote:$remote_root/cores/PC110/rtl/"
+if [[ ! -s "$pc110_source/PC110.sv" ]]; then
+    echo "PC110 source checkout is missing." >&2
+    echo "Run mister-de25/scripts/fetch-core-catalog.sh first." >&2
+    exit 1
+fi
+
+ssh "$remote" "mkdir -p '$remote_root/de25-nano' '$remote_root/mister-de25/upstream/cores/PC110/rtl'"
+rsync -az --delete "$pc110_source/rtl/" \
+    "$remote:$remote_root/mister-de25/upstream/cores/PC110/rtl/"
 rsync -az --delete \
     --exclude artifacts \
     --exclude ip/ip \

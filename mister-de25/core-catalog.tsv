@@ -10,3 +10,4 @@
 1	SMS	https://github.com/MiSTer-devel/SMS_MiSTer.git	699962383651a9b2126fc090e6f2aa79b6323877	Sega Master System and Game Gear core
 2	AO486	https://github.com/MiSTer-devel/ao486_MiSTer.git	1a43f583b4b8c5544bbfae621049fc2869904565	486-class PC core with GUS SDRAM
 2	PCXT	https://github.com/MiSTer-devel/PCXT_MiSTer.git	97af0d89f3ecd0ad5330c7ad1b27d258f2f4b1c5	IBM PC and XT core
+2	PC110	https://github.com/ahmadexp/PC110_MiSTer.git	3a3041a7ceabf29de1b8b9e37e4ab5b0afc08c90	IBM Palm Top PC 110 supplemental core

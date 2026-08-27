@@ -12,14 +12,17 @@ for former_root_entry in \
         exit 1
     }
 done
-[[ -s $workspace_root/cores/PC110/PC110.sv ]]
-[[ -s $workspace_root/cores/PC110/rtl/pc110/pc110_chipset.sv ]]
+[[ ! -e $workspace_root/cores ]]
+[[ -s $target_root/upstream/cores/PC110/PC110.sv ]]
+[[ -s $target_root/upstream/cores/PC110/rtl/pc110/pc110_chipset.sv ]]
 [[ -s $workspace_root/shared/mister/sys/ascal.vhd ]]
-grep -q 'SYSTEMVERILOG_FILE ../../cores/PC110/PC110.sv' \
+grep -q 'SYSTEMVERILOG_FILE ../upstream/cores/PC110/PC110.sv' \
+    "$target_root/quartus/DE25_MISTER_PC110.qsf"
+grep -q 'SEARCH_PATH ../upstream/cores/PC110$' \
     "$target_root/quartus/DE25_MISTER_PC110.qsf"
 grep -q 'VHDL_FILE ../../shared/mister/sys/ascal.vhd' \
     "$target_root/quartus/DE25_MISTER_MENU.qsf"
-echo "PASS: repository root is platform-centric and local cores are isolated"
+echo "PASS: repository is platform-centric and every core uses a fetched checkout"
 
 "$target_root/scripts/check-timing-summary.sh" \
     "$target_root/sim/timing-pass.summary"
@@ -569,21 +572,21 @@ for scaler_project in NES SNES MINIMIG TGFX16 APPLE1 PC110 PCXT SMS; do
 done
 # PC110 plus the screenshot scaler exceeds the Agilex 5 M20K budget unless
 # its small register files and lookup tables use the plentiful MLAB fabric.
-pc110_chipset_source="$target_root/../cores/PC110/rtl/pc110/pc110_chipset.sv"
+pc110_chipset_source="$target_root/upstream/cores/PC110/rtl/pc110/pc110_chipset.sv"
 for memory in scamp block2 ecb pos xr; do
     grep -Eq "ramstyle *= *\"MLAB\".*$memory *\[" \
         "$pc110_chipset_source"
 done
 grep -A4 'DE25_PC110_CORE' \
-    "$target_root/../cores/PC110/rtl/common/simple_fifo.v" | grep -q 'ramstyle = "MLAB"'
+    "$target_root/upstream/cores/PC110/rtl/common/simple_fifo.v" | grep -q 'ramstyle = "MLAB"'
 grep -A5 'DE25_PC110_CORE' \
-    "$target_root/../cores/PC110/rtl/common/simple_ram.v" | grep -q 'ramstyle = "MLAB"'
+    "$target_root/upstream/cores/PC110/rtl/common/simple_ram.v" | grep -q 'ramstyle = "MLAB"'
 grep -A5 'DE25_PC110_CORE' \
     "$target_root/../shared/mister/sys/gamma_corr.sv" | grep -q 'MLAB, no_rw_check'
 grep -q 'pc110_refresh_div == 9.d451' \
-    "$target_root/../cores/PC110/rtl/system.v"
+    "$target_root/upstream/cores/PC110/rtl/system.v"
 grep -q 'pc110_refresh_toggle, pit_readdata\[3:0\]' \
-    "$target_root/../cores/PC110/rtl/system.v"
+    "$target_root/upstream/cores/PC110/rtl/system.v"
 echo "PASS: PC110 preserves its scaler within the Agilex M20K budget"
 grep -q 'o_vacc_ini.*4\*OHRESH.*MOD (4\*OHRESH)' \
     "$target_root/../shared/mister/sys/ascal.vhd"
@@ -639,11 +642,11 @@ grep -Fq 'set de25_pcxt_clk_14_318 [get_clocks -nowarn DE25_PCXT_CLK_14_318]' \
     "$target_root/quartus/DE25_MISTER_MENU.sdc"
 echo "PASS: PC110 constrains the scaler and video clocks as asynchronous"
 grep -q 'wire PC110_VGA_FORCE_60 = 1.b0' \
-    "$target_root/../cores/PC110/PC110.sv"
+    "$target_root/upstream/cores/PC110/PC110.sv"
 grep -q '\.video_f60.*(PC110_VGA_FORCE_60)' \
-    "$target_root/../cores/PC110/PC110.sv"
+    "$target_root/upstream/cores/PC110/PC110.sv"
 echo "PASS: PC110 source timing remains native before frame-store conversion"
-grep -q '\.CONF_STR_BRAM(1)' "$target_root/../cores/PC110/PC110.sv"
+grep -q '\.CONF_STR_BRAM(1)' "$target_root/upstream/cores/PC110/PC110.sv"
 grep -q '^localparam CONF_AW = \$clog2(STRLEN+1);$' \
     "$target_root/../shared/mister/sys/hps_io.sv"
 grep -A2 '^wire \[CONF_AW-1:0\] conf_addr =' \

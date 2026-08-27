@@ -313,4 +313,4 @@ _Utility	Input test	InputTest	no	https://github.com/MiSTer-devel/InputTest_MiSTe
 _Utility	SDRAM board test	MEMTEST	yes	https://github.com/MiSTer-devel/MemTest_MiSTer.git		MiSTer-devel_MemTest_MiSTer	packaged	scripts/build-memtest.sh	artifacts/memtest/MemTest_20260814_FDCD.rbf	pass	pending	
 _Utility	Boot Menu		no	https://github.com/MiSTer-devel/Menu_MiSTer.git		MiSTer-devel_Menu_MiSTer	not-ported			not-run	not-run	
 _Utility	MiSTer Laggy	MiSTerLaggy	no	https://github.com/MiSTer-devel/MiSTerLaggy_MiSTer.git		MiSTer-devel_MiSTerLaggy_MiSTer	not-ported			not-run	not-run	
-_Computer	IBM PC110	PC110	no	https://github.com/ahmadexp/PC110_MiSTer.git		ahmadexp_PC110_MiSTer	packaged	scripts/build-pc110.sh	artifacts/pc110/IBM_PC110_20260825_FDCD_VERTICAL_ACCUM_FIX.rbf	pass	pending	DE25 supplemental core
+_Computer	IBM PC110	PC110	no	https://github.com/ahmadexp/PC110_MiSTer.git	stock-main-integration	ahmadexp_PC110_MiSTer	packaged	scripts/build-pc110.sh	artifacts/pc110/IBM_PC110_20260825_FDCD_VERTICAL_ACCUM_FIX.rbf	pass	pending	DE25 supplemental core
